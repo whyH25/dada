@@ -1,4 +1,5 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth.js'
 import LoginModal from './components/LoginModal.vue'
@@ -7,7 +8,6 @@ import InterestModal from './components/InterestModal.vue'
 const router = useRouter()
 const auth = useAuthStore()
 
-// 원본 requireAuth(): 로그인돼 있으면 바로 실행, 아니면 모달 열고 대기
 function requireAuth(action) {
   if (auth.isLoggedIn) {
     if (typeof action === 'function') action()
@@ -20,6 +20,25 @@ function go(path) { router.push(path) }
 function globalSearch(q) {
   router.push({ path: '/rooms', query: { q: (q || '').trim() } })
 }
+
+const profileOpen = ref(false)
+const profileRef = ref(null)
+
+function toggleProfile() {
+  profileOpen.value = !profileOpen.value
+}
+
+function handleOutsideClick(e) {
+  if (profileRef.value && !profileRef.value.contains(e.target)) {
+    profileOpen.value = false
+  }
+}
+
+onMounted(() => {
+  auth.restoreSession()
+  document.addEventListener('click', handleOutsideClick)
+})
+onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 </script>
 
 <template>
@@ -60,9 +79,13 @@ function globalSearch(q) {
         <div class="nav-auth" v-if="!auth.isLoggedIn">
           <button class="nav-login-btn" @click="auth.openLogin()">로그인 / 회원가입</button>
         </div>
-        <div class="nav-profile" v-else @click="go('/mypage')">
-          <div class="avatar">김</div>
-          <div class="nav-profile-name">김지원</div>
+        <div class="nav-profile has-dropdown" v-else ref="profileRef" @click.stop="toggleProfile">
+          <div class="avatar">{{ auth.user?.userName?.charAt(0) }}</div>
+          <div class="nav-profile-name">{{ auth.user?.userName }}</div>
+          <div class="nav-dropdown" v-if="profileOpen">
+            <div class="nav-dropdown-item" @click="go('/mypage')">마이페이지</div>
+            <div class="nav-dropdown-item" @click="auth.logout(router)">로그아웃</div>
+          </div>
         </div>
       </div>
     </div>
@@ -72,6 +95,18 @@ function globalSearch(q) {
   <router-view v-slot="{ Component }">
     <component :is="Component" />
   </router-view>
+
+  <!-- 푸터 -->
+  <footer class="footer" v-if="$route.name !== 'signup'">
+    <div class="footer-inner">
+      <div>© 2026 다대다. All rights reserved.</div>
+      <div class="footer-links">
+        <a>이용약관</a>
+        <a>개인정보처리방침</a>
+        <a>고객센터</a>
+      </div>
+    </div>
+  </footer>
 
   <!-- 모달들 -->
   <LoginModal />

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.UserDao">
+
+    <select id="selectAllUsers" resultType="com.ssafy.mvc.dto.UserDto">
+        SELECT
+            user_idx,
+            user_email,
+            user_name,
+            user_phone,
+            user_profile_img,
+            user_status
+        FROM users
+        WHERE user_status != 'DELETED'
+    </select>
+
+    <select id="selectUserByEmail" parameterType="string" resultType="com.ssafy.mvc.dto.UserDto">
+        SELECT
+            user_idx,
+            user_email,
+            user_pwd,
+            user_name,
+            user_phone,
+            user_profile_img,
+            user_status
+        FROM users
+        WHERE user_email = #{userEmail}
+        AND user_status = 'ACTIVE'
+    </select>
+
+
+    <insert id="insertUser" parameterType="com.ssafy.mvc.dto.UserDto">
+        INSERT INTO users (user_email, user_pwd, user_name, user_phone)
+        VALUES (#{userEmail}, #{userPwd}, #{userName}, #{userPhone})
+    </insert>
+
+    <select id="existsByEmail" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) <![CDATA[>]]> 0
+        FROM users
+        WHERE user_email = #{userEmail}
+    </select>
+
+</mapper>

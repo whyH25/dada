@@ -1,2 +1,3 @@
-2026/06/01-11:31:30.049 f34 Creating DB C:\workspace_pjt\dada\.metadata\.plugins\org.eclipse.swt\EBWebView\Default\shared_proto_db\metadata since it was missing.
-2026/06/01-11:31:30.058 f34 Reusing MANIFEST C:\workspace_pjt\dada\.metadata\.plugins\org.eclipse.swt\EBWebView\Default\shared_proto_db\metadata/MANIFEST-000001
+2026/06/06-12:20:02.868 810c Reusing MANIFEST C:\workspace_pjt\dada\.metadata\.plugins\org.eclipse.swt\EBWebView\Default\shared_proto_db\metadata/MANIFEST-000001
+2026/06/06-12:20:02.869 810c Recovering log #3
+2026/06/06-12:20:02.870 810c Reusing old log C:\workspace_pjt\dada\.metadata\.plugins\org.eclipse.swt\EBWebView\Default\shared_proto_db\metadata/000003.log 

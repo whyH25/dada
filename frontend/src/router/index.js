@@ -48,6 +48,7 @@ const routes = [
   { path: '/notices', name: 'notices', component: () => import('../views/NoticesView.vue') },
   { path: '/notifications', name: 'notifications', component: () => import('../views/NotificationsView.vue') },
   { path: '/mypage', name: 'mypage', component: () => import('../views/MypageView.vue') },
+  { path: '/signup', name: 'signup', component: () => import('../views/SignupView.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
