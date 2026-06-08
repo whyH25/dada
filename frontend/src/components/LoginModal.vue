@@ -1,11 +1,58 @@
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+
+const emit = defineEmits(['login-success'])
 
 const router = useRouter()
 const auth = useAuthStore()
 
-function doLogin() { auth.doLogin(router) }
+const userEmail = ref('')
+const userPwd = ref('')
+const loading = ref(false)
+const errorMsg = ref('')
+const successMsg = ref('')
+
+const emailRef = ref(null)
+const pwdRef = ref(null)
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function validate() {
+  if (!userEmail.value.trim()) {
+    errorMsg.value = '이메일을 입력해주세요.'
+    emailRef.value?.focus()
+    return false
+  }
+  if (!EMAIL_REGEX.test(userEmail.value.trim())) {
+    errorMsg.value = '올바른 이메일 형식이 아닙니다.'
+    emailRef.value?.focus()
+    return false
+  }
+  if (!userPwd.value.trim()) {
+    errorMsg.value = '비밀번호를 입력해주세요.'
+    pwdRef.value?.focus()
+    return false
+  }
+  return true
+}
+
+async function handleLogin() {
+  errorMsg.value = ''
+  successMsg.value = ''
+  if (!validate()) return
+  loading.value = true
+  try {
+    await auth.doLogin(userEmail.value, userPwd.value, router)
+    successMsg.value = '로그인에 성공했습니다.'
+    emit('login-success')
+  } catch (e) {
+    errorMsg.value = e.message || '로그인에 실패했습니다.'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -23,26 +70,31 @@ function doLogin() { auth.doLogin(router) }
 
       <div class="auth-field">
         <label class="auth-label">이메일</label>
-        <input class="input" type="email" value="jiwon.kim@email.com" placeholder="you@email.com" />
+        <input class="input" type="email" v-model="userEmail" placeholder="you@email.com" ref="emailRef" />
       </div>
       <div class="auth-field">
         <label class="auth-label">비밀번호</label>
-        <input class="input" type="password" value="········" placeholder="비밀번호" />
+        <input class="input" type="password" v-model="userPwd" placeholder="비밀번호" @keyup.enter="handleLogin" ref="pwdRef" />
       </div>
       <div class="auth-row">
-        <label class="auth-remember"><input type="checkbox" checked /> 로그인 상태 유지</label>
+        <label class="auth-remember"><input type="checkbox" /> 로그인 상태 유지</label>
         <a class="auth-forgot">비밀번호 찾기</a>
       </div>
 
-      <button class="btn btn-primary btn-block btn-lg" @click="doLogin">로그인</button>
+      <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
+      <p v-if="successMsg" class="auth-success">{{ successMsg }}</p>
+
+      <button class="btn btn-primary btn-block btn-lg" :disabled="loading" @click="handleLogin">
+        {{ loading ? '로그인 중...' : '로그인' }}
+      </button>
 
       <div class="auth-divider"><span>또는</span></div>
       <div class="auth-social">
-        <button class="auth-social-btn kakao" @click="doLogin">카카오로 시작하기</button>
-        <button class="auth-social-btn" @click="doLogin">Google 계정으로 계속</button>
+        <button class="auth-social-btn kakao">카카오로 시작하기</button>
+        <button class="auth-social-btn">Google 계정으로 계속</button>
       </div>
       <div class="auth-foot">
-        아직 회원이 아니신가요? <a @click="doLogin">회원가입</a>
+        아직 회원이 아니신가요? <a style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/signup') }">회원가입</a>
       </div>
     </div>
   </div>

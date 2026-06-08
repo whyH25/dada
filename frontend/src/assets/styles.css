@@ -190,6 +190,10 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
 .nav-item.has-dropdown:hover .nav-dropdown {
   opacity: 1; visibility: visible; transform: translateY(0);
 }
+.nav-profile.has-dropdown .nav-dropdown {
+  opacity: 1; visibility: visible; transform: translateY(0);
+  left: auto; right: 0;
+}
 .nav-dropdown-item {
   display: block;
   padding: 9px 12px;
@@ -257,6 +261,7 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
   border: 1.5px solid #286c4a;
 }
 .nav-profile {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
