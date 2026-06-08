@@ -17,6 +17,11 @@ public class UserDto {
         this.userIdx = userIdx;
     }
 
+    // 프론트에서 userId로 접근하는 경우 호환
+    public Long getUserId() {
+        return userIdx;
+    }
+
     public String getUserEmail() {
         return userEmail;
     }

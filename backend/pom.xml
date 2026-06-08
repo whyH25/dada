@@ -81,6 +81,12 @@
 			<version>5.3.0</version>
 		</dependency>
 
+		<!-- Jackson (JSON 파싱) -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>

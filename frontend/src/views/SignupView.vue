@@ -68,7 +68,7 @@ async function handleSignup() {
     alert('회원가입이 완료되었습니다.')
     router.push('/')
   } catch (e) {
-    alert('회원가입 중 오류가 발생하였습니다.')
+    errorMsg.value = e.message || '회원가입 중 오류가 발생했습니다.'
   } finally {
     loading.value = false
   }

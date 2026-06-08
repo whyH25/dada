@@ -5,6 +5,7 @@ import { useDataStore } from '../stores/data.js'
 import { useFlowStore } from '../stores/flow.js'
 import { useAuthStore } from '../stores/auth.js'
 import { fetchJobCategories, createInterviewRoom } from '../api/interviewRoomApi.js'
+import { startSession } from '../api/sessionApi.js'
 import { useDeviceCheck } from '../composables/useDeviceCheck.js'
 
 const router = useRouter()
@@ -110,15 +111,22 @@ function removePortfolio() {
   portfolioFile.value = null
 }
 
-async function gotoStep2() {
+function gotoStep2() {
   if (!company.value.trim()) {
     errorMsg.value = '회사명을 입력해주세요.'
     return
   }
   errorMsg.value = ''
-  submitting.value = true
+  step.value = 2
+  window.scrollTo(0, 0)
+}
+
+async function startInterview() {
   try {
-    const result = await createInterviewRoom({
+    submitting.value = true
+
+    // 1. 면접방 DB 저장
+    const roomResult = await createInterviewRoom({
       userId: auth.user?.userId ?? 1,
       companyName: company.value.trim(),
       jobId: selectedJobId.value,
@@ -128,34 +136,39 @@ async function gotoStep2() {
       resumeFile: resumeFile.value,
       portfolioFile: portfolioFile.value,
     })
-    flow.currentRoom = result.roomId
-    step.value = 2
-    window.scrollTo(0, 0)
+    flow.roomId = roomResult.roomId
+
+    // 2. 세션 시작 + AI 질문 생성
+    const sessionResult = await startSession({
+      roomId: flow.roomId,
+      userId: auth.user?.userId ?? 1,
+    })
+    flow.sessionId = sessionResult.data.sessionId
+    flow.scenarios = sessionResult.data.scenarios
+
+    // 기존 mock 데이터에도 추가 (PrepView 등 호환용)
+    const logoMap = { 카카오: 'kakao', 삼성전자: 'samsung', 네이버: 'naver', 토스: 'toss' }
+    data.rooms.push({
+      co: company.value,
+      logo: logoMap[company.value] || 'lounge',
+      short: company.value.charAt(0),
+      role: `${selectedJobName.value} · ${sel.type}`,
+      title: `${company.value} ${selectedJobName.value} 맞춤형 다대다 면접`,
+      diff: difficultyMap[sel.diff].charAt(0),
+      date: new Date().toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace('.', ''),
+      count: 0,
+      sessions: 0,
+      mine: true,
+      interviewerCount: interviewerCount.value,
+    })
+    flow.currentRoom = data.rooms.length - 1
+    stopDeviceCheck()
+    router.push('/prep')
   } catch (e) {
-    errorMsg.value = e.message || '면접방 생성 중 오류가 발생했습니다.'
+    errorMsg.value = e.message || '면접 시작 중 오류가 발생했습니다.'
   } finally {
     submitting.value = false
   }
-}
-
-function startInterview() {
-  const logoMap = { 카카오: 'kakao', 삼성전자: 'samsung', 네이버: 'naver', 토스: 'toss' }
-  data.rooms.push({
-    co: company.value,
-    logo: logoMap[company.value] || 'lounge',
-    short: company.value.charAt(0),
-    role: `${selectedJobName.value} · ${sel.type}`,
-    title: `${company.value} ${selectedJobName.value} 맞춤형 다대다 면접`,
-    diff: difficultyMap[sel.diff].charAt(0),
-    date: new Date().toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace('.', ''),
-    count: 0,
-    sessions: 0,
-    mine: true,
-    interviewerCount: interviewerCount.value,
-  })
-  flow.currentRoom = data.rooms.length - 1
-  stopDeviceCheck()
-  router.push('/prep')
 }
 </script>
 

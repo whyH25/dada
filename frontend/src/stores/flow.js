@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 
-// 면접 진행 흐름에서 선택된 방 인덱스를 공유 (원본 currentRoom 전역변수 대체)
 export const useFlowStore = defineStore('flow', {
-  state: () => ({ currentRoom: 0 }),
+  state: () => ({
+    currentRoom: 0,   // mock 데이터 인덱스 (RoomIntroView 등 기존 호환용)
+    roomId: null,     // DB의 실제 interview_room.room_id
+    sessionId: null,  // DB의 실제 interview_session.session_id
+    scenarios: [],    // AI 생성 질문 목록
+  }),
 })
