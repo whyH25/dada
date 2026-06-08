@@ -22,6 +22,7 @@ Thumbs.db
 
 # Environment
 .env
+backend/src/main/resources/application-local.properties
 
 # metadata
 .metadata/

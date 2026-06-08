@@ -8,22 +8,28 @@ const router = useRouter()
 const flow = useFlowStore()
 const data = useDataStore()
 
-const labels = ['면접방 입장 확인', 'AI 면접관 2명 준비', '기출 기반 질문 세팅', '카메라 · 마이크 연결']
-const active = ref(1)   // index currently "active"; below it = done
-let timer = null
-
 const r = computed(() => data.rooms[flow.currentRoom])
 const sub = computed(() =>
   r.value ? `${r.value.co} ${r.value.role} 면접장에 입장하고 있어요.` : 'AI 면접관과 경쟁 지원자를 면접장에 입장시키는 중입니다.'
 )
 
-// 원본 runWaitSteps()
+const interviewerCount = computed(() => r.value?.interviewerCount ?? 2)
+const labels = computed(() => [
+  '면접방 입장 확인',
+  `AI 면접관 ${interviewerCount.value}명 준비`,
+  '기출 기반 질문 세팅',
+  '카메라 · 마이크 연결',
+])
+
+const active = ref(1)
+let timer = null
+
 onMounted(() => {
   let idx = 1
   timer = setInterval(() => {
     idx++
     active.value = idx
-    if (idx >= labels.length) {
+    if (idx >= labels.value.length) {
       clearInterval(timer)
       setTimeout(() => router.push('/interview'), 700)
     }
