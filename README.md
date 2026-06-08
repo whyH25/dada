@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎙️ InterviewAI
+# 🎙️ 다대다(多:多)
 
 ### AI 기반 다대다(多:多) 면접 시뮬레이션 플랫폼
 
