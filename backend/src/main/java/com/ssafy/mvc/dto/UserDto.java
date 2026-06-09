@@ -1,7 +1,7 @@
 package com.ssafy.mvc.dto;
 
 public class UserDto {
-    private Long userIdx;
+    private Long userId;
     private String userEmail;
     private String userPwd;
     private String userName;
@@ -10,16 +10,16 @@ public class UserDto {
     private String userStatus;
 
     public Long getUserIdx() {
-        return userIdx;
+        return userId;
     }
 
     public void setUserIdx(Long userIdx) {
-        this.userIdx = userIdx;
+        this.userId = userIdx;
     }
 
     // 프론트에서 userId로 접근하는 경우 호환
     public Long getUserId() {
-        return userIdx;
+        return userId;
     }
 
     public String getUserEmail() {
