@@ -38,7 +38,7 @@ function enterRoom(i) {
         <div class="flex-between">
           <div>
             <h1 class="page-title">100대기업 면접방</h1>
-            <p class="page-subtitle">실제 채용 트렌드를 반영한 기업·직무별 모의 면접방. 총 <strong>312개</strong></p>
+            <p class="page-subtitle">실제 채용 트렌드를 반영한 기업|직무별 모의 면접방. 총 <strong>312개</strong></p>
             <div class="rooms-result-count">{{ resultLabel }}</div>
           </div>
         </div>
@@ -50,7 +50,7 @@ function enterRoom(i) {
           <svg style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--ink-400);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
           <input class="input" v-model="query" placeholder="기업명, 직무, 키워드로 검색" style="padding-left:34px;" />
         </div>
-        <select class="select" style="width:140px;"><option>전체 산업군</option><option>IT · 인터넷</option><option>제조 · 반도체</option><option>금융</option><option>유통 · 커머스</option></select>
+        <select class="select" style="width:140px;"><option>전체 산업군</option><option>IT | 인터넷</option><option>제조 | 반도체</option><option>금융</option><option>유통 | 커머스</option></select>
         <select class="select" style="width:140px;"><option>전체 직무</option><option>개발</option><option>데이터</option><option>기획</option><option>디자인</option></select>
         <select class="select" style="width:120px;"><option>최신순</option><option>참여 많은순</option><option>난이도순</option></select>
         <button class="btn btn-ghost" @click="query = ''">
@@ -60,13 +60,13 @@ function enterRoom(i) {
       </div>
 
       <div class="filter-chips">
-        <div class="filter-chip active">전체 · 312</div>
-        <div class="filter-chip">IT · 인터넷 · 142</div>
-        <div class="filter-chip">제조 · 반도체 · 68</div>
-        <div class="filter-chip">금융 · 41</div>
-        <div class="filter-chip">유통 · 커머스 · 33</div>
-        <div class="filter-chip">컨설팅 · 18</div>
-        <div class="filter-chip">기타 · 10</div>
+        <div class="filter-chip active">전체 | 312</div>
+        <div class="filter-chip">IT | 인터넷 | 142</div>
+        <div class="filter-chip">제조 | 반도체 | 68</div>
+        <div class="filter-chip">금융 | 41</div>
+        <div class="filter-chip">유통 | 커머스 | 33</div>
+        <div class="filter-chip">컨설팅 | 18</div>
+        <div class="filter-chip">기타 | 10</div>
       </div>
 
       <div class="rooms-grid">
@@ -79,7 +79,7 @@ function enterRoom(i) {
               <div class="company-logo" :class="r.logo">{{ r.short }}</div>
               <div><div class="room-co-name">{{ r.co }}</div><div class="room-co-role">{{ r.role }}</div></div>
             </div>
-            <span v-if="r.mine" class="badge badge-green">참여완료 · {{ r.sessions }}회</span>
+            <span v-if="r.mine" class="badge badge-green">참여완료 | {{ r.sessions }}회</span>
             <span v-else class="badge badge-outline">진행 전</span>
           </div>
           <h3 class="room-title">{{ r.title }}</h3>

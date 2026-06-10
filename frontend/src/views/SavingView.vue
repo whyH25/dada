@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const labels = ['음성 · 영상 업로드', '답변 텍스트 변환', '역량별 점수 산출', '리포트 발행']
+const labels = ['음성 | 영상 업로드', '답변 텍스트 변환', '역량별 점수 산출', '리포트 발행']
 const active = ref(1)
 let timer = null
 

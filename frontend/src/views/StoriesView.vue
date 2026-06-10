@@ -45,7 +45,7 @@ function open(i) { router.push('/story/' + i) }
           <p class="story-quote">{{ data.stories[i].quote }}</p>
           <div class="story-footer">
             <span class="story-read">인터뷰 읽기 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6" /></svg></span>
-            <span class="story-stats">조회 {{ data.stories[i].views.toLocaleString() }} · ♥ {{ data.stories[i].likes }}</span>
+            <span class="story-stats">조회 {{ data.stories[i].views.toLocaleString() }} | ♥ {{ data.stories[i].likes }}</span>
           </div>
         </div>
       </div>

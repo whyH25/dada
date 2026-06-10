@@ -1,6 +1,7 @@
 # Vue
 frontend/node_modules/
 frontend/dist/
+frontend/public/interviewers/
 
 # Spring Boot
 backend/target/

@@ -18,7 +18,7 @@ const labels = computed(() => [
   '면접방 입장 확인',
   `AI 면접관 ${interviewerCount.value}명 준비`,
   '기출 기반 질문 세팅',
-  '카메라 · 마이크 연결',
+  '카메라 | 마이크 연결',
 ])
 
 const active = ref(1)

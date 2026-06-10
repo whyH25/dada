@@ -35,7 +35,7 @@ const jobCategories = ref([])
 
 const sel = reactive({
   type: '신입',
-  diff: '중 · 실제 면접 수준',
+  diff: '중 | 실제 면접 수준',
   interviewers: '1명',
   applicants: '1명',
 })
@@ -49,13 +49,14 @@ const submitting = ref(false)
 const errorMsg = ref('')
 
 const typeOpts = ['신입', '경력', '인턴']
-const diffOpts = ['하 · 편안한 분위기', '중 · 실제 면접 수준', '상 · 압박 면접']
+const diffOpts = ['하 | 편안한 분위기', '중 | 실제 면접 수준', '상 | 압박 면접']
 const countOpts = ['1명', '2명', '3명']
+const applicantOpts = ['0명', '1명', '2명']
 
 const difficultyMap = {
-  '하 · 편안한 분위기': 'EASY',
-  '중 · 실제 면접 수준': 'MEDIUM',
-  '상 · 압박 면접': 'HARD',
+  '하 | 편안한 분위기': 'EASY',
+  '중 | 실제 면접 수준': 'MEDIUM',
+  '상 | 압박 면접': 'HARD',
 }
 
 const interviewerCount = computed(() => parseInt(sel.interviewers))
@@ -131,6 +132,7 @@ async function startInterview() {
       companyName: company.value.trim(),
       jobId: selectedJobId.value,
       difficulty: difficultyMap[sel.diff],
+      employmentType: sel.type,
       interviewerCount: interviewerCount.value,
       aiApplicantCount: applicantCount.value,
       resumeFile: resumeFile.value,
@@ -152,7 +154,7 @@ async function startInterview() {
       co: company.value,
       logo: logoMap[company.value] || 'lounge',
       short: company.value.charAt(0),
-      role: `${selectedJobName.value} · ${sel.type}`,
+      role: `${selectedJobName.value} | ${sel.type}`,
       title: `${company.value} ${selectedJobName.value} 맞춤형 다대다 면접`,
       diff: difficultyMap[sel.diff].charAt(0),
       date: new Date().toLocaleDateString('ko-KR', { year: '2-digit', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace('.', ''),
@@ -160,6 +162,7 @@ async function startInterview() {
       sessions: 0,
       mine: true,
       interviewerCount: interviewerCount.value,
+      aiApplicantCount: applicantCount.value,
     })
     flow.currentRoom = data.rooms.length - 1
     stopDeviceCheck()
@@ -251,7 +254,7 @@ async function startInterview() {
                   <div class="field">
                     <label class="field-label">AI 경쟁 지원자 수</label>
                     <div class="chip-group">
-                      <div v-for="o in countOpts" :key="o" class="chip" :class="{ active: sel.applicants === o }" @click="sel.applicants = o">{{ o }}</div>
+                      <div v-for="o in applicantOpts" :key="o" class="chip" :class="{ active: sel.applicants === o }" @click="sel.applicants = o">{{ o }}</div>
                     </div>
                   </div>
                 </div>
@@ -285,7 +288,7 @@ async function startInterview() {
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
                       </div>
                       <div class="upload-title">이력서 및 자기소개서</div>
-                      <div class="upload-sub">PDF · DOC · 최대 10MB</div>
+                      <div class="upload-sub">PDF | DOC | 최대 10MB</div>
                     </template>
                   </label>
 
@@ -307,7 +310,7 @@ async function startInterview() {
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
                       </div>
                       <div class="upload-title">포트폴리오</div>
-                      <div class="upload-sub">PDF · DOC · 최대 50MB</div>
+                      <div class="upload-sub">PDF | DOC | 최대 50MB</div>
                     </template>
                   </label>
 
@@ -337,7 +340,7 @@ async function startInterview() {
             </div>
             <div class="preview-foot">
               <div class="text-sm text-muted" style="margin-bottom: 10px;">
-                총 {{ 1 + interviewerCount + applicantCount }}명 · 면접관 {{ interviewerCount }} + 본인 + AI 지원자 {{ applicantCount }}
+                총 {{ 1 + interviewerCount + applicantCount }}명 | 면접관 {{ interviewerCount }} + 본인 + AI 지원자 {{ applicantCount }}
               </div>
               <button class="btn btn-secondary btn-block" disabled style="opacity:0.6">다음 단계에서 생성</button>
             </div>

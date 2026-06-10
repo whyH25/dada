@@ -47,12 +47,12 @@ function logoFor(name) {
       <div class="card list-card">
         <div class="notif-item unread">
           <div class="notif-ico green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg></div>
-          <div class="notif-body"><div class="notif-title">카카오 면접 리포트가 발행되었어요</div><div class="notif-sub">총평 82점 · 발화 분석 결과를 확인해 보세요.</div></div>
+          <div class="notif-body"><div class="notif-title">카카오 면접 리포트가 발행되었어요</div><div class="notif-sub">총평 82점 | 발화 분석 결과를 확인해 보세요.</div></div>
           <span class="notif-time">10분 전</span>
         </div>
         <div class="notif-item unread">
           <div class="notif-ico red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" /></svg></div>
-          <div class="notif-body"><div class="notif-title">삼성전자 DS부문 서류 마감 D-3</div><div class="notif-sub">5월 25일(일) 23:59 까지 · 저장한 공고</div></div>
+          <div class="notif-body"><div class="notif-title">삼성전자 DS부문 서류 마감 D-3</div><div class="notif-sub">5월 25일(일) 23:59 까지 | 저장한 공고</div></div>
           <span class="notif-time">2시간 전</span>
         </div>
         <div class="notif-item unread">

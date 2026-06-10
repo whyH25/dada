@@ -51,7 +51,7 @@ function send() {
           <div class="cr-head">
             <button class="cr-back" @click="router.push('/community')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" /></svg></button>
             <div class="chat-ico" :class="c.logo">{{ c.short }}</div>
-            <div class="cr-head-text"><div class="cr-title">{{ c.title }}</div><div class="cr-sub"><span class="online-dot"></span>{{ c.online.toLocaleString() }}명 접속 중 · {{ c.tag }}</div></div>
+            <div class="cr-head-text"><div class="cr-title">{{ c.title }}</div><div class="cr-sub"><span class="online-dot"></span>{{ c.online.toLocaleString() }}명 접속 중 | {{ c.tag }}</div></div>
             <button class="cr-leave" @click="router.push('/community')">나가기</button>
           </div>
           <div class="cr-messages" ref="messagesBox">
@@ -73,7 +73,7 @@ function send() {
               <span class="chat-ico" :class="o.logo">{{ o.short }}</span>
               <span class="cr-side-text">
                 <span class="cr-side-name">{{ o.title }}</span>
-                <span class="cr-side-sub"><span class="online-dot"></span>{{ o.online.toLocaleString() }}명 · {{ o.tag }}</span>
+                <span class="cr-side-sub"><span class="online-dot"></span>{{ o.online.toLocaleString() }}명 | {{ o.tag }}</span>
               </span>
             </button>
           </div>

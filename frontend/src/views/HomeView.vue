@@ -18,7 +18,7 @@ function requireAuth(action) {
       <!-- Hero -->
       <section class="hero">
         <div class="hero-inner">
-          <div class="hero-eyebrow"><span class="pulse"></span>NEW · 실전형 다대다 면접 베타</div>
+          <div class="hero-eyebrow"><span class="pulse"></span>NEW | 실전형 다대다 면접 베타</div>
           <h1 class="hero-title">AI 기반 <span>다대다</span><br />면접 시뮬레이션</h1>
           <p class="hero-desc">
             혼자 보던 1:1 AI 면접은 잊어주세요. AI 면접관 2명 + AI 경쟁 지원자 2명과 함께,
@@ -33,7 +33,7 @@ function requireAuth(action) {
           </div>
           <div class="hero-stats">
             <div><div class="hero-stat-num">128,492</div><div class="hero-stat-label">누적 모의 면접</div></div>
-            <div><div class="hero-stat-num">320+</div><div class="hero-stat-label">등록 기업·직무</div></div>
+            <div><div class="hero-stat-num">320+</div><div class="hero-stat-label">등록 기업|직무</div></div>
             <div><div class="hero-stat-num">87%</div><div class="hero-stat-label">사용자 만족도</div></div>
           </div>
         </div>
@@ -55,7 +55,7 @@ function requireAuth(action) {
           </button>
           <div class="feature-art art-b" aria-hidden="true"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
         </div>
-        <div class="feature-card fc-c" @click="requireAuth(() => go('/mypage'))">
+        <div class="feature-card fc-c" @click="requireAuth(() => go('/mypage?section=resume'))">
           <h3 class="feature-card-title">이력서 등록만으로<br />모든 면접방에<br />나에게 맞는<br />질문이 도착해요.</h3>
           <button class="feature-pill">이력서 등록
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -79,7 +79,7 @@ function requireAuth(action) {
           <div class="story-card" @click="go('/story/0')">
             <div class="story-card-top">
               <div class="company-logo samsung">S</div>
-              <div><div class="story-meta-name">삼성전자 · DS부문</div><div class="story-meta-sub">반도체 설계 · 신입 · 26기 상반기</div></div>
+              <div><div class="story-meta-name">삼성전자 | DS부문</div><div class="story-meta-sub">반도체 설계 | 신입 | 26기 상반기</div></div>
             </div>
             <div class="story-kicker"><span class="story-kicker-tag">합격자 인터뷰</span><span class="story-kicker-result">최종 합격</span></div>
             <h3 class="story-headline">“임원이 가장 본 건 화려함이 아니라 근거의 일관성이었어요”</h3>
@@ -92,7 +92,7 @@ function requireAuth(action) {
           <div class="story-card" @click="go('/story/1')">
             <div class="story-card-top">
               <div class="company-logo kakao">K</div>
-              <div><div class="story-meta-name">카카오 · 백엔드 개발</div><div class="story-meta-sub">서버 개발 · 경력 3년 · 수시 채용</div></div>
+              <div><div class="story-meta-name">카카오 | 백엔드 개발</div><div class="story-meta-sub">서버 개발 | 경력 3년 | 수시 채용</div></div>
             </div>
             <div class="story-kicker"><span class="story-kicker-tag">합격자 인터뷰</span><span class="story-kicker-result">최종 합격</span></div>
             <h3 class="story-headline">“옆자리 AI 지원자가 저보다 잘했어요. 그게 약이 됐죠”</h3>
@@ -105,7 +105,7 @@ function requireAuth(action) {
           <div class="story-card" @click="go('/story/2')">
             <div class="story-card-top">
               <div class="company-logo naver">N</div>
-              <div><div class="story-meta-name">네이버 · 데이터 분석</div><div class="story-meta-sub">데이터 사이언티스트 · 신입 · 26기 상반기</div></div>
+              <div><div class="story-meta-name">네이버 | 데이터 분석</div><div class="story-meta-sub">데이터 사이언티스트 | 신입 | 26기 상반기</div></div>
             </div>
             <div class="story-kicker"><span class="story-kicker-tag">합격자 인터뷰</span><span class="story-kicker-result">최종 합격</span></div>
             <h3 class="story-headline">“케이스 면접은 정답이 아니라 생각의 절차를 봅니다”</h3>
@@ -148,22 +148,22 @@ function requireAuth(action) {
           <div class="card-header"><h3 class="card-title">커뮤니티</h3><a class="card-link" @click="go('/community')">더보기 ›</a></div>
           <div class="list-item chat-item" @click="go('/community')">
             <div class="chat-ico samsung">S</div>
-            <div class="list-item-text"><div class="list-item-title">삼성전자 채용 준비방</div><div class="list-item-sub"><span class="online-dot"></span>428명 접속 중 · 반도체·DS</div></div>
+            <div class="list-item-text"><div class="list-item-title">삼성전자 채용 준비방</div><div class="list-item-sub"><span class="online-dot"></span>428명 접속 중 | 반도체|DS</div></div>
             <span class="chat-enter">입장</span>
           </div>
           <div class="list-item chat-item" @click="go('/community')">
             <div class="chat-ico kakao">K</div>
-            <div class="list-item-text"><div class="list-item-title">카카오 백엔드 오픈톡</div><div class="list-item-sub"><span class="online-dot"></span>312명 접속 중 · 서버·플랫폼</div></div>
+            <div class="list-item-text"><div class="list-item-title">카카오 백엔드 오픈톡</div><div class="list-item-sub"><span class="online-dot"></span>312명 접속 중 | 서버|플랫폼</div></div>
             <span class="chat-enter">입장</span>
           </div>
           <div class="list-item chat-item" @click="go('/community')">
             <div class="chat-ico naver">N</div>
-            <div class="list-item-text"><div class="list-item-title">네이버 데이터 직군방</div><div class="list-item-sub"><span class="online-dot"></span>198명 접속 중 · 데이터 분석</div></div>
+            <div class="list-item-text"><div class="list-item-title">네이버 데이터 직군방</div><div class="list-item-sub"><span class="online-dot"></span>198명 접속 중 | 데이터 분석</div></div>
             <span class="chat-enter">입장</span>
           </div>
           <div class="list-item chat-item" @click="go('/community')">
             <div class="chat-ico lounge">26</div>
-            <div class="list-item-text"><div class="list-item-title">26기 상반기 공채 라운지</div><div class="list-item-sub"><span class="online-dot"></span>1,204명 접속 중 · 전체 직군</div></div>
+            <div class="list-item-text"><div class="list-item-title">26기 상반기 공채 라운지</div><div class="list-item-sub"><span class="online-dot"></span>1,204명 접속 중 | 전체 직군</div></div>
             <span class="chat-enter">입장</span>
           </div>
         </div>
