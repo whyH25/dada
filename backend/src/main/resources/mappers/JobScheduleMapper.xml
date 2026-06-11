@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.JobScheduleDao">
+
+    <sql id="cols">
+        schedule_id, company_name, job_title, job_url,
+        employment_type, company_type,
+        start_date, end_date, description, created_at, updated_at
+    </sql>
+
+    <select id="selectAll" resultType="com.ssafy.mvc.dto.JobScheduleDto">
+        SELECT <include refid="cols" />
+        FROM job_schedule
+        ORDER BY end_date ASC
+    </select>
+
+    <select id="selectById" parameterType="long" resultType="com.ssafy.mvc.dto.JobScheduleDto">
+        SELECT <include refid="cols" />
+        FROM job_schedule
+        WHERE schedule_id = #{scheduleId}
+    </select>
+
+    <insert id="insert" parameterType="com.ssafy.mvc.dto.JobScheduleDto" useGeneratedKeys="true" keyProperty="scheduleId">
+        INSERT INTO job_schedule
+            (company_name, job_title, job_url, employment_type, company_type, start_date, end_date, description)
+        VALUES
+            (#{companyName}, #{jobTitle}, #{jobUrl}, #{employmentType}, #{companyType}, #{startDate}, #{endDate}, #{description})
+    </insert>
+
+    <update id="update" parameterType="com.ssafy.mvc.dto.JobScheduleDto">
+        UPDATE job_schedule
+        SET
+            company_name    = #{companyName},
+            job_title       = #{jobTitle},
+            job_url         = #{jobUrl},
+            employment_type = #{employmentType},
+            company_type    = #{companyType},
+            start_date      = #{startDate},
+            end_date        = #{endDate},
+            description     = #{description}
+        WHERE schedule_id = #{scheduleId}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM job_schedule WHERE schedule_id = #{scheduleId}
+    </delete>
+
+</mapper>

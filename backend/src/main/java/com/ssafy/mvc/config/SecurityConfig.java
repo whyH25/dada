@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -27,8 +28,19 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .securityContext(ctx -> ctx.requireExplicitSave(false))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users/login", "/api/users/signup",
-                                 "/api/email/send-code", "/api/email/verify-code").permitAll()
+                .requestMatchers(
+                    "/api/users/login",
+                    "/api/users/signup",
+                    "/api/email/send-code",
+                    "/api/email/verify-code"
+                ).permitAll()
+
+                // 사용자 캘린더에서 채용일정 조회는 로그인 없이 허용
+                .requestMatchers(HttpMethod.GET, "/api/job-schedules").permitAll()
+
+                // 관리자 전용 API — ADMIN 권한 필요
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
@@ -38,6 +50,7 @@ public class SecurityConfig {
                     response.getWriter().write("{\"success\":false,\"message\":\"로그인이 필요합니다.\"}");
                 })
             );
+
         return http.build();
     }
 
@@ -48,8 +61,10 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 

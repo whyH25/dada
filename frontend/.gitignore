@@ -37,3 +37,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# 영상 에셋 (용량 크므로 git 제외)
+public/interviewers/
+public/applicants/

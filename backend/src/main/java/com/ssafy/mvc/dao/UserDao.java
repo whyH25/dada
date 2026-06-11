@@ -17,4 +17,6 @@ public interface UserDao {
     boolean existsByEmail(@Param("userEmail") String email);
 
     void insertUser(UserDto user);
+
+    void deleteUser(@Param("userId") Long userId);
 }

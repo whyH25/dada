@@ -26,8 +26,8 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 
-// 로그인 후 이용 가능한 경로 (원본 GATED_ROUTES)
 const GATED = ['create', 'interview', 'room-intro', 'mypage']
+const ADMIN_ROUTES = ['admin', 'admin-jobs', 'admin-users']
 
 const routes = [
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
@@ -49,6 +49,16 @@ const routes = [
   { path: '/notifications', name: 'notifications', component: () => import('../views/NotificationsView.vue') },
   { path: '/mypage', name: 'mypage', component: () => import('../views/MypageView.vue') },
   { path: '/signup', name: 'signup', component: () => import('../views/SignupView.vue') },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('../views/admin/AdminView.vue'),
+    children: [
+      { path: '', redirect: '/admin/jobs' },
+      { path: 'jobs', name: 'admin-jobs', component: () => import('../views/admin/AdminJobsView.vue') },
+      { path: 'users', name: 'admin-users', component: () => import('../views/admin/AdminUsersView.vue') },
+    ],
+  },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -58,11 +68,20 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-// 원본 goto()의 게이팅 로직: 비로그인 상태로 보호 경로 진입 시 로그인 모달
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
-  if (!auth.isLoggedIn && GATED.includes(to.name)) {
-    auth.openLogin(to.fullPath) // 로그인 후 이 경로로 이동
+
+  if (ADMIN_ROUTES.includes(to.name)) {
+    if (!auth.isLoggedIn) {
+      auth.openLogin(to.fullPath)
+      next(from.name ? false : '/')
+    } else if (auth.user?.userRole !== 'ADMIN') {
+      next('/')  // 로그인했지만 ADMIN 아님 → 홈
+    } else {
+      next()
+    }
+  } else if (!auth.isLoggedIn && GATED.includes(to.name)) {
+    auth.openLogin(to.fullPath)
     next(from.name ? false : '/')
   } else {
     next()

@@ -26,7 +26,8 @@ public class CustomUserDetailsDto implements UserDetails, Serializable {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        String role = userDto.getUserRole() != null ? userDto.getUserRole() : "USER";
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role));
     }
 
     @Override

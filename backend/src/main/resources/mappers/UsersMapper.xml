@@ -11,7 +11,8 @@
             user_name,
             user_phone,
             user_profile_img,
-            user_status
+            user_status,
+            user_role
         FROM users
         WHERE user_status != 'DELETED'
     </select>
@@ -25,12 +26,12 @@
             user_phone,
             user_profile_img,
             user_status,
+            user_role,
             email_verified
         FROM users
         WHERE user_email = #{userEmail}
         AND user_status = 'ACTIVE'
     </select>
-
 
     <insert id="insertUser" parameterType="com.ssafy.mvc.dto.UserDto">
         INSERT INTO users (user_email, user_pwd, user_name, user_phone, email_verified)
@@ -42,5 +43,11 @@
         FROM users
         WHERE user_email = #{userEmail}
     </select>
+
+    <update id="deleteUser">
+        UPDATE users
+        SET user_status = 'DELETED'
+        WHERE user_id = #{userId}
+    </update>
 
 </mapper>
