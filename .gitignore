@@ -2,6 +2,7 @@
 frontend/node_modules/
 frontend/dist/
 frontend/public/interviewers/
+frontend/public/applicants/
 
 # Spring Boot
 backend/target/

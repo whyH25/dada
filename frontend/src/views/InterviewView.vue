@@ -20,15 +20,23 @@ const interviewerCount = computed(() => r.value?.interviewerCount || 2)
 const aiApplicantCount = computed(() => r.value?.aiApplicantCount ?? 1)
 
 const interviewerVideos = ref([])
+const applicantImages = ref([])
 
-function pickRandomVideos(count) {
-  const indices = Array.from({ length: 10 }, (_, i) => i + 1)
+function pickRandom(count, total, pathFn) {
+  const indices = Array.from({ length: total }, (_, i) => i + 1)
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [indices[i], indices[j]] = [indices[j], indices[i]]
   }
-  return indices.slice(0, Math.min(count, 10))
-    .map(n => `/interviewers/interviewer_${String(n).padStart(2, '0')}.mp4`)
+  return indices.slice(0, Math.min(count, total)).map(pathFn)
+}
+
+function pickRandomVideos(count) {
+  return pickRandom(count, 10, n => `/interviewers/interviewer_${String(n).padStart(2, '0')}.mp4`)
+}
+
+function pickRandomApplicants(count) {
+  return pickRandom(count, 10, n => `/applicants/applicant_${String(n).padStart(2, '0')}.png`)
 }
 
 const interviewers = computed(() =>
@@ -45,6 +53,7 @@ const aiApplicants = computed(() =>
     id: `a${i + 1}`,
     name: aiApplicantCount.value === 1 ? 'AI 지원자' : `AI 지원자 ${i + 1}`,
     letter: String.fromCharCode(65 + i),
+    image: applicantImages.value[i] ?? null,
   }))
 )
 
@@ -311,6 +320,7 @@ function endInterview() {
 let clockTimer = null
 onMounted(async () => {
   interviewerVideos.value = pickRandomVideos(interviewerCount.value)
+  applicantImages.value = pickRandomApplicants(aiApplicantCount.value)
   clockTimer = setInterval(() => { elapsed.value++ }, 1000)
   await startMyMedia()
 })
@@ -363,7 +373,8 @@ onUnmounted(() => {
           </div>
           <div v-for="ap in aiApplicants" :key="ap.id"
                class="iv-thumb" :class="{ speaking: isSpeaking(ap.id) }">
-            <div class="iv-thumb-av av-appli">{{ ap.letter }}</div>
+            <img v-if="ap.image" :src="ap.image" class="iv-thumb-video" />
+            <div v-else class="iv-thumb-av av-appli">{{ ap.letter }}</div>
             <div class="iv-thumb-name">{{ ap.name }}</div>
           </div>
           <div class="iv-thumb" :class="{ speaking: isSpeaking('me') }">
@@ -399,9 +410,10 @@ onUnmounted(() => {
         <div class="iv-row-label" style="margin-top: 36px;">지원자</div>
         <div class="iv-row">
           <div v-for="ap in aiApplicants" :key="ap.id"
-               class="iv-tile" :class="{ speaking: isSpeaking(ap.id) }">
-            <div class="iv-avatar av-appli">{{ ap.letter }}</div>
-            <div class="iv-tile-name">{{ ap.name }}</div>
+               class="iv-tile" :class="{ speaking: isSpeaking(ap.id), 'has-video': ap.image }">
+            <img v-if="ap.image" :src="ap.image" class="iv-applicant-img" />
+            <div v-else class="iv-avatar av-appli">{{ ap.letter }}</div>
+            <div class="iv-tile-name" :class="{ 'name-overlay': ap.image }">{{ ap.name }}</div>
           </div>
 
           <!-- 나 (실제 카메라 - 타일 전체 채움) -->
@@ -713,6 +725,13 @@ onUnmounted(() => {
 }
 .iv-thumb-interviewer {
   transform: none;
+}
+.iv-applicant-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* ── 내 카메라: 타일 전체 채움 ── */
