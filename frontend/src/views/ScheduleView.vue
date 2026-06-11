@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useDataStore } from '../stores/data.js'
+import { useAuthStore } from '../stores/auth.js'
+import { getBookmarks, toggleBookmark } from '../api/scheduleApi.js'
 
 const data = useDataStore()
+const auth = useAuthStore()
 
 // ── 캘린더 상태 ──────────────────────────────────────
 const todayDate = new Date()
@@ -23,13 +26,30 @@ async function loadSchedules() {
   } catch { /* 서버 미연결 시 빈 캘린더 */ }
 }
 
-// ── 관심 일정 (로컬) ─────────────────────────────────
+// ── 관심 일정 (서버 연동) ─────────────────────────────
 const savedIds = ref(new Set())
-function toggleSave(scheduleId) {
-  const s = new Set(savedIds.value)
-  s.has(scheduleId) ? s.delete(scheduleId) : s.add(scheduleId)
-  savedIds.value = s
+
+async function loadBookmarks() {
+  if (!auth.isLoggedIn) return
+  try {
+    const ids = await getBookmarks()
+    savedIds.value = new Set(ids)
+  } catch { /* 조용히 실패 */ }
 }
+
+async function toggleSave(scheduleId) {
+  if (!auth.isLoggedIn) {
+    auth.openLogin()
+    return
+  }
+  try {
+    const res = await toggleBookmark(scheduleId)
+    const s = new Set(savedIds.value)
+    res.saved ? s.add(scheduleId) : s.delete(scheduleId)
+    savedIds.value = s
+  } catch { /* 네트워크 오류 무시 */ }
+}
+
 const isSaved = (id) => savedIds.value.has(id)
 const mineCount = computed(() => savedIds.value.size)
 
@@ -124,7 +144,10 @@ function slideHot(dir) {
   hotTrack.value?.scrollBy({ left: dir * 320, behavior: 'smooth' })
 }
 
-onMounted(loadSchedules)
+onMounted(() => {
+  loadSchedules()
+  loadBookmarks()
+})
 </script>
 
 <template>

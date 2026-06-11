@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.BookmarkDao">
+
+    <!-- 사용자가 저장한 채용일정 ID 목록 -->
+    <select id="selectScheduleIdsByUserId" resultType="long">
+        SELECT schedule_id
+        FROM job_schedule_bookmark
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 북마크 존재 여부 -->
+    <select id="existsByUserAndSchedule" resultType="boolean">
+        SELECT COUNT(*) <![CDATA[>]]> 0
+        FROM job_schedule_bookmark
+        WHERE user_id = #{userId} AND schedule_id = #{scheduleId}
+    </select>
+
+    <!-- INSERT IGNORE: 중복 요청 시 오류 없이 무시 (멱등성 보장) -->
+    <insert id="insert">
+        INSERT IGNORE INTO job_schedule_bookmark (user_id, schedule_id)
+        VALUES (#{userId}, #{scheduleId})
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM job_schedule_bookmark
+        WHERE user_id = #{userId} AND schedule_id = #{scheduleId}
+    </delete>
+
+</mapper>
