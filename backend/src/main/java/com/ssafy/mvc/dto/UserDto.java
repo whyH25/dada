@@ -1,6 +1,8 @@
 package com.ssafy.mvc.dto;
 
-public class UserDto {
+public class UserDto implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
     private Long userId;
     private String userEmail;
     private String userPwd;

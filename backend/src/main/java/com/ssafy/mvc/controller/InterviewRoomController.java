@@ -1,10 +1,12 @@
 package com.ssafy.mvc.controller;
 
+import com.ssafy.mvc.dto.CustomUserDetailsDto;
 import com.ssafy.mvc.dto.InterviewRoomDto;
 import com.ssafy.mvc.service.InterviewRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,7 +21,7 @@ public class InterviewRoomController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<InterviewRoomDto> createRoom(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails,
             @RequestParam String companyName,
             @RequestParam Integer jobId,
             @RequestParam String difficulty,
@@ -31,7 +33,7 @@ public class InterviewRoomController {
     ) throws IOException {
 
         InterviewRoomDto dto = new InterviewRoomDto();
-        dto.setUserId(userId);
+        dto.setUserId(userDetails.getUserDto().getUserId());
         dto.setCompanyName(companyName);
         dto.setJobId(jobId);
         dto.setDifficulty(difficulty);

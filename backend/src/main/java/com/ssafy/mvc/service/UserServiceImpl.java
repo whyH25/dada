@@ -2,7 +2,7 @@ package com.ssafy.mvc.service;
 
 import java.util.List;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ssafy.mvc.dao.UserDao;
@@ -12,10 +12,11 @@ import com.ssafy.mvc.dto.UserDto;
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder encoder;
 
-    public UserServiceImpl(UserDao userDao) {
+    public UserServiceImpl(UserDao userDao, PasswordEncoder encoder) {
         this.userDao = userDao;
+        this.encoder = encoder;
     }
 
     @Override
@@ -42,6 +43,13 @@ public class UserServiceImpl implements UserService {
             return null;
         }
         user.setUserPwd(null);
+        return user;
+    }
+
+    @Override
+    public UserDto getUserByEmail(String email) {
+        UserDto user = userDao.selectUserByEmail(email);
+        if (user != null) user.setUserPwd(null);
         return user;
     }
 }

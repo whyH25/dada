@@ -11,4 +11,6 @@ public interface UserService {
     UserDto userLogin(String email, String password);
 
     void signup(UserDto user);
+
+    UserDto getUserByEmail(String email);
 }
