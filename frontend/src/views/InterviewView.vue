@@ -20,7 +20,7 @@ const interviewerCount = computed(() => r.value?.interviewerCount || 2)
 const aiApplicantCount = computed(() => r.value?.aiApplicantCount ?? 1)
 
 const interviewerVideos = ref([])
-const applicantImages = ref([])
+const applicantVideos = ref([])
 
 function pickRandom(count, total, pathFn) {
   const indices = Array.from({ length: total }, (_, i) => i + 1)
@@ -36,7 +36,10 @@ function pickRandomVideos(count) {
 }
 
 function pickRandomApplicants(count) {
-  return pickRandom(count, 10, n => `/applicants/applicant_${String(n).padStart(2, '0')}.png`)
+  return pickRandom(count, 10, n => ({
+    stop: `/applicants/applicant_${String(n).padStart(2, '0')}.mp4`,
+    move: `/applicants/applicant_move_${String(n).padStart(2, '0')}.mp4`,
+  }))
 }
 
 const interviewers = computed(() =>
@@ -53,7 +56,8 @@ const aiApplicants = computed(() =>
     id: `a${i + 1}`,
     name: aiApplicantCount.value === 1 ? 'AI 지원자' : `AI 지원자 ${i + 1}`,
     letter: String.fromCharCode(65 + i),
-    image: applicantImages.value[i] ?? null,
+    stopVideo: applicantVideos.value[i]?.stop ?? null,
+    moveVideo: applicantVideos.value[i]?.move ?? null,
   }))
 )
 
@@ -62,8 +66,10 @@ const userInitial = computed(() => userName.value.charAt(0))
 
 // ── 발화 감지 ─────────────────────────────────────────
 const isSpeakingMe = ref(false)
+const testSpeakingId = ref(null)   // 테스트용: null이면 비활성
 function isSpeaking(id) {
   if (id === 'me') return isSpeakingMe.value
+  if (testSpeakingId.value === id) return true
   return false  // 나중에 실제 오디오로 대체
 }
 
@@ -320,7 +326,7 @@ function endInterview() {
 let clockTimer = null
 onMounted(async () => {
   interviewerVideos.value = pickRandomVideos(interviewerCount.value)
-  applicantImages.value = pickRandomApplicants(aiApplicantCount.value)
+  applicantVideos.value = pickRandomApplicants(aiApplicantCount.value)
   clockTimer = setInterval(() => { elapsed.value++ }, 1000)
   await startMyMedia()
 })
@@ -373,7 +379,7 @@ onUnmounted(() => {
           </div>
           <div v-for="ap in aiApplicants" :key="ap.id"
                class="iv-thumb" :class="{ speaking: isSpeaking(ap.id) }">
-            <img v-if="ap.image" :src="ap.image" class="iv-thumb-video" />
+            <video v-if="ap.stopVideo" :src="ap.stopVideo" autoplay loop muted playsinline class="iv-thumb-video"></video>
             <div v-else class="iv-thumb-av av-appli">{{ ap.letter }}</div>
             <div class="iv-thumb-name">{{ ap.name }}</div>
           </div>
@@ -410,10 +416,15 @@ onUnmounted(() => {
         <div class="iv-row-label" style="margin-top: 36px;">지원자</div>
         <div class="iv-row">
           <div v-for="ap in aiApplicants" :key="ap.id"
-               class="iv-tile" :class="{ speaking: isSpeaking(ap.id), 'has-video': ap.image }">
-            <img v-if="ap.image" :src="ap.image" class="iv-applicant-img" />
+               class="iv-tile" :class="{ speaking: isSpeaking(ap.id), 'has-video': ap.stopVideo }">
+            <template v-if="ap.stopVideo">
+              <video :src="ap.stopVideo" autoplay loop muted playsinline
+                     v-show="!isSpeaking(ap.id)" class="iv-applicant-video"></video>
+              <video :src="ap.moveVideo" autoplay loop muted playsinline
+                     v-show="isSpeaking(ap.id)" class="iv-applicant-video"></video>
+            </template>
             <div v-else class="iv-avatar av-appli">{{ ap.letter }}</div>
-            <div class="iv-tile-name" :class="{ 'name-overlay': ap.image }">{{ ap.name }}</div>
+            <div class="iv-tile-name" :class="{ 'name-overlay': ap.stopVideo }">{{ ap.name }}</div>
           </div>
 
           <!-- 나 (실제 카메라 - 타일 전체 채움) -->
@@ -535,6 +546,18 @@ onUnmounted(() => {
             <path d="m3 16 4-4 4 4 4-6 6 6"/>
             <circle cx="8.5" cy="8.5" r="1.5"/>
           </svg>
+        </button>
+      </div>
+
+      <!-- 테스트용 발화 토글 (개발 중에만 사용) -->
+      <div v-if="aiApplicants.length" style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:rgba(255,255,255,0.35)">TEST</span>
+        <button v-for="ap in aiApplicants" :key="ap.id"
+                class="iv-ctrl-btn" :class="{ on: testSpeakingId === ap.id }"
+                style="width:40px;height:40px;font-size:11px;font-weight:700;"
+                @click="testSpeakingId = testSpeakingId === ap.id ? null : ap.id"
+                :title="`${ap.name} 발화 테스트`">
+          {{ ap.name.replace('AI 지원자', 'A') }}
         </button>
       </div>
 
@@ -726,7 +749,7 @@ onUnmounted(() => {
 .iv-thumb-interviewer {
   transform: none;
 }
-.iv-applicant-img {
+.iv-applicant-video {
   position: absolute;
   inset: 0;
   width: 100%;
