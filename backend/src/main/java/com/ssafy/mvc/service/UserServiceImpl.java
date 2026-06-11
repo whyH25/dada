@@ -2,6 +2,7 @@ package com.ssafy.mvc.service;
 
 import java.util.List;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ssafy.mvc.dao.UserDao;
@@ -11,6 +12,7 @@ import com.ssafy.mvc.dto.UserDto;
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public UserServiceImpl(UserDao userDao) {
         this.userDao = userDao;
@@ -26,6 +28,7 @@ public class UserServiceImpl implements UserService {
         if (userDao.existsByEmail(user.getUserEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
+        user.setUserPwd(encoder.encode(user.getUserPwd()));
         userDao.insertUser(user);
     }
 
@@ -35,7 +38,7 @@ public class UserServiceImpl implements UserService {
         if (user == null) {
             return null;
         }
-        if (!password.equals(user.getUserPwd())) {
+        if (!encoder.matches(password, user.getUserPwd())) {
             return null;
         }
         user.setUserPwd(null);

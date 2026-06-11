@@ -35,7 +35,6 @@ function handleOutsideClick(e) {
 }
 
 onMounted(() => {
-  auth.restoreSession()
   document.addEventListener('click', handleOutsideClick)
 })
 onUnmounted(() => document.removeEventListener('click', handleOutsideClick))

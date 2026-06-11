@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth.js'
 
 // 원본 CSS 그대로 사용 (디자인 100% 유지)
 import './assets/styles.css'
@@ -13,8 +14,12 @@ import './assets/extra.css'
 import './assets/mypage.css'
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
+
+const auth = useAuthStore()
+await auth.restoreSession()
 
 app.mount('#app')
