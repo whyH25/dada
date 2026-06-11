@@ -10,6 +10,7 @@ public class UserDto implements java.io.Serializable {
     private String userPhone;
     private String userProfileImg;
     private String userStatus;
+    private Integer emailVerified;
 
     public Long getUserIdx() {
         return userId;
@@ -70,5 +71,13 @@ public class UserDto implements java.io.Serializable {
 
     public void setUserStatus(String userStatus) {
         this.userStatus = userStatus;
+    }
+
+    public Integer getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(Integer emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

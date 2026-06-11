@@ -27,7 +27,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .securityContext(ctx -> ctx.requireExplicitSave(false))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/users/login", "/api/users/signup").permitAll()
+                .requestMatchers("/api/users/login", "/api/users/signup",
+                                 "/api/email/send-code", "/api/email/verify-code").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

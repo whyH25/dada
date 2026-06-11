@@ -13,10 +13,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
     private final PasswordEncoder encoder;
+    private final EmailService emailService;
 
-    public UserServiceImpl(UserDao userDao, PasswordEncoder encoder) {
+    public UserServiceImpl(UserDao userDao, PasswordEncoder encoder, EmailService emailService) {
         this.userDao = userDao;
         this.encoder = encoder;
+        this.emailService = emailService;
     }
 
     @Override
@@ -29,8 +31,13 @@ public class UserServiceImpl implements UserService {
         if (userDao.existsByEmail(user.getUserEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
+        if (!emailService.isVerified(user.getUserEmail())) {
+            throw new IllegalArgumentException("이메일 인증이 필요합니다.");
+        }
         user.setUserPwd(encoder.encode(user.getUserPwd()));
+        user.setEmailVerified(1);
         userDao.insertUser(user);
+        emailService.clearCode(user.getUserEmail());
     }
 
     @Override
