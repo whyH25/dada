@@ -140,14 +140,6 @@ async function startInterview() {
     })
     flow.roomId = roomResult.roomId
 
-    // 2. 세션 시작 + AI 질문 생성
-    const sessionResult = await startSession({
-      roomId: flow.roomId,
-      userId: auth.user?.userId ?? 1,
-    })
-    flow.sessionId = sessionResult.data.sessionId
-    flow.scenarios = sessionResult.data.scenarios
-
     // 기존 mock 데이터에도 추가 (PrepView 등 호환용)
     const logoMap = { 카카오: 'kakao', 삼성전자: 'samsung', 네이버: 'naver', 토스: 'toss' }
     data.rooms.push({

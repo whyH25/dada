@@ -2,6 +2,7 @@ package com.ssafy.mvc.controller;
 
 import com.ssafy.mvc.dto.CustomUserDetailsDto;
 import com.ssafy.mvc.dto.InterviewRoomDto;
+import com.ssafy.mvc.dto.InterviewStartResultDto;
 import com.ssafy.mvc.service.InterviewRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -19,6 +20,7 @@ public class InterviewRoomController {
 
     private final InterviewRoomService interviewRoomService;
 
+    // 면접방 생성 및 서류 텍스트 추출 후 DB 저장
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<InterviewRoomDto> createRoom(
             @AuthenticationPrincipal CustomUserDetailsDto userDetails,
@@ -42,6 +44,13 @@ public class InterviewRoomController {
         dto.setAiApplicantCnt(aiApplicantCnt);
 
         InterviewRoomDto result = interviewRoomService.createRoom(dto, resumeFile, portfolioFile);
+        return ResponseEntity.ok(result);
+    }
+
+    // 페르소나 선정 → AI 대본 생성 → 시나리오 저장 → 상태 IN_PROGRESS 전환
+    @PostMapping("/{roomId}/start")
+    public ResponseEntity<InterviewStartResultDto> startInterview(@PathVariable Long roomId) {
+        InterviewStartResultDto result = interviewRoomService.startInterview(roomId);
         return ResponseEntity.ok(result);
     }
 }

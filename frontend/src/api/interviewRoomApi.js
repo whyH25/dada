@@ -67,3 +67,15 @@ export async function createInterviewRoom({ companyName, jobId, difficulty, empl
   }
   return res.json()
 }
+
+export async function startInterview(roomId) {
+  const res = await fetch(`${BASE}/interview-rooms/${roomId}/start`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!res.ok) {
+    const msg = await res.text()
+    throw new Error(msg || 'AI 대본 생성에 실패했습니다.')
+  }
+  return res.json()
+}

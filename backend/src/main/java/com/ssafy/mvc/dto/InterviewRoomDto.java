@@ -13,6 +13,7 @@ public class InterviewRoomDto {
     private Long roomId;
     private Long userId;
 
+    private String jobName;
     private String applicantType;
     private String companyName;
     private Integer jobId;
@@ -43,6 +44,12 @@ public class InterviewRoomDto {
 	}
 	public void setUserId(Long userId) {
 		this.userId = userId;
+	}
+	public String getJobName() {
+		return jobName;
+	}
+	public void setJobName(String jobName) {
+		this.jobName = jobName;
 	}
 	public String getApplicantType() {
 		return applicantType;

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.InterviewRoomPersonaDao">
+
+    <insert id="insertRoomPersonas" parameterType="java.util.List">
+        INSERT INTO interview_room_persona (room_id, persona_role, persona_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roomId}, #{item.personaRole}, #{item.personaId})
+        </foreach>
+    </insert>
+
+</mapper>

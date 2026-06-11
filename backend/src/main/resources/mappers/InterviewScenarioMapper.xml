@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.InterviewScenarioDao">
+
+    <insert id="insertScenarios" parameterType="java.util.List">
+        INSERT INTO interview_scenario (
+            room_id, scenario_type, parent_scenario_id,
+            turn_order, turn_role, turn_ref_id,
+            speech_text, timeout_sec
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.roomId}, #{item.scenarioType}, #{item.parentScenarioId},
+                #{item.turnOrder}, #{item.turnRole}, #{item.turnRefId},
+                #{item.speechText}, #{item.timeoutSec}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.AiPersonaDao">
+
+    <select id="selectRandomInterviewers" resultType="com.ssafy.mvc.dto.AiInterviewerDto">
+        SELECT interviewer_id, interviewer_name, interviewer_gender, profile_image_url, interviewer_prompt
+        FROM ai_interviewer
+        ORDER BY RAND()
+        LIMIT #{count}
+    </select>
+
+    <select id="selectRandomApplicants" resultType="com.ssafy.mvc.dto.AiApplicantDto">
+        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, applicant_prompt
+        FROM ai_applicant
+        WHERE applicant_type = #{applicantType}
+        ORDER BY RAND()
+        LIMIT #{count}
+    </select>
+
+</mapper>
