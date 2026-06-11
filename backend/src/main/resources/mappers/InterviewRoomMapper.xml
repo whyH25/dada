@@ -1,6 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.ssafy.mvc.dao.InterviewRoomMapper">
+<mapper namespace="com.ssafy.mvc.dao.InterviewRoomDao">
+
+    <insert id="insertInterviewRoom" parameterType="com.ssafy.mvc.dto.InterviewRoomDto"
+            useGeneratedKeys="true" keyProperty="roomId">
+        INSERT INTO interview_room (
+            user_id,
+            applicant_type,
+            company_name,
+            job_id,
+            difficulty,
+            ai_interviewer_cnt,
+            ai_applicant_cnt,
+            resume_id,
+            resume_text,
+            portfolio_id,
+            portfolio_text,
+            status
+        ) VALUES (
+            #{userId},
+            #{applicantType},
+            #{companyName},
+            #{jobId},
+            #{difficulty},
+            #{aiInterviewerCnt},
+            #{aiApplicantCnt},
+            #{resumeId},
+            #{resumeText},
+            #{portfolioId},
+            #{portfolioText},
+            #{status}
+        )
+    </insert>
 
 </mapper>

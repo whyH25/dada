@@ -3,23 +3,34 @@ package com.ssafy.mvc.dto;
 import java.time.LocalDateTime;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class InterviewRoomDto {
     private Long roomId;
     private Long userId;
+
+    private String applicantType;
     private String companyName;
     private Integer jobId;
-    private Integer industryId;
     private String difficulty;
+
     private Integer aiInterviewerCnt;
     private Integer aiApplicantCnt;
+
     private Long resumeId;
+    private String resumeText;
     private Long portfolioId;
+    private String portfolioText;
+
     private String status;
-    private String prompt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
+    private LocalDateTime startedAt;
+    private LocalDateTime endedAt;
+    
     
 	public Long getRoomId() {
 		return roomId;
@@ -33,6 +44,12 @@ public class InterviewRoomDto {
 	public void setUserId(Long userId) {
 		this.userId = userId;
 	}
+	public String getApplicantType() {
+		return applicantType;
+	}
+	public void setApplicantType(String applicantType) {
+		this.applicantType = applicantType;
+	}
 	public String getCompanyName() {
 		return companyName;
 	}
@@ -44,12 +61,6 @@ public class InterviewRoomDto {
 	}
 	public void setJobId(Integer jobId) {
 		this.jobId = jobId;
-	}
-	public Integer getIndustryId() {
-		return industryId;
-	}
-	public void setIndustryId(Integer industryId) {
-		this.industryId = industryId;
 	}
 	public String getDifficulty() {
 		return difficulty;
@@ -75,11 +86,23 @@ public class InterviewRoomDto {
 	public void setResumeId(Long resumeId) {
 		this.resumeId = resumeId;
 	}
+	public String getResumeText() {
+		return resumeText;
+	}
+	public void setResumeText(String resumeText) {
+		this.resumeText = resumeText;
+	}
 	public Long getPortfolioId() {
 		return portfolioId;
 	}
 	public void setPortfolioId(Long portfolioId) {
 		this.portfolioId = portfolioId;
+	}
+	public String getPortfolioText() {
+		return portfolioText;
+	}
+	public void setPortfolioText(String portfolioText) {
+		this.portfolioText = portfolioText;
 	}
 	public String getStatus() {
 		return status;
@@ -87,32 +110,28 @@ public class InterviewRoomDto {
 	public void setStatus(String status) {
 		this.status = status;
 	}
-	public String getPrompt() {
-		return prompt;
+	public LocalDateTime getStartedAt() {
+		return startedAt;
 	}
-	public void setPrompt(String prompt) {
-		this.prompt = prompt;
+	public void setStartedAt(LocalDateTime startedAt) {
+		this.startedAt = startedAt;
 	}
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
+	public LocalDateTime getEndedAt() {
+		return endedAt;
 	}
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
+	public void setEndedAt(LocalDateTime endedAt) {
+		this.endedAt = endedAt;
 	}
-	public LocalDateTime getUpdatedAt() {
-		return updatedAt;
-	}
-	public void setUpdatedAt(LocalDateTime updatedAt) {
-		this.updatedAt = updatedAt;
-	}
+	
 	
 	@Override
 	public String toString() {
-		return "InterviewRoomDto [roomId=" + roomId + ", userId=" + userId + ", companyName=" + companyName + ", jobId="
-				+ jobId + ", industryId=" + industryId + ", difficulty=" + difficulty + ", aiInterviewerCnt="
-				+ aiInterviewerCnt + ", aiApplicantCnt=" + aiApplicantCnt + ", resumeId=" + resumeId + ", portfolioId="
-				+ portfolioId + ", status=" + status + ", prompt=" + prompt + ", createdAt=" + createdAt
-				+ ", updatedAt=" + updatedAt + "]";
+		return "InterviewRoomDto [roomId=" + roomId + ", userId=" + userId + ", applicantType=" + applicantType
+				+ ", companyName=" + companyName + ", jobId=" + jobId + ", difficulty=" + difficulty
+				+ ", aiInterviewerCnt=" + aiInterviewerCnt + ", aiApplicantCnt=" + aiApplicantCnt + ", resumeId="
+				+ resumeId + ", resumeText=" + resumeText + ", portfolioId=" + portfolioId + ", portfolioText="
+				+ portfolioText + ", status=" + status + ", startedAt=" + startedAt + ", endedAt=" + endedAt + "]";
 	}
+	
     
 }
