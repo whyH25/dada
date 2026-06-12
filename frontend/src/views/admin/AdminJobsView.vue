@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getJobSchedules, createJobSchedule, updateJobSchedule, deleteJobSchedule } from '../../api/adminApi.js'
 import { toast } from '../../utils/toast.js'
 
@@ -9,7 +9,7 @@ const showModal = ref(false)
 const editTarget = ref(null)
 
 const COMPANY_TYPES = ['대기업', '중견기업', '중소기업', '스타트업', '공기업', '외국계']
-const EMPLOYMENT_TYPES = ['정규직', '계약직', '인턴', '파견직', '프리랜서']
+const EMPLOYMENT_TYPES = ['신입', '경력', '인턴']
 
 const form = ref(emptyForm())
 
@@ -57,18 +57,10 @@ async function remove(s) {
 }
 
 // ── 미리보기 ──────────────────────────────────────────
-function formatKorDate(d) {
-  if (!d) return null
-  const [, m, day] = d.split('-')
-  return `${parseInt(m)}월 ${parseInt(day)}일`
-}
 function formatDotDate(d) {
   if (!d) return ''
   return d.replace(/-/g, '.')
 }
-
-const previewStartKor = computed(() => formatKorDate(form.value.startDate))
-const previewEndKor   = computed(() => formatKorDate(form.value.endDate))
 
 onMounted(load)
 </script>
@@ -229,22 +221,6 @@ onMounted(load)
               </div>
             </div>
 
-            <!-- 카드 2: 캘린더 표시 미리보기 -->
-            <div class="preview-card">
-              <div class="preview-cal-item">
-                <span class="preview-dot dot-start"></span>
-                <span class="preview-cal-text">
-                  서류 시작 : <strong>{{ previewStartKor || '날짜 미입력' }}</strong>
-                </span>
-              </div>
-              <div class="preview-cal-item" style="margin-top:10px;">
-                <span class="preview-dot dot-end"></span>
-                <span class="preview-cal-text">
-                  서류 마감 : <strong>{{ previewEndKor || '날짜 미입력' }}</strong>
-                </span>
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
@@ -291,8 +267,8 @@ onMounted(load)
 .admin-textarea { min-height: 72px; resize: vertical; }
 .admin-modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
-/* 미리보기 패널 */
-.admin-preview-col { display: flex; flex-direction: column; gap: 12px; }
+/* 미리보기 패널 - 상단을 좌측 회사명 라인에 맞춤 (title 높이 ~42px + label 간격 ~10px) */
+.admin-preview-col { display: flex; flex-direction: column; gap: 12px; padding-top: 52px; }
 
 .preview-card {
   background: #fff;

@@ -1,10 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useDataStore } from '../stores/data.js'
 import { useAuthStore } from '../stores/auth.js'
 import { getBookmarks, toggleBookmark } from '../api/scheduleApi.js'
 
-const data = useDataStore()
 const auth = useAuthStore()
 
 // ── 캘린더 상태 ──────────────────────────────────────
@@ -138,11 +136,31 @@ function formatDate(d) {
   return d.replace(/-/g, '.')
 }
 
-// ── 핫잡 슬라이더 ─────────────────────────────────────
+// ── 핫잡 슬라이더 (서류 마감 기준 D-day, 최대 10개) ──────
 const hotTrack = ref(null)
 function slideHot(dir) {
   hotTrack.value?.scrollBy({ left: dir * 320, behavior: 'smooth' })
 }
+
+const HOT_COLORS = ['#308860', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#10b981']
+function hotBgColor(name) {
+  if (!name) return HOT_COLORS[0]
+  return HOT_COLORS[name.charCodeAt(0) % HOT_COLORS.length]
+}
+
+const hotJobs = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return schedules.value
+    .filter(s => s.endDate)
+    .map(s => {
+      const diffDays = Math.ceil((new Date(s.endDate) - today) / 86400000)
+      return { ...s, diffDays }
+    })
+    .filter(s => s.diffDays >= 0)
+    .sort((a, b) => a.diffDays - b.diffDays)
+    .slice(0, 10)
+})
 
 onMounted(() => {
   loadSchedules()
@@ -170,13 +188,26 @@ onMounted(() => {
           </div>
         </div>
         <div class="hot-track" ref="hotTrack">
-          <div class="hot-job" v-for="(j, i) in data.hotJobs" :key="i">
+          <div v-if="hotJobs.length === 0" class="hot-empty">등록된 채용공고가 없습니다.</div>
+          <div class="hot-job" v-for="j in hotJobs" :key="j.scheduleId">
             <div class="hot-job-top">
-              <div class="company-logo" :class="j.logo" style="width:32px;height:32px;font-size:13px;">{{ j.short }}</div>
-              <span class="badge" :class="'badge-' + j.kind">{{ j.dday }}</span>
+              <div class="company-logo"
+                :style="{ background: hotBgColor(j.companyName), color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', flexShrink: '0' }"
+                style="width:32px;height:32px;font-size:13px;">
+                {{ j.companyName.charAt(0) }}
+              </div>
+              <span class="badge" :class="j.diffDays <= 7 ? 'badge-red' : 'badge-green'">
+                {{ j.diffDays === 0 ? 'D-0' : `D-${j.diffDays}` }}
+              </span>
             </div>
-            <div><div class="hot-job-name">{{ j.co }}</div><div class="hot-job-sub">{{ j.sub }}</div></div>
-            <div class="hot-job-meta"><span>{{ j.label }}</span><span>{{ j.date }}</span></div>
+            <div>
+              <div class="hot-job-name">{{ j.companyName }}</div>
+              <div class="hot-job-sub">{{ j.jobTitle }}</div>
+            </div>
+            <div class="hot-job-meta">
+              <span>{{ j.employmentType || j.companyType || '' }}</span>
+              <span>{{ j.endDate?.replace(/-/g, '.') }}</span>
+            </div>
           </div>
         </div>
       </section>
