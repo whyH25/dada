@@ -59,4 +59,9 @@ public class UserServiceImpl implements UserService {
         if (user != null) user.setUserPwd(null);
         return user;
     }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return userDao.existsByEmail(email);
+    }
 }

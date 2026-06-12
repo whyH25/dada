@@ -347,4 +347,9 @@ async function handleSignup() {
   font-weight: 600;
   margin-left: 4px;
 }
+.auth-error {
+  color: #e53e3e;
+  font-size: 13px;
+  margin: 4px 0 10px;
+}
 </style>

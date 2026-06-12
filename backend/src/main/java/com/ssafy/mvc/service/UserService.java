@@ -13,4 +13,6 @@ public interface UserService {
     void signup(UserDto user);
 
     UserDto getUserByEmail(String email);
+
+    boolean existsByEmail(String email);
 }
