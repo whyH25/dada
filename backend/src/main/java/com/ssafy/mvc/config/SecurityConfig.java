@@ -2,11 +2,15 @@ package com.ssafy.mvc.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +20,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.ssafy.mvc.service.AdminUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
@@ -32,13 +38,15 @@ public class SecurityConfig {
                     "/api/users/login",
                     "/api/users/signup",
                     "/api/email/send-code",
-                    "/api/email/verify-code"
+                    "/api/email/verify-code",
+                    "/api/admin/login",
+                    "/api/admin/logout"
                 ).permitAll()
 
-                // 사용자 캘린더에서 채용일정 조회는 로그인 없이 허용
                 .requestMatchers(HttpMethod.GET, "/api/job-schedules").permitAll()
 
-                // 관리자 전용 API — ADMIN 권한 필요
+                // /api/admin/login, /api/admin/logout 을 먼저 허용했으므로
+                // 나머지 /api/admin/** 은 ADMIN 권한 필요
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated()
@@ -64,7 +72,6 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-
         return source;
     }
 
@@ -73,8 +80,21 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /** 일반 사용자 인증 매니저 (users 테이블) */
     @Bean
+    @Primary
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    /** 관리자 전용 인증 매니저 (admins 테이블만 조회) */
+    @Bean
+    @Qualifier("adminAuthManager")
+    public AuthenticationManager adminAuthenticationManager(
+            AdminUserDetailsService adminUserDetailsService,
+            PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(adminUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return new ProviderManager(provider);
     }
 }

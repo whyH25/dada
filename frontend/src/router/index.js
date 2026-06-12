@@ -1,33 +1,9 @@
-// import { createRouter, createWebHistory } from 'vue-router'
-
-// const router = createRouter({
-//   history: createWebHistory(import.meta.env.BASE_URL),
-//   routes: [],
-// })
-
-// export default router
-
-// import { createRouter, createWebHistory } from 'vue-router'
-// import TestView from '@/views/TestView.vue'
-
-// const router = createRouter({
-//   history: createWebHistory(import.meta.env.BASE_URL),
-//   routes: [
-//     {
-//       path: '/test',
-//       name: 'test',
-//       component: TestView,
-//     },
-//   ],
-// })
-
-// export default router
-
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { useAdminAuthStore } from '../stores/adminAuth.js'
 
 const GATED = ['create', 'interview', 'room-intro', 'mypage']
-const ADMIN_ROUTES = ['admin', 'admin-jobs', 'admin-users']
+const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users']
 
 const routes = [
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
@@ -49,6 +25,11 @@ const routes = [
   { path: '/notifications', name: 'notifications', component: () => import('../views/NotificationsView.vue') },
   { path: '/mypage', name: 'mypage', component: () => import('../views/MypageView.vue') },
   { path: '/signup', name: 'signup', component: () => import('../views/SignupView.vue') },
+
+  // 관리자 로그인 (독립 페이지 - 일반 nav 없음)
+  { path: '/admin/login', name: 'admin-login', component: () => import('../views/admin/AdminLoginView.vue') },
+
+  // 관리자 대시보드 (사이드바 레이아웃)
   {
     path: '/admin',
     name: 'admin',
@@ -59,6 +40,7 @@ const routes = [
       { path: 'users', name: 'admin-users', component: () => import('../views/admin/AdminUsersView.vue') },
     ],
   },
+
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -70,23 +52,25 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
+  const adminAuth = useAdminAuthStore()
 
-  if (ADMIN_ROUTES.includes(to.name)) {
-    if (!auth.isLoggedIn) {
-      auth.openLogin(to.fullPath)
-      next(from.name ? false : '/')
-    } else if (auth.user?.userRole !== 'ADMIN') {
-      next('/')  // 로그인했지만 ADMIN 아님 → 홈
-    } else {
-      next()
-    }
-  } else if (!auth.isLoggedIn && GATED.includes(to.name)) {
-    auth.openLogin(to.fullPath)
-    next(from.name ? false : '/')
-  } else {
-    next()
+  if (to.name === 'admin-login') {
+    // 이미 관리자 로그인 상태면 대시보드로 redirect
+    if (adminAuth.isAdminLoggedIn) return next('/admin/jobs')
+    return next()
   }
+
+  if (ADMIN_GATED.includes(to.name)) {
+    if (!adminAuth.isAdminLoggedIn) return next('/admin/login')
+    return next()
+  }
+
+  if (!auth.isLoggedIn && GATED.includes(to.name)) {
+    auth.openLogin(to.fullPath)
+    return next(from.name ? false : '/')
+  }
+
+  next()
 })
 
 export default router
-

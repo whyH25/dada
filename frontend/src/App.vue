@@ -42,7 +42,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 
 <template>
   <!-- ============ TOP NAVIGATION ============ -->
-  <nav class="nav">
+  <nav class="nav" v-if="!$route.path.startsWith('/admin')">
     <div class="nav-inner">
       <div class="brand" @click="go('/')">
         <div class="brand-logo"><span class="d"></span><span class="d"></span><span class="d"></span></div>
@@ -96,7 +96,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
   </router-view>
 
   <!-- 푸터 -->
-  <footer class="footer" v-if="$route.name !== 'signup'">
+  <footer class="footer" v-if="$route.name !== 'signup' && !$route.path.startsWith('/admin')">
     <div class="footer-inner">
       <div>© 2026 다대다. All rights reserved.</div>
       <div class="footer-links">

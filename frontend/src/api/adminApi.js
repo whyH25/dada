@@ -21,3 +21,6 @@ export const getJobSchedules = () => request('GET', '/job-schedules')
 export const createJobSchedule = (body) => request('POST', '/job-schedules', body)
 export const updateJobSchedule = (id, body) => request('PUT', `/job-schedules/${id}`, body)
 export const deleteJobSchedule = (id) => request('DELETE', `/job-schedules/${id}`)
+
+// 관리자 인증 (adminAuth store 내부에서 직접 fetch 사용 - 여기서는 미사용)
+export const getAdminMe = () => request('GET', '/me')

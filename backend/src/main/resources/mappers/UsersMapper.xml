@@ -11,8 +11,7 @@
             user_name,
             user_phone,
             user_profile_img,
-            user_status,
-            user_role
+            user_status
         FROM users
         WHERE user_status != 'DELETED'
     </select>
@@ -26,7 +25,6 @@
             user_phone,
             user_profile_img,
             user_status,
-            user_role,
             email_verified
         FROM users
         WHERE user_email = #{userEmail}
