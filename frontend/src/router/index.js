@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/auth.js'
 import { useAdminAuthStore } from '../stores/adminAuth.js'
 
 const GATED = ['create', 'interview', 'room-intro', 'mypage']
-const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users']
+const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users', 'admin-stories', 'admin-notices']
 
 const routes = [
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
@@ -25,6 +25,7 @@ const routes = [
   { path: '/notifications', name: 'notifications', component: () => import('../views/NotificationsView.vue') },
   { path: '/mypage', name: 'mypage', component: () => import('../views/MypageView.vue') },
   { path: '/signup', name: 'signup', component: () => import('../views/SignupView.vue') },
+  { path: '/notices/:id', name: 'notice', component: () => import('../views/NoticeView.vue') },
 
   // 관리자 로그인 (독립 페이지 - 일반 nav 없음)
   { path: '/admin/login', name: 'admin-login', component: () => import('../views/admin/AdminLoginView.vue') },
@@ -37,6 +38,8 @@ const routes = [
     children: [
       { path: '', redirect: '/admin/jobs' },
       { path: 'jobs', name: 'admin-jobs', component: () => import('../views/admin/AdminJobsView.vue') },
+      { path: 'stories', name: 'admin-stories', component: () => import('../views/admin/AdminStoriesView.vue') },
+      { path: 'notices', name: 'admin-notices', component: () => import('../views/admin/AdminNoticesView.vue') },
       { path: 'users', name: 'admin-users', component: () => import('../views/admin/AdminUsersView.vue') },
     ],
   },

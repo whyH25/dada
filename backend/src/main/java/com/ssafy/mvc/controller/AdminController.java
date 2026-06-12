@@ -21,10 +21,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ssafy.mvc.dao.JobScheduleDao;
+import com.ssafy.mvc.dao.NoticeDao;
+import com.ssafy.mvc.dao.StoryDao;
 import com.ssafy.mvc.dao.UserDao;
 import com.ssafy.mvc.dto.AdminDto;
 import com.ssafy.mvc.dto.AdminUserDetailsDto;
 import com.ssafy.mvc.dto.JobScheduleDto;
+import com.ssafy.mvc.dto.NoticeDto;
+import com.ssafy.mvc.dto.StoryDto;
 import com.ssafy.mvc.dto.UserDto;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,14 +39,20 @@ public class AdminController {
 
     private final UserDao userDao;
     private final JobScheduleDao jobScheduleDao;
+    private final StoryDao storyDao;
+    private final NoticeDao noticeDao;
     private final AuthenticationManager adminAuthManager;
 
     public AdminController(
             UserDao userDao,
             JobScheduleDao jobScheduleDao,
+            StoryDao storyDao,
+            NoticeDao noticeDao,
             @Qualifier("adminAuthManager") AuthenticationManager adminAuthManager) {
         this.userDao = userDao;
         this.jobScheduleDao = jobScheduleDao;
+        this.storyDao = storyDao;
+        this.noticeDao = noticeDao;
         this.adminAuthManager = adminAuthManager;
     }
 
@@ -150,5 +160,61 @@ public class AdminController {
     public ResponseEntity<?> deleteJobSchedule(@PathVariable("id") Long scheduleId) {
         jobScheduleDao.delete(scheduleId);
         return ResponseEntity.ok(Map.of("success", true, "message", "채용일정이 삭제되었습니다."));
+    }
+
+    // ── 관리자 - 합격스토리 관리 ──────────────────────────────────────
+
+    @GetMapping("/api/admin/stories")
+    public ResponseEntity<?> getStories() {
+        return ResponseEntity.ok(Map.of("success", true, "data", storyDao.selectAll()));
+    }
+
+    @PostMapping("/api/admin/stories")
+    public ResponseEntity<?> createStory(@RequestBody StoryDto story) {
+        storyDao.insert(story);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("success", true, "message", "스토리가 등록되었습니다.", "data", story));
+    }
+
+    @PutMapping("/api/admin/stories/{id}")
+    public ResponseEntity<?> updateStory(
+            @PathVariable("id") Long storyId, @RequestBody StoryDto story) {
+        story.setStoryId(storyId);
+        storyDao.update(story);
+        return ResponseEntity.ok(Map.of("success", true, "message", "스토리가 수정되었습니다."));
+    }
+
+    @DeleteMapping("/api/admin/stories/{id}")
+    public ResponseEntity<?> deleteStory(@PathVariable("id") Long storyId) {
+        storyDao.delete(storyId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "스토리가 삭제되었습니다."));
+    }
+
+    // ── 관리자 - 공지사항 관리 ────────────────────────────────────────
+
+    @GetMapping("/api/admin/notices")
+    public ResponseEntity<?> getNotices() {
+        return ResponseEntity.ok(Map.of("success", true, "data", noticeDao.selectAll()));
+    }
+
+    @PostMapping("/api/admin/notices")
+    public ResponseEntity<?> createNotice(@RequestBody NoticeDto notice) {
+        noticeDao.insert(notice);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(Map.of("success", true, "message", "공지사항이 등록되었습니다.", "data", notice));
+    }
+
+    @PutMapping("/api/admin/notices/{id}")
+    public ResponseEntity<?> updateNotice(
+            @PathVariable("id") Long noticeId, @RequestBody NoticeDto notice) {
+        notice.setNoticeId(noticeId);
+        noticeDao.update(notice);
+        return ResponseEntity.ok(Map.of("success", true, "message", "공지사항이 수정되었습니다."));
+    }
+
+    @DeleteMapping("/api/admin/notices/{id}")
+    public ResponseEntity<?> deleteNotice(@PathVariable("id") Long noticeId) {
+        noticeDao.delete(noticeId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "공지사항이 삭제되었습니다."));
     }
 }

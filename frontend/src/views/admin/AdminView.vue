@@ -7,8 +7,10 @@ const route = useRoute()
 const adminAuth = useAdminAuthStore()
 
 const menus = [
-  { name: 'admin-jobs', label: '채용일정 관리', path: '/admin/jobs' },
-  { name: 'admin-users', label: '사용자 관리', path: '/admin/users' },
+  { name: 'admin-jobs',     label: '채용일정 관리', path: '/admin/jobs' },
+  { name: 'admin-stories',  label: '합격스토리 관리', path: '/admin/stories' },
+  { name: 'admin-notices',  label: '공지사항 관리', path: '/admin/notices' },
+  { name: 'admin-users',    label: '사용자 관리', path: '/admin/users' },
 ]
 </script>
 
