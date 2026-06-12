@@ -4,9 +4,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { reports } from '../stores/seed.js'
 import { scoreColor, reportPanel } from '../utils/mypageReport.js'
 import { toast } from '../utils/toast.js'
+import { useAuthStore } from '../stores/auth.js'
+import { updateUserApi } from '../api/authApi.js'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
+const user = computed(() => authStore.user)
 
 // section: reports | report-detail | favorites | resume | cover | portfolio | account | billing
 const section = ref('reports')
@@ -56,6 +60,51 @@ function deleteDoc(type, i) {
 }
 function setMainDoc(type, i) { docs[type].forEach((d, j) => (d.main = j === i)) }
 
+// ---- 회원정보 수정 ----
+const isEditing = ref(false)
+const editName = ref('')
+const editPwd = ref('')
+const editPwdConfirm = ref('')
+const editError = ref('')
+const editLoading = ref(false)
+
+function startEdit() {
+  editName.value = user.value?.userName || ''
+  editPwd.value = ''
+  editPwdConfirm.value = ''
+  editError.value = ''
+  isEditing.value = true
+}
+
+async function submitEdit() {
+  editError.value = ''
+  if (!editName.value.trim()) {
+    editError.value = '이름을 입력해주세요.'
+    return
+  }
+  if (editPwd.value && editPwd.value.length < 8) {
+    editError.value = '비밀번호는 8자 이상이어야 합니다.'
+    return
+  }
+  if (editPwd.value && editPwd.value !== editPwdConfirm.value) {
+    editError.value = '비밀번호가 일치하지 않습니다.'
+    return
+  }
+  editLoading.value = true
+  try {
+    const payload = { userName: editName.value.trim() }
+    if (editPwd.value) payload.userPwd = editPwd.value
+    const res = await updateUserApi(payload)
+    authStore.user = res.data
+    isEditing.value = false
+    toast('회원정보가 수정되었습니다.')
+  } catch (e) {
+    editError.value = e.message
+  } finally {
+    editLoading.value = false
+  }
+}
+
 // ---- 계정 ----
 const notifPrefs = reactive({ schedule: true, report: true, community: false, marketing: false })
 const notifMeta = [
@@ -93,9 +142,9 @@ onMounted(() => {
         <!-- Side menu -->
         <aside class="side-menu">
           <div class="side-profile">
-            <div class="side-profile-avatar">김</div>
-            <div class="side-profile-name">김지원</div>
-            <div class="side-profile-email">jiwon.kim@email.com</div>
+            <div class="side-profile-avatar">{{ user?.userName?.charAt(0) }}</div>
+            <div class="side-profile-name">{{ user?.userName }}</div>
+            <div class="side-profile-email">{{ user?.userEmail }}</div>
             <div class="side-profile-meta">PRO 멤버 | 26.12.31 만료</div>
           </div>
           <div class="side-section">
@@ -230,15 +279,44 @@ onMounted(() => {
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 계정 <span class="sep">›</span> 회원정보</div>
             <h2 class="mp-h1" style="margin:4px 0 20px;">회원정보</h2>
             <div class="card">
-              <div class="card-header"><h3 class="card-title">기본 정보</h3><button class="btn btn-sm btn-secondary" @click="toast('정보 수정 화면을 엽니다. (데모)')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" /></svg>정보 수정</button></div>
+              <div class="card-header">
+                <h3 class="card-title">기본 정보</h3>
+                <button v-if="!isEditing" class="btn btn-sm btn-secondary" @click="startEdit">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" /></svg>
+                  정보 수정
+                </button>
+                <button v-else class="btn btn-sm btn-primary" :disabled="editLoading" @click="submitEdit">
+                  {{ editLoading ? '저장 중...' : '완료' }}
+                </button>
+              </div>
               <div class="info-grid">
-                <div class="info-row"><div class="info-label">아이디</div><div class="info-val">jiwon.kim@email.com</div></div>
-                <div class="info-row"><div class="info-label">닉네임</div><div class="info-val">김지원</div></div>
-                <div class="info-row"><div class="info-label">비밀번호</div><div class="info-val">••••••••<span class="info-sub"> | 마지막 변경 26.04.02</span></div></div>
-                <div class="info-row"><div class="info-label">가입일</div><div class="info-val">2025.03.14</div></div>
+                <div class="info-row"><div class="info-label">아이디</div><div class="info-val">{{ user?.userEmail }}</div></div>
+                <div class="info-row">
+                  <div class="info-label">이름</div>
+                  <div class="info-val">
+                    <input v-if="isEditing" class="input input-inline" v-model="editName" placeholder="이름" />
+                    <span v-else>{{ user?.userName }}</span>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">비밀번호</div>
+                  <div class="info-val">
+                    <template v-if="isEditing">
+                      <input class="input input-inline" type="password" v-model="editPwd" placeholder="새 비밀번호 (변경 시 입력)" style="margin-bottom:6px;" />
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <input class="input input-inline" type="password" v-model="editPwdConfirm" placeholder="비밀번호 확인" />
+                        <span v-if="editPwd && editPwdConfirm && editPwd !== editPwdConfirm" style="color:#e53e3e; font-size:12px; white-space:nowrap;">비밀번호가 일치하지 않습니다.</span>
+                      </div>
+                    </template>
+                    <span v-else>••••••••</span>
+                  </div>
+                </div>
+                <div class="info-row"><div class="info-label">가입일</div><div class="info-val">{{ user?.createdAt || '-' }}</div></div>
                 <div class="info-row"><div class="info-label">요금제</div><div class="info-val"><span class="badge badge-green">PRO 멤버</span></div></div>
               </div>
+              <p v-if="editError" class="auth-error" style="margin-top:8px;">{{ editError }}</p>
             </div>
+            <!--
             <div class="card" style="margin-top:16px;">
               <div class="card-header"><h3 class="card-title">알림 설정</h3><span class="text-sm text-muted">원하는 알림만 받아보세요</span></div>
               <div v-for="[key, label, desc] in notifMeta" :key="key" class="setting-row">
@@ -246,6 +324,7 @@ onMounted(() => {
                 <label class="toggle"><input type="checkbox" v-model="notifPrefs[key]" @change="onNotifChange" /><span class="slider"></span></label>
               </div>
             </div>
+            -->
           </template>
 
           <!-- 구독 및 결제 -->

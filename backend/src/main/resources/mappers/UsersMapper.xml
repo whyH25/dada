@@ -25,7 +25,8 @@
             user_phone,
             user_profile_img,
             user_status,
-            email_verified
+            email_verified,
+            DATE_FORMAT(created_at, '%Y.%m.%d') AS created_at
         FROM users
         WHERE user_email = #{userEmail}
         AND user_status = 'ACTIVE'
@@ -41,6 +42,13 @@
         FROM users
         WHERE user_email = #{userEmail}
     </select>
+
+    <update id="updateUser" parameterType="com.ssafy.mvc.dto.UserDto">
+        UPDATE users
+        SET user_name = #{userName}
+            <if test="userPwd != null">, user_pwd = #{userPwd}</if>
+        WHERE user_id = #{userId}
+    </update>
 
     <update id="deleteUser">
         UPDATE users

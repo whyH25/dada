@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,6 +67,16 @@ public class UserController {
     public ResponseEntity<?> getMe(@AuthenticationPrincipal CustomUserDetailsDto userDetails) {
         UserDto user = userService.getUserByEmail(userDetails.getUsername());
         return ResponseEntity.ok(Map.of("success", true, "data", user));
+    }
+
+    @PatchMapping("/api/users/me")
+    public ResponseEntity<?> updateMe(
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails,
+            @RequestBody UserDto updateRequest) {
+        updateRequest.setUserIdx(userDetails.getUserDto().getUserId());
+        userService.updateUser(updateRequest);
+        UserDto updated = userService.getUserByEmail(userDetails.getUsername());
+        return ResponseEntity.ok(Map.of("success", true, "message", "회원정보가 수정되었습니다.", "data", updated));
     }
 
     @PostMapping("/api/users/logout")

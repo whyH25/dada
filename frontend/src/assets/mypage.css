@@ -3,6 +3,8 @@
    ========================= */
 #mypage-content { min-width: 0; }
 
+.input-inline { max-width: 280px; height: 34px; padding: 0 10px; font-size: 14px; display: block; }
+
 .mp-h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 4px; color: var(--ink-900); }
 .mp-sub { font-size: 13.5px; color: var(--ink-500); margin: 0; }
 .mp-section-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; margin: 26px 0 12px; }

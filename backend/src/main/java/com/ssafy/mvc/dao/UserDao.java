@@ -18,5 +18,7 @@ public interface UserDao {
 
     void insertUser(UserDto user);
 
+    void updateUser(UserDto user);
+
     void deleteUser(@Param("userId") Long userId);
 }

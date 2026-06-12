@@ -15,4 +15,6 @@ public interface UserService {
     UserDto getUserByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    void updateUser(UserDto user);
 }

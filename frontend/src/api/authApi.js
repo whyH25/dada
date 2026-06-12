@@ -44,6 +44,18 @@ export async function logoutApi() {
   })
 }
 
+export async function updateUserApi(updateData) {
+  const response = await fetch('http://localhost:8080/api/users/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(updateData),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.message || '회원정보 수정에 실패했습니다.')
+  return data
+}
+
 export async function sendVerificationCodeApi(email) {
   const response = await fetch('http://localhost:8080/api/email/send-code', {
     method: 'POST',

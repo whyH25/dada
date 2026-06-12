@@ -64,4 +64,14 @@ public class UserServiceImpl implements UserService {
     public boolean existsByEmail(String email) {
         return userDao.existsByEmail(email);
     }
+
+    @Override
+    public void updateUser(UserDto user) {
+        if (user.getUserPwd() != null && !user.getUserPwd().isBlank()) {
+            user.setUserPwd(encoder.encode(user.getUserPwd()));
+        } else {
+            user.setUserPwd(null);
+        }
+        userDao.updateUser(user);
+    }
 }

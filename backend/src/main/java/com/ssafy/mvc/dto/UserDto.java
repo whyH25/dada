@@ -11,6 +11,7 @@ public class UserDto implements java.io.Serializable {
     private String userProfileImg;
     private String userStatus;
     private Integer emailVerified;
+    private String createdAt;
 
     public Long getUserIdx() {
         return userId;
@@ -79,5 +80,13 @@ public class UserDto implements java.io.Serializable {
 
     public void setEmailVerified(Integer emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
     }
 }
