@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ssafy.mvc.dao.JobScheduleDao;
 import com.ssafy.mvc.dao.NoticeDao;
+import com.ssafy.mvc.dao.PostDao;
 import com.ssafy.mvc.dao.StoryDao;
 import com.ssafy.mvc.dao.UserDao;
 import com.ssafy.mvc.dto.AdminDto;
@@ -41,6 +42,7 @@ public class AdminController {
     private final JobScheduleDao jobScheduleDao;
     private final StoryDao storyDao;
     private final NoticeDao noticeDao;
+    private final PostDao postDao;
     private final AuthenticationManager adminAuthManager;
 
     public AdminController(
@@ -48,11 +50,13 @@ public class AdminController {
             JobScheduleDao jobScheduleDao,
             StoryDao storyDao,
             NoticeDao noticeDao,
+            PostDao postDao,
             @Qualifier("adminAuthManager") AuthenticationManager adminAuthManager) {
         this.userDao = userDao;
         this.jobScheduleDao = jobScheduleDao;
         this.storyDao = storyDao;
         this.noticeDao = noticeDao;
+        this.postDao = postDao;
         this.adminAuthManager = adminAuthManager;
     }
 
@@ -216,5 +220,18 @@ public class AdminController {
     public ResponseEntity<?> deleteNotice(@PathVariable("id") Long noticeId) {
         noticeDao.delete(noticeId);
         return ResponseEntity.ok(Map.of("success", true, "message", "공지사항이 삭제되었습니다."));
+    }
+
+    // ── 관리자 - 게시글 관리 ──────────────────────────────────────────
+
+    @GetMapping("/api/admin/posts")
+    public ResponseEntity<?> getPosts() {
+        return ResponseEntity.ok(Map.of("success", true, "data", postDao.selectAll(null)));
+    }
+
+    @DeleteMapping("/api/admin/posts/{id}")
+    public ResponseEntity<?> deletePost(@PathVariable("id") Long postId) {
+        postDao.delete(postId);
+        return ResponseEntity.ok(Map.of("success", true, "message", "게시글이 삭제되었습니다."));
     }
 }

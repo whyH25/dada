@@ -2,8 +2,8 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useAdminAuthStore } from '../stores/adminAuth.js'
 
-const GATED = ['create', 'interview', 'room-intro', 'mypage']
-const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users', 'admin-stories', 'admin-notices']
+const GATED = ['create', 'interview', 'room-intro', 'mypage', 'post-create', 'post-edit']
+const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users', 'admin-stories', 'admin-notices', 'admin-posts']
 
 const routes = [
   { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
@@ -17,8 +17,19 @@ const routes = [
   { path: '/done', name: 'done', component: () => import('../views/DoneView.vue') },
   { path: '/stories', name: 'stories', component: () => import('../views/StoriesView.vue') },
   { path: '/story/:id', name: 'story', component: () => import('../views/StoryView.vue') },
-  { path: '/community', name: 'community', component: () => import('../views/CommunityView.vue') },
-  { path: '/post/:id', name: 'post', component: () => import('../views/PostView.vue') },
+  // 커뮤니티 (글쓰기/상세는 layout 바깥에 별도 배치)
+  { path: '/community/board/new',       name: 'post-create', component: () => import('../views/PostCreateView.vue') },
+  { path: '/community/board/:id/edit',  name: 'post-edit',   component: () => import('../views/PostCreateView.vue') },
+  { path: '/community/board/:id',       name: 'post-detail', component: () => import('../views/PostDetailView.vue') },
+  {
+    path: '/community',
+    component: () => import('../views/CommunityView.vue'),
+    children: [
+      { path: '', redirect: '/community/openchat' },
+      { path: 'openchat', name: 'openchat', component: () => import('../views/OpenChatView.vue') },
+      { path: 'board',    name: 'board',    component: () => import('../views/PostsView.vue') },
+    ],
+  },
   { path: '/study/:id', name: 'study-detail', component: () => import('../views/StudyDetailView.vue') },
   { path: '/chatroom/:id', name: 'chatroom', component: () => import('../views/ChatroomView.vue') },
   { path: '/notices', name: 'notices', component: () => import('../views/NoticesView.vue') },
@@ -40,6 +51,7 @@ const routes = [
       { path: 'jobs', name: 'admin-jobs', component: () => import('../views/admin/AdminJobsView.vue') },
       { path: 'stories', name: 'admin-stories', component: () => import('../views/admin/AdminStoriesView.vue') },
       { path: 'notices', name: 'admin-notices', component: () => import('../views/admin/AdminNoticesView.vue') },
+      { path: 'posts',   name: 'admin-posts',   component: () => import('../views/admin/AdminPostsView.vue') },
       { path: 'users', name: 'admin-users', component: () => import('../views/admin/AdminUsersView.vue') },
     ],
   },

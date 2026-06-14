@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.CommentDao">
+
+    <select id="selectByPostId" resultType="com.ssafy.mvc.dto.CommentDto">
+        SELECT
+            c.comment_id,
+            c.post_id,
+            c.user_id,
+            c.content,
+            c.is_anonymous AS anonymous,
+            c.created_at,
+            CASE WHEN c.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name
+        FROM comments c
+        JOIN users u ON c.user_id = u.user_id
+        WHERE c.post_id = #{postId}
+        ORDER BY c.created_at ASC
+    </select>
+
+    <select id="selectById" resultType="com.ssafy.mvc.dto.CommentDto">
+        SELECT comment_id, post_id, user_id, content, is_anonymous AS anonymous, created_at
+        FROM comments
+        WHERE comment_id = #{commentId}
+    </select>
+
+    <insert id="insert" parameterType="com.ssafy.mvc.dto.CommentDto" useGeneratedKeys="true" keyProperty="commentId">
+        INSERT INTO comments (post_id, user_id, content, is_anonymous)
+        VALUES (#{postId}, #{userId}, #{content}, #{anonymous})
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM comments WHERE comment_id = #{commentId}
+    </delete>
+
+</mapper>

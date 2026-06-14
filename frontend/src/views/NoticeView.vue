@@ -34,7 +34,7 @@ onMounted(async () => {
         <div class="breadcrumb">
           홈 <span class="sep">›</span>
           <a @click="router.push('/notices')" style="cursor:pointer;">공지사항</a>
-          <span class="sep">›</span> 상세
+          <span class="sep">›</span> {{ notice?.category ?? '상세' }}
         </div>
       </div>
 

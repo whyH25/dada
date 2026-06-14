@@ -6,11 +6,18 @@ const router = useRouter()
 const route = useRoute()
 const adminAuth = useAdminAuthStore()
 
-const menus = [
-  { name: 'admin-jobs',     label: '채용일정 관리', path: '/admin/jobs' },
-  { name: 'admin-stories',  label: '합격스토리 관리', path: '/admin/stories' },
-  { name: 'admin-notices',  label: '공지사항 관리', path: '/admin/notices' },
-  { name: 'admin-users',    label: '사용자 관리', path: '/admin/users' },
+const topMenus = [
+  { name: 'admin-jobs',    label: '채용일정 관리', path: '/admin/jobs' },
+  { name: 'admin-stories', label: '합격스토리 관리', path: '/admin/stories' },
+  { name: 'admin-notices', label: '공지사항 관리', path: '/admin/notices' },
+]
+
+const communityMenus = [
+  { name: 'admin-posts', label: '게시글 관리', path: '/admin/posts' },
+]
+
+const bottomMenus = [
+  { name: 'admin-users', label: '사용자 관리', path: '/admin/users' },
 ]
 </script>
 
@@ -23,14 +30,24 @@ const menus = [
       </div>
       <nav class="admin-nav">
         <button
-          v-for="m in menus"
-          :key="m.name"
-          class="admin-nav-item"
-          :class="{ active: route.name === m.name }"
+          v-for="m in topMenus" :key="m.name"
+          class="admin-nav-item" :class="{ active: route.name === m.name }"
           @click="router.push(m.path)"
-        >
-          {{ m.label }}
-        </button>
+        >{{ m.label }}</button>
+
+        <div class="admin-nav-section-label">커뮤니티</div>
+
+        <button
+          v-for="m in communityMenus" :key="m.name"
+          class="admin-nav-item" :class="{ active: route.name === m.name }"
+          @click="router.push(m.path)"
+        >{{ m.label }}</button>
+
+        <button
+          v-for="m in bottomMenus" :key="m.name"
+          class="admin-nav-item" :class="{ active: route.name === m.name }"
+          @click="router.push(m.path)"
+        >{{ m.label }}</button>
       </nav>
       <div class="admin-sidebar-footer">
         <button class="admin-logout-btn" @click="adminAuth.logout(router)">로그아웃</button>
@@ -80,8 +97,18 @@ const menus = [
 .admin-nav {
   display: flex;
   flex-direction: column;
-  padding: 12px 0;
+  padding: 8px 0;
   flex: 1;
+  overflow-y: auto;
+}
+
+.admin-nav-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3, #9ca3af);
+  padding: 14px 20px 4px;
 }
 
 .admin-nav-item {
@@ -91,8 +118,8 @@ const menus = [
   color: var(--text-2, #374151);
   background: none;
   border: none;
-  cursor: pointer;
   border-left: 3px solid transparent;
+  cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 

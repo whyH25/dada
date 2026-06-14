@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/job-schedules").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/stories", "/api/stories/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/notices", "/api/notices/*").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/*", "/api/posts/*/comments").permitAll()
 
                 // /api/admin/login, /api/admin/logout 을 먼저 허용했으므로
                 // 나머지 /api/admin/** 은 ADMIN 권한 필요
