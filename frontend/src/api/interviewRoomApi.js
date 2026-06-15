@@ -79,3 +79,13 @@ export async function startInterview(roomId) {
   }
   return res.json()
 }
+
+export function updateRoomStatusApi(roomId, status) {
+  return fetch(`${BASE}/interview-rooms/${roomId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ status }),
+    keepalive: true,
+  })
+}

@@ -14,6 +14,7 @@ public class InterviewScenarioDto {
     private String speechText;
     private String answerText;
     private Integer timeoutSec;
+    private String voiceType; // TTS 조회 시 JOIN으로 채워짐 (DB 컬럼 없음)
 
     public Long getScenarioId() { return scenarioId; }
     public void setScenarioId(Long scenarioId) { this.scenarioId = scenarioId; }
@@ -44,4 +45,7 @@ public class InterviewScenarioDto {
 
     public Integer getTimeoutSec() { return timeoutSec; }
     public void setTimeoutSec(Integer timeoutSec) { this.timeoutSec = timeoutSec; }
+
+    public String getVoiceType() { return voiceType; }
+    public void setVoiceType(String voiceType) { this.voiceType = voiceType; }
 }

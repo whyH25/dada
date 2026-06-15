@@ -1,6 +1,7 @@
 package com.ssafy.mvc.dto;
 
 import java.util.List;
+import java.util.Map;
 
 public class InterviewStartResultDto {
 
@@ -11,6 +12,9 @@ public class InterviewStartResultDto {
     private String applicantType;
     private String difficulty;
     private List<InterviewScenarioDto> scenario;
+    private List<Long> interviewerPersonaIds;  // 선정된 면접관 ID 순서 (타일 순서와 일치)
+    private List<Long> applicantPersonaIds;    // 선정된 지원자 ID 순서 (타일 순서와 일치)
+    private Map<Long, String> personaNames;    // personaId → 이름
 
     public Long getRoomId() { return roomId; }
     public void setRoomId(Long roomId) { this.roomId = roomId; }
@@ -32,4 +36,13 @@ public class InterviewStartResultDto {
 
     public List<InterviewScenarioDto> getScenario() { return scenario; }
     public void setScenario(List<InterviewScenarioDto> scenario) { this.scenario = scenario; }
+
+    public List<Long> getInterviewerPersonaIds() { return interviewerPersonaIds; }
+    public void setInterviewerPersonaIds(List<Long> interviewerPersonaIds) { this.interviewerPersonaIds = interviewerPersonaIds; }
+
+    public List<Long> getApplicantPersonaIds() { return applicantPersonaIds; }
+    public void setApplicantPersonaIds(List<Long> applicantPersonaIds) { this.applicantPersonaIds = applicantPersonaIds; }
+
+    public Map<Long, String> getPersonaNames() { return personaNames; }
+    public void setPersonaNames(Map<Long, String> personaNames) { this.personaNames = personaNames; }
 }

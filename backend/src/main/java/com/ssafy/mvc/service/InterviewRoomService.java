@@ -16,7 +16,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -69,6 +71,11 @@ public class InterviewRoomService {
         InterviewStartResultDto script = aiPromptService.generateScript(room, interviewers, applicants);
 
         saveScenarios(roomId, script.getScenario());
+        // batch INSERT는 생성된 ID를 반환하지 않으므로 재조회로 scenarioId 채움
+        script.setScenario(interviewScenarioDao.selectByRoomId(roomId));
+        script.setInterviewerPersonaIds(interviewers.stream().map(AiInterviewerDto::getInterviewerId).toList());
+        script.setApplicantPersonaIds(applicants.stream().map(AiApplicantDto::getApplicantId).toList());
+        script.setPersonaNames(buildPersonaNames(interviewers, applicants));
 
         interviewRoomDao.updateStatus(roomId, "IN_PROGRESS");
         return script;
@@ -82,6 +89,17 @@ public class InterviewRoomService {
             s.setScenarioType("MAIN");
         }
         interviewScenarioDao.insertScenarios(scenarios);
+    }
+
+    public void updateStatus(Long roomId, String status) {
+        interviewRoomDao.updateStatus(roomId, status);
+    }
+
+    private Map<Long, String> buildPersonaNames(List<AiInterviewerDto> interviewers, List<AiApplicantDto> applicants) {
+        Map<Long, String> map = new LinkedHashMap<>();
+        for (AiInterviewerDto i : interviewers) map.put(i.getInterviewerId(), i.getInterviewerName());
+        for (AiApplicantDto a : applicants)     map.put(a.getApplicantId(),   a.getApplicantName());
+        return map;
     }
 
     private void saveRoomPersonas(Long roomId, List<AiInterviewerDto> interviewers, List<AiApplicantDto> applicants) {

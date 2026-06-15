@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/interview-rooms")
@@ -30,7 +31,7 @@ public class InterviewRoomController {
             @RequestParam String applicantType,
             @RequestParam(required = false) Integer aiInterviewerCnt,
             @RequestParam Integer aiApplicantCnt,
-            @RequestParam MultipartFile resumeFile,
+            @RequestParam(required = false) MultipartFile resumeFile,
             @RequestParam(required = false) MultipartFile portfolioFile
     ) throws IOException {
 
@@ -52,5 +53,12 @@ public class InterviewRoomController {
     public ResponseEntity<InterviewStartResultDto> startInterview(@PathVariable Long roomId) {
         InterviewStartResultDto result = interviewRoomService.startInterview(roomId);
         return ResponseEntity.ok(result);
+    }
+
+    // 면접 상태 업데이트 (COMPLETED / CANCELLED)
+    @PatchMapping("/{roomId}/status")
+    public ResponseEntity<?> updateStatus(@PathVariable Long roomId, @RequestBody Map<String, String> body) {
+        interviewRoomService.updateStatus(roomId, body.get("status"));
+        return ResponseEntity.ok(Map.of("success", true));
     }
 }

@@ -5,7 +5,7 @@ import { reports } from '../stores/seed.js'
 import { scoreColor, reportPanel } from '../utils/mypageReport.js'
 import { toast } from '../utils/toast.js'
 import { useAuthStore } from '../stores/auth.js'
-import { updateUserApi } from '../api/authApi.js'
+import { updateUserApi, deleteUserApi } from '../api/authApi.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -102,6 +102,24 @@ async function submitEdit() {
     editError.value = e.message
   } finally {
     editLoading.value = false
+  }
+}
+
+// ---- 회원탈퇴 ----
+const showWithdrawConfirm = ref(false)
+const withdrawLoading = ref(false)
+
+async function withdrawUser() {
+  withdrawLoading.value = true
+  try {
+    await deleteUserApi()
+    authStore.user = null
+    showWithdrawConfirm.value = false
+    router.push('/')
+  } catch (e) {
+    toast(e.message)
+  } finally {
+    withdrawLoading.value = false
   }
 }
 
@@ -315,6 +333,23 @@ onMounted(() => {
                 <div class="info-row"><div class="info-label">요금제</div><div class="info-val"><span class="badge badge-green">PRO 멤버</span></div></div>
               </div>
               <p v-if="editError" class="auth-error" style="margin-top:8px;">{{ editError }}</p>
+              <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--ink-150); text-align:right;">
+                <button class="btn-withdraw" @click="showWithdrawConfirm = true">회원탈퇴</button>
+              </div>
+            </div>
+
+            <!-- 회원탈퇴 확인 모달 -->
+            <div v-if="showWithdrawConfirm" class="withdraw-overlay" @click.self="showWithdrawConfirm = false">
+              <div class="withdraw-modal">
+                <h3 class="withdraw-title">정말 탈퇴하시겠습니까?</h3>
+                <p class="withdraw-desc">탈퇴 시 모든 면접 기록과 리포트가 삭제되며<br>복구할 수 없습니다.</p>
+                <div class="withdraw-actions">
+                  <button class="btn btn-secondary" @click="showWithdrawConfirm = false">취소</button>
+                  <button class="btn btn-danger" :disabled="withdrawLoading" @click="withdrawUser">
+                    {{ withdrawLoading ? '처리 중...' : '탈퇴하기' }}
+                  </button>
+                </div>
+              </div>
             </div>
             <!--
             <div class="card" style="margin-top:16px;">

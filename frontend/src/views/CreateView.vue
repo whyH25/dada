@@ -468,11 +468,12 @@ async function startInterview() {
               </p>
               <button
                 class="btn btn-primary btn-block btn-lg"
-                :disabled="camStatus !== 'ok' || micStatus !== 'ok'"
-                :style="{ opacity: camStatus === 'ok' && micStatus === 'ok' ? 1 : 0.45, cursor: camStatus === 'ok' && micStatus === 'ok' ? 'pointer' : 'not-allowed' }"
+                :disabled="camStatus !== 'ok' || micStatus !== 'ok' || submitting"
+                :style="{ opacity: camStatus === 'ok' && micStatus === 'ok' && !submitting ? 1 : 0.45, cursor: camStatus === 'ok' && micStatus === 'ok' && !submitting ? 'pointer' : 'not-allowed' }"
                 @click="startInterview"
               >
-                면접방 생성하고 시작하기
+                <span v-if="submitting">면접방 생성 중...</span>
+                <span v-else>면접방 생성하고 시작하기</span>
               </button>
               <button class="btn btn-ghost btn-block" style="margin-top: 6px;" @click="step = 1">이전 단계로</button>
             </div>

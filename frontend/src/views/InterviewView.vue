@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useFlowStore } from '../stores/flow.js'
 import { useDataStore } from '../stores/data.js'
 import { useAuthStore } from '../stores/auth.js'
+import { updateRoomStatusApi } from '../api/interviewRoomApi.js'
 
 const router = useRouter()
 const flow = useFlowStore()
@@ -15,9 +16,9 @@ const roomTitle = computed(() =>
   r.value ? `${r.value.co} | ${r.value.role.replace(/·/g, '|')}` : '면접 진행 중'
 )
 
-// ── 참가자 (면접방 설정 기반 동적 생성) ──────────────
-const interviewerCount = computed(() => r.value?.interviewerCount || 2)
-const aiApplicantCount = computed(() => r.value?.aiApplicantCount ?? 1)
+// ── 참가자 (flow 페르소나 데이터 기반, fallback으로 mock 데이터) ──────────────
+const interviewerCount = computed(() => flow.interviewerPersonaIds.length || r.value?.interviewerCount || 2)
+const aiApplicantCount = computed(() => flow.applicantPersonaIds.length   || (r.value?.aiApplicantCount ?? 1))
 
 const interviewerVideos = ref([])
 const applicantVideos = ref([])
@@ -43,34 +44,185 @@ function pickRandomApplicants(count) {
 }
 
 const interviewers = computed(() =>
-  Array.from({ length: interviewerCount.value }, (_, i) => ({
-    id: `i${i + 1}`,
-    name: interviewerCount.value === 1 ? '면접관' : `면접관 ${i + 1}`,
-    letter: ['박', '이', '김', '최'][i] ?? String(i + 1),
-    video: interviewerVideos.value[i] ?? null,
-  }))
+  flow.interviewerPersonaIds.map((personaId, i) => {
+    const name = flow.personaNames[personaId] ?? `면접관 ${i + 1}`
+    return {
+      id: `i${i + 1}`,
+      name,
+      letter: name.charAt(0),
+      video: interviewerVideos.value[i] ?? null,
+    }
+  })
 )
 
 const aiApplicants = computed(() =>
-  Array.from({ length: aiApplicantCount.value }, (_, i) => ({
-    id: `a${i + 1}`,
-    name: aiApplicantCount.value === 1 ? 'AI 지원자' : `AI 지원자 ${i + 1}`,
-    letter: String.fromCharCode(65 + i),
-    stopVideo: applicantVideos.value[i]?.stop ?? null,
-    moveVideo: applicantVideos.value[i]?.move ?? null,
-  }))
+  flow.applicantPersonaIds.map((personaId, i) => {
+    const name = flow.personaNames[personaId] ?? `지원자 ${i + 1}`
+    return {
+      id: `a${i + 1}`,
+      name,
+      letter: name.charAt(0),
+      stopVideo: applicantVideos.value[i]?.stop ?? null,
+      moveVideo: applicantVideos.value[i]?.move ?? null,
+    }
+  })
 )
 
 const userName = computed(() => auth.user?.userName || '나')
 const userInitial = computed(() => userName.value.charAt(0))
 
+// ── 면접 시작 / 종료 상태 ─────────────────────────────
+const interviewStarted = ref(false)
+const interviewEnded   = ref(false)
+const statusFinalized  = ref(false)  // COMPLETED/CANCELLED 중복 호출 방지
+
+function startInterview() {
+  interviewStarted.value = true
+  playTurn(0)
+}
+
+async function finalizeStatus(status) {
+  if (statusFinalized.value || !flow.roomId) return
+  statusFinalized.value = true
+  await updateRoomStatusApi(flow.roomId, status)
+}
+
+// ── 시나리오 TTS 재생 ──────────────────────────────────
+const currentTurnIndex = ref(-1)  // -1: 아직 시작 전
+let currentAudio = null
+
+const currentTurn = computed(() => flow.scenarios[currentTurnIndex.value] ?? null)
+
+// turnRefId → 타일 ID ('i1','i2',... / 'a1','a2',...)
+function tileIdForTurn(turn) {
+  if (!turn) return null
+  if (turn.turnRole === 'INTERVIEWER') {
+    const idx = flow.interviewerPersonaIds.indexOf(turn.turnRefId)
+    return idx >= 0 ? `i${idx + 1}` : 'i1'
+  }
+  if (turn.turnRole === 'APPLICANT') {
+    const idx = flow.applicantPersonaIds.indexOf(turn.turnRefId)
+    return idx >= 0 ? `a${idx + 1}` : 'a1'
+  }
+  return 'me'
+}
+
+// ── USER 턴 녹음 + 카운트다운 ──────────────────────────
+const userTurnActive = ref(false)
+const userTurnTimeLeft = ref(0)
+const userTimerText = computed(() => {
+  const m = String(Math.floor(userTurnTimeLeft.value / 60)).padStart(2, '0')
+  const s = String(userTurnTimeLeft.value % 60).padStart(2, '0')
+  return `${m}:${s}`
+})
+let userCountdownTimer = null
+let mediaRecorder = null
+let audioChunks = []
+
+function startUserTurn(turn) {
+  userTurnActive.value = true
+  userTurnTimeLeft.value = Math.min(turn.timeoutSec ?? 55, 55)
+  audioChunks = []
+
+  // 마이크 스트림으로 녹음 시작
+  if (myStream.value) {
+    const audioStream = new MediaStream(myStream.value.getAudioTracks())
+    mediaRecorder = new MediaRecorder(audioStream)
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data) }
+    mediaRecorder.start(500) // 500ms마다 청크 수집 - 짧은 발화도 누락 없이 캡처
+  }
+
+  // 카운트다운 → 0이 되면 자동으로 다음 턴
+  userCountdownTimer = setInterval(() => {
+    userTurnTimeLeft.value--
+    if (userTurnTimeLeft.value <= 0) finishUserTurn()
+  }, 1000)
+}
+
+function finishUserTurn() {
+  if (!userTurnActive.value) return
+  clearInterval(userCountdownTimer)
+  userTurnActive.value = false
+
+  const scenarioId = flow.scenarios[currentTurnIndex.value]?.scenarioId
+  const nextIndex  = currentTurnIndex.value + 1
+
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.onstop = async () => {
+      if (audioChunks.length > 0 && scenarioId) await sendStt(audioChunks, scenarioId)
+      mediaRecorder = null
+      playTurn(nextIndex)
+    }
+    mediaRecorder.stop()
+  } else {
+    mediaRecorder = null
+    playTurn(nextIndex)
+  }
+}
+
+async function sendStt(chunks, scenarioId) {
+  try {
+    const form = new FormData()
+    form.append('audioFile', new Blob(chunks, { type: 'audio/webm' }), 'answer.webm')
+    form.append('scenarioId', String(scenarioId))
+    await fetch('http://localhost:8080/api/speech/stt', {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    })
+  } catch (e) {
+    console.error('STT 실패:', e)
+  }
+}
+
+async function playTurn(index) {
+  if (index >= flow.scenarios.length) {
+    await finalizeStatus('COMPLETED')
+    interviewEnded.value = true
+    return
+  }
+
+  const turn = flow.scenarios[index]
+  currentTurnIndex.value = index  // 현재 턴 세팅 → isSpeaking 자동 반영
+
+  if (turn.turnRole === 'USER') {
+    startUserTurn(turn)
+    return
+  }
+
+  if (!turn.scenarioId || !turn.speechText) {
+    playTurn(index + 1)
+    return
+  }
+
+  try {
+    const res = await fetch('http://localhost:8080/api/speech/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ scenarioId: turn.scenarioId }),
+    })
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    currentAudio = new Audio(url)
+    currentAudio.onended = () => {
+      URL.revokeObjectURL(url)
+      currentAudio = null
+      playTurn(index + 1)
+    }
+    currentAudio.play()
+  } catch {
+    playTurn(index + 1)
+  }
+}
+
 // ── 발화 감지 ─────────────────────────────────────────
 const isSpeakingMe = ref(false)
-const testSpeakingId = ref(null)   // 테스트용: null이면 비활성
+const micLevel = ref(0)  // 0-100, 마이크 입력 음량
+
 function isSpeaking(id) {
-  if (id === 'me') return isSpeakingMe.value
-  if (testSpeakingId.value === id) return true
-  return false  // 나중에 실제 오디오로 대체
+  if (id === 'me') return currentTurn.value?.turnRole === 'USER'
+  return tileIdForTurn(currentTurn.value) === id
 }
 
 let audioCtx = null
@@ -85,10 +237,11 @@ function startAudioDetection(stream) {
     audioCtx.createMediaStreamSource(stream).connect(audioAnalyser)
     const buf = new Uint8Array(audioAnalyser.frequencyBinCount)
     audioInterval = setInterval(() => {
-      if (muted.value) { isSpeakingMe.value = false; return }
+      if (muted.value) { isSpeakingMe.value = false; micLevel.value = 0; return }
       audioAnalyser.getByteFrequencyData(buf)
       const avg = buf.reduce((s, v) => s + v, 0) / buf.length
       isSpeakingMe.value = avg > 12
+      micLevel.value = Math.min(100, Math.round(avg * 3))
     }, 80)
   } catch { /* AudioContext 없는 환경 */ }
 }
@@ -314,7 +467,8 @@ function openCustomBgPicker() {
   customBgInputEl.value?.click()
 }
 
-function endInterview() {
+async function endInterview() {
+  if (!interviewEnded.value) await finalizeStatus('CANCELLED')
   stopAudioDetection()
   stopBgLoop()
   if (customBgUrl.value) { URL.revokeObjectURL(customBgUrl.value); customBgUrl.value = null }
@@ -324,19 +478,40 @@ function endInterview() {
 }
 
 let clockTimer = null
+
+function handleBeforeUnload() {
+  if (!statusFinalized.value && flow.roomId) {
+    statusFinalized.value = true
+    // keepalive: true → 페이지 언로드 중에도 요청 완료 보장
+    fetch(`http://localhost:8080/api/interview-rooms/${flow.roomId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status: 'CANCELLED' }),
+      keepalive: true,
+    })
+  }
+}
+
 onMounted(async () => {
   interviewerVideos.value = pickRandomVideos(interviewerCount.value)
   applicantVideos.value = pickRandomApplicants(aiApplicantCount.value)
   clockTimer = setInterval(() => { elapsed.value++ }, 1000)
   await startMyMedia()
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
   clearInterval(clockTimer)
   stopAudioDetection()
   stopBgLoop()
   if (customBgUrl.value) URL.revokeObjectURL(customBgUrl.value)
   myStream.value?.getTracks().forEach(t => t.stop())
   screenStream.value?.getTracks().forEach(t => t.stop())
+  currentAudio?.pause()
+  currentAudio = null
+  clearInterval(userCountdownTimer)
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop()
 })
 </script>
 
@@ -450,6 +625,34 @@ onUnmounted(() => {
       </template>
     </div>
 
+    <!-- 면접 시작 전 오버레이 -->
+    <div v-if="!interviewStarted" class="iv-overlay">
+      <div class="iv-overlay-box">
+        <p class="iv-overlay-title">면접 준비가 완료되었습니다</p>
+        <p class="iv-overlay-sub">준비가 되셨으면 아래 버튼을 눌러 시작하세요.</p>
+        <button class="iv-start-btn" @click="startInterview">면접 시작하기</button>
+      </div>
+    </div>
+
+    <!-- 면접 종료 오버레이 -->
+    <div v-if="interviewEnded" class="iv-overlay">
+      <div class="iv-overlay-box">
+        <p class="iv-overlay-title">면접이 모두 종료되었습니다</p>
+        <p class="iv-overlay-sub">수고하셨습니다. 결과를 저장합니다.</p>
+        <button class="iv-end-overlay-btn" @click="endInterview">면접 종료</button>
+      </div>
+    </div>
+
+    <!-- USER 턴 답변 바 -->
+    <div v-if="userTurnActive" class="iv-user-turn-bar">
+      <div class="iv-user-turn-left">
+        <span class="rec-indicator"><span class="rec-dot"></span>REC</span>
+        <span class="iv-user-turn-label">내 답변 차례</span>
+      </div>
+      <span class="iv-user-timer">{{ userTimerText }}</span>
+      <button class="iv-finish-answer-btn" @click="finishUserTurn">답변 완료</button>
+    </div>
+
     <!-- 하단 컨트롤: 아이콘만, 반응 없음 -->
     <div class="iv-controls">
 
@@ -503,19 +706,24 @@ onUnmounted(() => {
       </div>
 
       <div class="iv-ctrl-group">
-        <!-- 음소거 -->
-        <button class="iv-ctrl-btn" :class="{ off: muted }" @click="toggleMute"
-                :title="muted ? '음소거 해제' : '음소거'">
-          <svg v-if="!muted" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
-          </svg>
-          <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="1" y1="1" x2="23" y2="23"/>
-            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/>
-            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23M12 19v3M8 22h8"/>
-          </svg>
-        </button>
+        <!-- 음소거 + 마이크 레벨 -->
+        <div class="iv-mic-wrapper">
+          <button class="iv-ctrl-btn" :class="{ off: muted }" @click="toggleMute"
+                  :title="muted ? '음소거 해제' : '음소거'">
+            <svg v-if="!muted" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
+            </svg>
+            <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/>
+              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23M12 19v3M8 22h8"/>
+            </svg>
+          </button>
+          <div class="iv-mic-level-bar">
+            <div class="iv-mic-level-fill" :style="{ width: micLevel + '%' }"></div>
+          </div>
+        </div>
 
         <!-- 비디오 -->
         <button class="iv-ctrl-btn" :class="{ off: camOff }" @click="toggleCam"
@@ -546,18 +754,6 @@ onUnmounted(() => {
             <path d="m3 16 4-4 4 4 4-6 6 6"/>
             <circle cx="8.5" cy="8.5" r="1.5"/>
           </svg>
-        </button>
-      </div>
-
-      <!-- 테스트용 발화 토글 (개발 중에만 사용) -->
-      <div v-if="aiApplicants.length" style="display:flex;gap:6px;align-items:center;">
-        <span style="font-size:11px;color:rgba(255,255,255,0.35)">TEST</span>
-        <button v-for="ap in aiApplicants" :key="ap.id"
-                class="iv-ctrl-btn" :class="{ on: testSpeakingId === ap.id }"
-                style="width:40px;height:40px;font-size:11px;font-weight:700;"
-                @click="testSpeakingId = testSpeakingId === ap.id ? null : ap.id"
-                :title="`${ap.name} 발화 테스트`">
-          {{ ap.name.replace('AI 지원자', 'A') }}
         </button>
       </div>
 
@@ -904,6 +1100,25 @@ onUnmounted(() => {
   gap: 10px;
   align-items: center;
 }
+.iv-mic-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.iv-mic-level-bar {
+  width: 56px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.iv-mic-level-fill {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 2px;
+  transition: width 0.08s linear;
+}
 .iv-ctrl-btn {
   display: flex;
   align-items: center;
@@ -991,6 +1206,102 @@ onUnmounted(() => {
   transition: background 0.15s;
 }
 .iv-end-btn:hover { background: #b91c1c; }
+
+/* ── 시작 / 종료 오버레이 ── */
+.iv-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  background: rgba(13, 17, 23, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.iv-overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.iv-overlay-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+.iv-overlay-sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+.iv-start-btn {
+  margin-top: 12px;
+  background: #ccff00;
+  border: none;
+  border-radius: 14px;
+  color: #0d1117;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 18px 52px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.iv-start-btn:hover { background: #b8e600; transform: scale(1.03); }
+.iv-end-overlay-btn {
+  margin-top: 12px;
+  background: #dc2626;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 18px 52px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.iv-end-overlay-btn:hover { background: #b91c1c; transform: scale(1.03); }
+
+/* ── USER 턴 답변 바 ── */
+.iv-user-turn-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 32px;
+  background: rgba(204, 255, 0, 0.06);
+  border-top: 1px solid rgba(204, 255, 0, 0.25);
+  flex-shrink: 0;
+}
+.iv-user-turn-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.iv-user-turn-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ccff00;
+}
+.iv-user-timer {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ccff00;
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.iv-finish-answer-btn {
+  background: #ccff00;
+  border: none;
+  border-radius: 10px;
+  color: #0d1117;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.iv-finish-answer-btn:hover { background: #b8e600; }
 
 @keyframes blink {
   0%, 100% { opacity: 1; }

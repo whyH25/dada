@@ -183,3 +183,13 @@
 .pay-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--ink-200); }
 .pay-form .field-inline { gap: 10px; }
 .pay-simple { margin-top: 14px; padding: 14px; background: var(--ink-50); border: 1px solid var(--ink-200); border-radius: 8px; font-size: 13px; color: var(--ink-700); line-height: 1.6; }
+
+/* 회원탈퇴 */
+.btn-withdraw { background: none; border: none; color: var(--ink-400); font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline; }
+.btn-withdraw:hover { color: #e53e3e; }
+.withdraw-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
+.withdraw-modal { background: #fff; border-radius: 14px; padding: 32px 28px 24px; width: 340px; max-width: 90vw; text-align: center; }
+.withdraw-title { font-size: 18px; font-weight: 700; color: var(--ink-900); margin: 0 0 10px; }
+.withdraw-desc { font-size: 13px; color: var(--ink-500); line-height: 1.7; margin: 0 0 24px; }
+.withdraw-actions { display: flex; gap: 10px; justify-content: center; }
+.withdraw-actions .btn { min-width: 100px; }

@@ -19,4 +19,27 @@
         </foreach>
     </insert>
 
+    <!-- INSERT 후 생성된 scenarioId 포함하여 재조회 -->
+    <select id="selectByRoomId" parameterType="long" resultType="com.ssafy.mvc.dto.InterviewScenarioDto">
+        SELECT scenario_id, room_id, scenario_type, parent_scenario_id,
+               turn_order, turn_role, turn_ref_id, speech_text, timeout_sec
+        FROM interview_scenario
+        WHERE room_id = #{roomId}
+        ORDER BY turn_order
+    </select>
+
+    <update id="updateAnswerText">
+        UPDATE interview_scenario SET answer_text = #{answerText} WHERE scenario_id = #{scenarioId}
+    </update>
+
+    <!-- TTS 호출용: speech_text + turn_role/turn_ref_id 기반으로 voice_type JOIN 조회 -->
+    <select id="selectForTts" parameterType="long" resultType="com.ssafy.mvc.dto.InterviewScenarioDto">
+        SELECT s.scenario_id, s.speech_text, s.turn_role, s.turn_ref_id,
+               COALESCE(ai.voice_type, ap.voice_type) AS voice_type
+        FROM interview_scenario s
+        LEFT JOIN ai_interviewer ai ON s.turn_role = 'INTERVIEWER' AND ai.interviewer_id = s.turn_ref_id
+        LEFT JOIN ai_applicant   ap ON s.turn_role = 'APPLICANT'   AND ap.applicant_id   = s.turn_ref_id
+        WHERE s.scenario_id = #{scenarioId}
+    </select>
+
 </mapper>

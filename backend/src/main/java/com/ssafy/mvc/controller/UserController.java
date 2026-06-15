@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -77,6 +78,20 @@ public class UserController {
         userService.updateUser(updateRequest);
         UserDto updated = userService.getUserByEmail(userDetails.getUsername());
         return ResponseEntity.ok(Map.of("success", true, "message", "회원정보가 수정되었습니다.", "data", updated));
+    }
+
+    @DeleteMapping("/api/users/me")
+    public ResponseEntity<?> deleteMe(
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails,
+            HttpSession session, HttpServletResponse response) {
+        userService.deleteUser(userDetails.getUserDto().getUserId());
+        SecurityContextHolder.clearContext();
+        session.invalidate();
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return ResponseEntity.ok(Map.of("success", true, "message", "회원탈퇴가 완료되었습니다."));
     }
 
     @PostMapping("/api/users/logout")

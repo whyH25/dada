@@ -8,6 +8,7 @@ public class AiApplicantDto {
     private String applicantType;
     private String profileImageUrl; // 추후 사용
     private String applicantPrompt;
+    private String voiceType;
 
     public Long getApplicantId() { return applicantId; }
     public void setApplicantId(Long applicantId) { this.applicantId = applicantId; }
@@ -26,6 +27,9 @@ public class AiApplicantDto {
 
     public String getApplicantPrompt() { return applicantPrompt; }
     public void setApplicantPrompt(String applicantPrompt) { this.applicantPrompt = applicantPrompt; }
+
+    public String getVoiceType() { return voiceType; }
+    public void setVoiceType(String voiceType) { this.voiceType = voiceType; }
 
     @Override
     public String toString() {

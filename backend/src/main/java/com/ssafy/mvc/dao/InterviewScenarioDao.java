@@ -10,4 +10,10 @@ import java.util.List;
 public interface InterviewScenarioDao {
 
     void insertScenarios(@Param("list") List<InterviewScenarioDto> list);
+
+    List<InterviewScenarioDto> selectByRoomId(Long roomId);
+
+    InterviewScenarioDto selectForTts(Long scenarioId);
+
+    void updateAnswerText(@Param("scenarioId") Long scenarioId, @Param("answerText") String answerText);
 }

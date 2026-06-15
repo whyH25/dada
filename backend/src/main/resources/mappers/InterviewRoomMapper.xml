@@ -47,7 +47,8 @@
 
     <update id="updateStatus">
         UPDATE interview_room
-        SET status = #{status}
+        SET status = #{status},
+            ended_at = CASE WHEN #{status} IN ('COMPLETED', 'CANCELLED') THEN NOW() ELSE ended_at END
         WHERE room_id = #{roomId}
     </update>
 

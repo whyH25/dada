@@ -44,6 +44,16 @@ export async function logoutApi() {
   })
 }
 
+export async function deleteUserApi() {
+  const response = await fetch('http://localhost:8080/api/users/me', {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.message || '회원탈퇴에 실패했습니다.')
+  return data
+}
+
 export async function updateUserApi(updateData) {
   const response = await fetch('http://localhost:8080/api/users/me', {
     method: 'PATCH',

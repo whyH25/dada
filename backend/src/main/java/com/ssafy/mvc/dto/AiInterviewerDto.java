@@ -7,6 +7,7 @@ public class AiInterviewerDto {
     private String interviewerGender;
     private String profileImageUrl; // 추후 사용
     private String interviewerPrompt;
+    private String voiceType;
 
     public Long getInterviewerId() { return interviewerId; }
     public void setInterviewerId(Long interviewerId) { this.interviewerId = interviewerId; }
@@ -22,6 +23,9 @@ public class AiInterviewerDto {
 
     public String getInterviewerPrompt() { return interviewerPrompt; }
     public void setInterviewerPrompt(String interviewerPrompt) { this.interviewerPrompt = interviewerPrompt; }
+
+    public String getVoiceType() { return voiceType; }
+    public void setVoiceType(String voiceType) { this.voiceType = voiceType; }
 
     @Override
     public String toString() {

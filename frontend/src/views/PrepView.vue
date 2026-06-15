@@ -29,7 +29,12 @@ let timer = null
 onMounted(() => {
   // AI 대본 생성 API 호출과 애니메이션 동시 진행
   const apiPromise = startInterview(flow.roomId)
-    .then(result => { flow.scenarios = result.scenario })
+    .then(result => {
+      flow.scenarios             = result.scenario              || []
+      flow.interviewerPersonaIds = result.interviewerPersonaIds || []
+      flow.applicantPersonaIds   = result.applicantPersonaIds   || []
+      flow.personaNames          = result.personaNames          || {}
+    })
     .catch(err => { errorMsg.value = err.message || 'AI 대본 생성에 실패했습니다.' })
 
   let idx = 1
