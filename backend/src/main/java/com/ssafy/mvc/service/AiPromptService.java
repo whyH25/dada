@@ -52,7 +52,7 @@ public class AiPromptService {
             [speechText / timeoutSec 규칙]
             15. INTERVIEWER, APPLICANT의 speechText는 반드시 null이 아닌 문자열이어야 합니다.
             16. USER의 speechText는 반드시 null이어야 합니다. (USER의 답변 내용은 절대 생성하지 마세요. USER 턴은 사용자가 답변해야 하는 시점만 표현합니다.)
-            17. USER 턴의 timeoutSec는 질문에 맞게 설정하세요.
+            17. USER 턴의 timeoutSec는 질문에 맞게 설정하세요. (최대값: 60초)
             18. INTERVIEWER, APPLICANT 턴의 timeoutSec는 null로 작성하세요.
 
             [내용 생성 규칙]
