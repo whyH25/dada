@@ -52,14 +52,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
       <div class="nav-menu">
         <div class="nav-item" :class="{ active: $route.name === 'home' }" @click="go('/')">홈</div>
         <div class="nav-item" :class="{ active: $route.name === 'schedule' }" @click="go('/schedule')">채용 일정</div>
-        <div class="nav-item has-dropdown" :class="{ active: ['rooms', 'create'].includes($route.name) }">
-          면접
-          <span class="caret"></span>
-          <div class="nav-dropdown">
-            <div class="nav-dropdown-item" @click="go('/rooms')">100대기업 면접방</div>
-            <div class="nav-dropdown-item" @click="requireAuth('create')">맞춤형 면접방 생성</div>
-          </div>
-        </div>
+        <div class="nav-item" :class="{ active: ['create', 'interview-intro'].includes($route.name) }" @click="requireAuth('interview-intro')">면접</div>
         <div class="nav-item" :class="{ active: $route.name === 'stories' }" @click="go('/stories')">합격스토리</div>
         <div class="nav-item has-dropdown" :class="{ active: ['openchat', 'board', 'post-create', 'post-edit', 'post-detail'].includes($route.name) }">
           커뮤니티

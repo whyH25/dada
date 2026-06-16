@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useAdminAuthStore } from '../stores/adminAuth.js'
 
-const GATED = ['create', 'interview', 'room-intro', 'mypage', 'post-create', 'post-edit']
+const GATED = ['create', 'interview', 'interview-intro', 'room-intro', 'mypage', 'post-create', 'post-edit']
 const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users', 'admin-stories', 'admin-notices', 'admin-posts']
 
 const routes = [
@@ -15,6 +15,7 @@ const routes = [
   { path: '/prep', name: 'prep', component: () => import('../views/PrepView.vue') },
   { path: '/saving', name: 'saving', component: () => import('../views/SavingView.vue') },
   { path: '/done', name: 'done', component: () => import('../views/DoneView.vue') },
+  { path: '/interview-intro', name: 'interview-intro', component: () => import('../views/InterviewIntroView.vue') },
   { path: '/stories', name: 'stories', component: () => import('../views/StoriesView.vue') },
   { path: '/story/:id', name: 'story', component: () => import('../views/StoryView.vue') },
   // 커뮤니티 (글쓰기/상세는 layout 바깥에 별도 배치)

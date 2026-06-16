@@ -67,9 +67,9 @@ onMounted(async () => {
 
       <!-- Feature cards -->
       <section class="feature-cards">
-        <div class="feature-card fc-a" @click="go('/rooms')">
-          <h3 class="feature-card-title">100대 기업<br />기출로 채운<br />면접방에서<br />실전을 경험하세요.</h3>
-          <button class="feature-pill">면접방 입장
+        <div class="feature-card fc-a" @click="go('/schedule')">
+          <h3 class="feature-card-title">채용 일정을<br />한눈에 확인하고<br />즐겨찾기로<br />관리하세요.</h3>
+          <button class="feature-pill">채용 일정 보기
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </button>
           <div class="feature-art art-a" aria-hidden="true"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
