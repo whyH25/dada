@@ -7,15 +7,23 @@ async function json(res) {
   return res.json()
 }
 
-export async function fetchPosts(category = '') {
-  const q = category ? `?category=${encodeURIComponent(category)}` : ''
+export async function fetchPosts(category = '', keyword = '', sort = 'latest', page = 1) {
+  const params = new URLSearchParams()
+  if (category) params.set('category', category)
+  if (keyword) params.set('keyword', keyword)
+  if (sort && sort !== 'latest') params.set('sort', sort)
+  if (page > 1) params.set('page', String(page))
+  const q = params.toString() ? '?' + params.toString() : ''
   const data = await json(await fetch(`${BASE}/posts${q}`, OPTS))
-  return data.data ?? []
+  return { posts: data.data ?? [], total: data.total ?? 0, page: data.page ?? 1, size: data.size ?? 20 }
 }
 
 export async function fetchPost(id) {
-  const data = await json(await fetch(`${BASE}/posts/${id}`, OPTS))
-  return data.data ?? null
+  const res = await fetch(`${BASE}/posts/${id}`, OPTS)
+  if (res.status === 404) return { post: null, related: [] }
+  if (!res.ok) throw new Error(res.status)
+  const data = await res.json()
+  return { post: data.data ?? null, related: data.related ?? [] }
 }
 
 export async function createPost(payload) {
@@ -46,6 +54,12 @@ export async function addComment(postId, content, anonymous) {
     ...JSON_OPTS, method: 'POST', body: JSON.stringify({ content, anonymous })
   }))
   return data
+}
+
+export async function updateComment(postId, commentId, content, anonymous) {
+  await json(await fetch(`${BASE}/posts/${postId}/comments/${commentId}`, {
+    ...JSON_OPTS, method: 'PUT', body: JSON.stringify({ content, anonymous: String(anonymous) })
+  }))
 }
 
 export async function deleteComment(postId, commentId) {

@@ -10,6 +10,10 @@ import com.ssafy.mvc.dto.PostDto;
 @Mapper
 public interface PostDao {
     List<PostDto> selectAll(@Param("category") String category);
+    List<PostDto> selectAllPaged(@Param("category") String category, @Param("keyword") String keyword,
+                                 @Param("sort") String sort, @Param("offset") int offset, @Param("size") int size);
+    int selectCount(@Param("category") String category, @Param("keyword") String keyword);
+    List<PostDto> selectRelated(@Param("postId") Long postId, @Param("category") String category);
     PostDto selectById(@Param("postId") Long postId);
     void insert(PostDto dto);
     void update(PostDto dto);

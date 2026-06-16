@@ -9,15 +9,39 @@ const auth = useAuthStore()
 
 const CATS = ['전체', '면접 후기', '질문', '스터디 모집', '자유']
 const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '자유': '' }
+const SORTS = [
+  { key: 'latest', label: '최신순' },
+  { key: 'views',  label: '조회순' },
+  { key: 'likes',  label: '좋아요순' },
+]
 
-const posts = ref([])
-const loading = ref(false)
+const posts    = ref([])
+const loading  = ref(false)
 const activeCat = ref('전체')
+const keyword  = ref('')
+const sort     = ref('latest')
+const page     = ref(1)
+const total    = ref(0)
+const size     = ref(20)
+
+const totalPages = () => Math.max(1, Math.ceil(total.value / size.value))
 
 async function load() {
   loading.value = true
-  posts.value = await fetchPosts(activeCat.value === '전체' ? '' : activeCat.value)
+  const res = await fetchPosts(
+    activeCat.value === '전체' ? '' : activeCat.value,
+    keyword.value,
+    sort.value,
+    page.value
+  )
+  posts.value  = res.posts
+  total.value  = res.total
   loading.value = false
+}
+
+function search() {
+  page.value = 1
+  load()
 }
 
 function goWrite() {
@@ -36,31 +60,53 @@ function formatDate(d) {
   return String(d).slice(0, 10).replace(/-/g, '.')
 }
 
-watch(activeCat, load)
+watch(activeCat, () => { page.value = 1; load() })
+watch(sort, () => { page.value = 1; load() })
 onMounted(load)
 </script>
 
 <template>
   <div class="comm-panel">
+    <!-- 툴바: 검색 + 정렬 + 글쓰기 -->
     <div class="board-toolbar">
       <div class="cat-tabs">
         <button
           v-for="c in CATS" :key="c"
-          class="cat-tab"
-          :class="{ active: activeCat === c }"
+          class="cat-tab" :class="{ active: activeCat === c }"
           @click="activeCat = c"
         >{{ c }}</button>
       </div>
       <button class="btn btn-primary btn-sm" @click="goWrite">글쓰기</button>
     </div>
 
+    <div class="board-filters">
+      <div class="search-box">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input
+          v-model="keyword"
+          placeholder="제목 또는 내용 검색"
+          @keydown.enter="search"
+        />
+      </div>
+      <div class="sort-tabs">
+        <button
+          v-for="s in SORTS" :key="s.key"
+          class="sort-tab" :class="{ active: sort === s.key }"
+          @click="sort = s.key"
+        >{{ s.label }}</button>
+      </div>
+    </div>
+
     <div v-if="loading" class="board-empty">불러오는 중...</div>
-    <div v-else-if="posts.length === 0" class="board-empty">게시글이 없습니다.</div>
+    <div v-else-if="posts.length === 0" class="board-empty">
+      {{ keyword ? `"${keyword}" 검색 결과가 없습니다.` : '게시글이 없습니다.' }}
+    </div>
 
     <div v-else class="board-list">
       <div
-        v-for="p in posts"
-        :key="p.postId"
+        v-for="p in posts" :key="p.postId"
         class="board-item"
         @click="router.push('/community/board/' + p.postId)"
       >
@@ -77,10 +123,25 @@ onMounted(load)
             <span>댓글 {{ p.commentCount }}</span>
             <span class="dot-sep"></span>
             <span>조회 {{ p.views }}</span>
+            <span class="dot-sep"></span>
+            <span>좋아요 {{ p.likes }}</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 페이지네이션 -->
+    <div v-if="totalPages() > 1" class="pagination">
+      <button class="pg-btn" :disabled="page <= 1" @click="page--; load()">‹</button>
+      <button
+        v-for="n in totalPages()" :key="n"
+        class="pg-btn" :class="{ active: page === n }"
+        @click="page = n; load()"
+      >{{ n }}</button>
+      <button class="pg-btn" :disabled="page >= totalPages()" @click="page++; load()">›</button>
+    </div>
+
+    <div class="board-total">총 {{ total }}개</div>
   </div>
 </template>
 
@@ -89,15 +150,10 @@ onMounted(load)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
-.cat-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
+.cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .cat-tab {
   padding: 5px 14px;
   border-radius: 99px;
@@ -115,6 +171,51 @@ onMounted(load)
   border-color: var(--green-500, #308860);
 }
 
+.board-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  padding: 7px 12px;
+  background: #fff;
+  flex: 1;
+  color: var(--ink-400);
+}
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--ink-800);
+  width: 100%;
+  background: transparent;
+}
+
+.sort-tabs { display: flex; gap: 12px; flex-shrink: 0; }
+.sort-tab {
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  color: var(--ink-400);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.sort-tab:hover { color: var(--ink-700); }
+.sort-tab.active {
+  color: var(--ink-900, #111827);
+  font-weight: 700;
+}
+
 .board-empty {
   text-align: center;
   padding: 60px 0;
@@ -130,19 +231,15 @@ onMounted(load)
 .board-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 16px 4px;
   border-bottom: 1px solid var(--border, #e5e7eb);
   cursor: pointer;
   transition: background 0.12s;
-  gap: 12px;
 }
 .board-item:hover { background: var(--ink-50, #f8f9fa); }
 
 .bi-main { flex: 1; min-width: 0; }
-
 .bi-meta-top { margin-bottom: 6px; }
-
 .bi-title {
   font-size: 15px;
   font-weight: 600;
@@ -152,7 +249,6 @@ onMounted(load)
   text-overflow: ellipsis;
   margin-bottom: 6px;
 }
-
 .bi-meta {
   font-size: 12px;
   color: var(--ink-400, #9ca3af);
@@ -162,9 +258,42 @@ onMounted(load)
   flex-wrap: wrap;
 }
 
-
 .badge-sm { font-size: 11px; padding: 2px 8px; }
 .badge-blue   { background: #eff6ff; color: #1d4ed8; border-radius: 99px; }
 .badge-green  { background: #f0fdf4; color: #15803d; border-radius: 99px; }
 .badge-purple { background: #faf5ff; color: #7c3aed; border-radius: 99px; }
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 0 8px;
+}
+.pg-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  color: var(--ink-600);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pg-btn:hover:not(:disabled) { background: var(--ink-50); }
+.pg-btn.active {
+  background: var(--green-500, #308860);
+  color: #fff;
+  border-color: var(--green-500, #308860);
+}
+.pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.board-total {
+  text-align: right;
+  font-size: 12px;
+  color: var(--ink-400);
+  padding: 4px 0 8px;
+}
 </style>

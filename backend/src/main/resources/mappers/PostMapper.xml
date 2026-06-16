@@ -3,6 +3,67 @@
 
 <mapper namespace="com.ssafy.mvc.dao.PostDao">
 
+    <select id="selectAllPaged" resultType="com.ssafy.mvc.dto.PostDto">
+        SELECT
+            p.post_id,
+            p.user_id,
+            p.category,
+            p.title,
+            p.views,
+            p.created_at,
+            p.is_anonymous AS anonymous,
+            CASE WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
+            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+            (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
+        FROM posts p
+        JOIN users u ON p.user_id = u.user_id
+        <where>
+            <if test="category != null and category != ''">
+                p.category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        <choose>
+            <when test="sort == 'views'">ORDER BY p.views DESC, p.created_at DESC</when>
+            <when test="sort == 'likes'">ORDER BY likes DESC, p.created_at DESC</when>
+            <otherwise>ORDER BY p.created_at DESC</otherwise>
+        </choose>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" resultType="int">
+        SELECT COUNT(*)
+        FROM posts p
+        <where>
+            <if test="category != null and category != ''">
+                p.category = #{category}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="selectRelated" resultType="com.ssafy.mvc.dto.PostDto">
+        SELECT
+            p.post_id,
+            p.category,
+            p.title,
+            p.views,
+            p.created_at,
+            p.is_anonymous AS anonymous,
+            CASE WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
+            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+            (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
+        FROM posts p
+        JOIN users u ON p.user_id = u.user_id
+        WHERE p.category = #{category} AND p.post_id != #{postId}
+        ORDER BY p.created_at DESC
+        LIMIT 3
+    </select>
+
     <select id="selectAll" resultType="com.ssafy.mvc.dto.PostDto">
         SELECT
             p.post_id,
@@ -51,7 +112,7 @@
 
     <update id="update" parameterType="com.ssafy.mvc.dto.PostDto">
         UPDATE posts
-        SET category = #{category}, title = #{title}, content = #{content}
+        SET category = #{category}, title = #{title}, content = #{content}, is_anonymous = #{anonymous}
         WHERE post_id = #{postId}
     </update>
 

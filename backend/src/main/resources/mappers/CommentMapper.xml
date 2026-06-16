@@ -29,6 +29,10 @@
         VALUES (#{postId}, #{userId}, #{content}, #{anonymous})
     </insert>
 
+    <update id="update" parameterType="com.ssafy.mvc.dto.CommentDto">
+        UPDATE comments SET content = #{content}, is_anonymous = #{anonymous} WHERE comment_id = #{commentId}
+    </update>
+
     <delete id="delete">
         DELETE FROM comments WHERE comment_id = #{commentId}
     </delete>

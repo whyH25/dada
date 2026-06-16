@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
-import { fetchPost, deletePost, togglePostLike, fetchComments, addComment, deleteComment } from '../api/postsApi.js'
+import { fetchPost, deletePost, togglePostLike, fetchComments, addComment, updateComment, deleteComment } from '../api/postsApi.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,20 +11,34 @@ const auth = useAuthStore()
 const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '자유': '' }
 
 const post = ref(null)
+const related = ref([])
 const comments = ref([])
 const loading = ref(true)
+const notFound = ref(false)
 const commentText = ref('')
 const isAnonymous = ref(false)
 const submittingComment = ref(false)
+
+// 댓글 수정 상태
+const editingCommentId = ref(null)
+const editingText = ref('')
+const editingAnonymous = ref(false)
 
 const postId = Number(route.params.id)
 
 async function load() {
   loading.value = true
-  const [p, c] = await Promise.all([fetchPost(postId), fetchComments(postId)])
-  post.value = p
-  comments.value = c
-  loading.value = false
+  try {
+    const [{ post: p, related: rel }, c] = await Promise.all([fetchPost(postId), fetchComments(postId)])
+    if (!p) { notFound.value = true; loading.value = false; return }
+    post.value = p
+    related.value = rel
+    comments.value = c
+    loading.value = false
+  } catch {
+    notFound.value = true
+    loading.value = false
+  }
 }
 
 async function handleLike() {
@@ -55,6 +69,26 @@ async function submitComment() {
   }
 }
 
+function startEditComment(c) {
+  editingCommentId.value = c.commentId
+  editingText.value = c.content
+  editingAnonymous.value = c.anonymous
+}
+
+function cancelEditComment() {
+  editingCommentId.value = null
+  editingText.value = ''
+  editingAnonymous.value = false
+}
+
+async function submitEditComment(cid) {
+  const text = editingText.value.trim()
+  if (!text) return
+  await updateComment(postId, cid, text, editingAnonymous.value)
+  comments.value = await fetchComments(postId)
+  cancelEditComment()
+}
+
 async function handleDeleteComment(cid) {
   if (!confirm('댓글을 삭제하시겠습니까?')) return
   await deleteComment(postId, cid)
@@ -65,6 +99,11 @@ async function handleDeleteComment(cid) {
 function formatDate(d) {
   if (!d) return ''
   return String(d).slice(0, 16).replace('T', ' ')
+}
+
+function formatDateShort(d) {
+  if (!d) return ''
+  return String(d).slice(0, 10).replace(/-/g, '.')
 }
 
 const isOwner = () => auth.user && post.value && auth.user.userId === post.value.userId
@@ -79,13 +118,19 @@ onMounted(load)
       <div class="page-header" style="border-bottom:none;padding-bottom:8px;margin-bottom:8px;">
         <div class="breadcrumb">
           홈 <span class="sep">›</span>
+          커뮤니티 <span class="sep">›</span>
           <a @click="router.push('/community/board')" style="cursor:pointer;">자유게시판</a>
           <span class="sep">›</span> {{ post?.category ?? '게시글' }}
         </div>
       </div>
 
       <div v-if="loading" class="pd-loading">불러오는 중...</div>
-      <div v-else-if="!post" class="pd-loading">게시글을 찾을 수 없습니다.</div>
+      <div v-else-if="notFound" class="pd-not-found">
+        <div class="pd-not-found-icon">🔍</div>
+        <h2>게시글을 찾을 수 없습니다</h2>
+        <p>삭제되었거나 존재하지 않는 게시글입니다.</p>
+        <button class="btn btn-ghost" @click="router.push('/community/board')">목록으로</button>
+      </div>
 
       <template v-else>
         <!-- 게시글 헤더 -->
@@ -145,13 +190,24 @@ onMounted(load)
                 {{ c.authorName }}
                 <span class="cr-time">{{ formatDate(c.createdAt) }}</span>
               </div>
-              <div class="cr-text">{{ c.content }}</div>
+              <!-- 수정 중인 댓글 -->
+              <template v-if="editingCommentId === c.commentId">
+                <textarea class="cr-edit-textarea" v-model="editingText" rows="2"></textarea>
+                <div class="cr-edit-actions">
+                  <label class="cr-edit-anon">
+                    <input type="checkbox" v-model="editingAnonymous" />
+                    <span>익명</span>
+                  </label>
+                  <button class="cr-edit-btn" @click="submitEditComment(c.commentId)">저장</button>
+                  <button class="cr-edit-btn cancel" @click="cancelEditComment">취소</button>
+                </div>
+              </template>
+              <div v-else class="cr-text">{{ c.content }}</div>
             </div>
-            <button
-              v-if="auth.user && auth.user.userId === c.userId"
-              class="cr-del"
-              @click="handleDeleteComment(c.commentId)"
-            >삭제</button>
+            <div v-if="auth.user && auth.user.userId === c.userId" class="cr-owner-btns">
+              <button class="cr-del" @click="startEditComment(c)">수정</button>
+              <button class="cr-del" @click="handleDeleteComment(c.commentId)">삭제</button>
+            </div>
           </div>
 
           <!-- 댓글 입력 -->
@@ -178,14 +234,38 @@ onMounted(load)
         <div class="pd-actions">
           <button class="btn btn-ghost" @click="router.push('/community/board')">목록으로</button>
         </div>
-      </template>
 
+        <!-- 연관 게시글 -->
+        <div v-if="related.length > 0" class="pd-related">
+          <h3 class="pd-related-title">더보기</h3>
+          <div class="related-list">
+            <div
+              v-for="r in related" :key="r.postId"
+              class="related-item"
+              @click="router.push('/community/board/' + r.postId)"
+            >
+              <span class="related-title">{{ r.title }}</span>
+              <span class="related-meta">{{ formatDateShort(r.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+      </template>
     </div>
   </main>
 </template>
 
 <style scoped>
 .pd-loading { text-align: center; padding: 80px 0; color: var(--ink-400); }
+
+.pd-not-found {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--ink-500);
+}
+.pd-not-found-icon { font-size: 40px; margin-bottom: 16px; }
+.pd-not-found h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--ink-800); }
+.pd-not-found p { font-size: 14px; margin-bottom: 24px; }
 
 .pd-head { padding: 8px 0 16px; }
 .pd-badges { margin-bottom: 10px; }
@@ -217,7 +297,6 @@ onMounted(load)
 .pd-body :deep(pre) { background: #f8f9fa; border-radius: 6px; padding: 12px 14px; font-size: 13px; overflow-x: auto; margin-bottom: 12px; }
 .pd-body :deep(a) { color: var(--green-600, #16a34a); text-decoration: underline; }
 
-/* 좋아요 */
 .pd-like-row { display: flex; justify-content: center; padding: 8px 0; }
 .like-btn {
   display: flex; align-items: center; gap: 6px;
@@ -252,9 +331,32 @@ onMounted(load)
 .cr-name { font-size: 13px; font-weight: 600; color: var(--ink-700); margin-bottom: 4px; }
 .cr-time { font-size: 11px; font-weight: 400; color: var(--ink-400); margin-left: 8px; }
 .cr-text { font-size: 14px; color: var(--ink-800); line-height: 1.6; }
+
+.cr-edit-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+.cr-edit-actions { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.cr-edit-anon { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-600); cursor: pointer; margin-right: auto; }
+.cr-edit-btn {
+  padding: 4px 12px; font-size: 12px; border-radius: 6px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--green-500, #308860); color: #fff;
+  cursor: pointer; font-weight: 600;
+}
+.cr-edit-btn.cancel { background: #fff; color: var(--ink-500); }
+
+.cr-owner-btns { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
 .cr-del {
   font-size: 12px; color: var(--ink-400); background: none;
-  border: none; cursor: pointer; padding: 2px 6px; flex-shrink: 0;
+  border: none; cursor: pointer; padding: 2px 6px; text-align: right;
 }
 .cr-del:hover { color: #ef4444; }
 
@@ -290,27 +392,46 @@ onMounted(load)
   background: var(--ink-50, #f8f9fa);
   box-sizing: border-box;
 }
-.ci-anon {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--ink-600);
-  cursor: pointer;
-  user-select: none;
-}
+.ci-anon { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-600); cursor: pointer; user-select: none; }
 .ci-anon input { cursor: pointer; }
-
 .ci-submit {
   padding: 6px 16px; font-size: 13px; font-weight: 600;
   background: var(--green-500, #308860); color: #fff;
   border: none; border-radius: 6px; cursor: pointer;
-  white-space: nowrap; flex-shrink: 0;
-  transition: background 0.15s;
+  white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
 }
 .ci-submit:hover { background: var(--green-600, #256b4a); }
 .ci-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
 .pd-actions { margin-top: 8px; }
+
+/* 연관 게시글 */
+.pd-related {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+.pd-related-title { font-size: 14px; font-weight: 700; color: var(--ink-700); margin-bottom: 12px; }
+.related-list { display: flex; flex-direction: column; }
+.related-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ink-100, #f3f4f6);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.related-item:hover .related-title { color: var(--green-600, #16a34a); }
+.related-title {
+  font-size: 14px;
+  color: var(--ink-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.related-meta { font-size: 12px; color: var(--ink-400); flex-shrink: 0; margin-left: 12px; }
 
 /* 배지 */
 .badge-sm { font-size: 12px; padding: 3px 10px; border-radius: 99px; }

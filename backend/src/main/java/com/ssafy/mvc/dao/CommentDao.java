@@ -12,5 +12,6 @@ public interface CommentDao {
     List<CommentDto> selectByPostId(@Param("postId") Long postId);
     CommentDto selectById(@Param("commentId") Long commentId);
     void insert(CommentDto dto);
+    void update(CommentDto dto);
     void delete(@Param("commentId") Long commentId);
 }

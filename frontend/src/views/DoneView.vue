@@ -1,8 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { toast } from '../utils/toast.js'
 const router = useRouter()
-function review() { toast('면접 후기 작성 화면으로 이동합니다. (데모)') }
+function review() { router.push('/community/board') }
 </script>
 
 <template>

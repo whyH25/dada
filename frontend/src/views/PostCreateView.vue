@@ -15,7 +15,8 @@ const CATS = ['면접 후기', '질문', '스터디 모집', '자유']
 const isEdit = !!route.params.id
 const postId = route.params.id ? Number(route.params.id) : null
 
-const category = ref('자유')
+const defaultCat = CATS.includes(route.query.category) ? route.query.category : '자유'
+const category = ref(defaultCat)
 const title = ref('')
 const content = ref('')
 const anonymous = ref(false)
@@ -24,7 +25,7 @@ const err = ref('')
 
 onMounted(async () => {
   if (isEdit && postId) {
-    const post = await fetchPost(postId)
+    const { post } = await fetchPost(postId)
     if (!post) { router.replace('/community/board'); return }
     if (post.userId !== auth.user?.userId) { router.replace('/community/board'); return }
     category.value = post.category

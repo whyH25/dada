@@ -27,15 +27,22 @@ public class PostController {
     @GetMapping("/api/posts")
     public ResponseEntity<?> listPosts(
             @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "sort", defaultValue = "latest") String sort,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
             @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
 
-        List<PostDto> posts = postDao.selectAll(category);
+        int offset = (page - 1) * size;
+        List<PostDto> posts = postDao.selectAllPaged(category, keyword, sort, offset, size);
+        int total = postDao.selectCount(category, keyword);
+
         if (userDetails != null) {
             Long userId = userDetails.getUserDto().getUserId();
             List<Long> likedIds = postDao.selectLikedPostIds(userId);
             posts.forEach(p -> p.setLiked(likedIds.contains(p.getPostId())));
         }
-        return ResponseEntity.ok(Map.of("success", true, "data", posts));
+        return ResponseEntity.ok(Map.of("success", true, "data", posts, "total", total, "page", page, "size", size));
     }
 
     @GetMapping("/api/posts/{id}")
@@ -44,13 +51,14 @@ public class PostController {
             @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
 
         PostDto post = postDao.selectById(postId);
-        if (post == null) return ResponseEntity.notFound().build();
+        if (post == null) return ResponseEntity.status(404).body(Map.of("success", false, "message", "게시글을 찾을 수 없습니다."));
         postDao.incrementViews(postId);
         post.setViews(post.getViews() + 1);
         if (userDetails != null) {
             post.setLiked(postDao.existsLike(userDetails.getUserDto().getUserId(), postId));
         }
-        return ResponseEntity.ok(Map.of("success", true, "data", post));
+        List<PostDto> related = postDao.selectRelated(postId, post.getCategory());
+        return ResponseEntity.ok(Map.of("success", true, "data", post, "related", related));
     }
 
     @PostMapping("/api/posts")
@@ -71,7 +79,7 @@ public class PostController {
     @PutMapping("/api/posts/{id}")
     public ResponseEntity<?> updatePost(
             @PathVariable("id") Long postId,
-            @RequestBody Map<String, String> body,
+            @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
 
         PostDto post = postDao.selectById(postId);
@@ -79,9 +87,10 @@ public class PostController {
         if (!post.getUserId().equals(userDetails.getUserDto().getUserId())) {
             return ResponseEntity.status(403).body(Map.of("success", false, "message", "수정 권한이 없습니다."));
         }
-        post.setCategory(body.get("category"));
-        post.setTitle(body.get("title"));
-        post.setContent(body.get("content"));
+        post.setCategory((String) body.get("category"));
+        post.setTitle((String) body.get("title"));
+        post.setContent((String) body.get("content"));
+        post.setAnonymous(Boolean.TRUE.equals(body.get("anonymous")));
         postDao.update(post);
         return ResponseEntity.ok(Map.of("success", true));
     }
@@ -126,13 +135,42 @@ public class PostController {
             @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
 
+        if (postDao.selectById(postId) == null)
+            return ResponseEntity.status(404).body(Map.of("success", false, "message", "게시글을 찾을 수 없습니다."));
+
+        String content = (String) body.get("content");
+        if (content == null || content.trim().isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "댓글 내용을 입력하세요."));
+
         CommentDto dto = new CommentDto();
         dto.setPostId(postId);
         dto.setUserId(userDetails.getUserDto().getUserId());
-        dto.setContent((String) body.get("content"));
+        dto.setContent(content.trim());
         dto.setAnonymous(Boolean.TRUE.equals(body.get("anonymous")));
         commentDao.insert(dto);
         return ResponseEntity.ok(Map.of("success", true, "commentId", dto.getCommentId()));
+    }
+
+    @PutMapping("/api/posts/{id}/comments/{cid}")
+    public ResponseEntity<?> updateComment(
+            @PathVariable("id") Long postId,
+            @PathVariable("cid") Long commentId,
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
+
+        CommentDto comment = commentDao.selectById(commentId);
+        if (comment == null) return ResponseEntity.notFound().build();
+        if (!comment.getUserId().equals(userDetails.getUserDto().getUserId()))
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "수정 권한이 없습니다."));
+
+        String content = body.get("content");
+        if (content == null || content.trim().isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "댓글 내용을 입력하세요."));
+
+        comment.setContent(content.trim());
+        comment.setAnonymous("true".equals(body.get("anonymous")));
+        commentDao.update(comment);
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     @DeleteMapping("/api/posts/{id}/comments/{cid}")
