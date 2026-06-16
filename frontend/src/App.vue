@@ -47,7 +47,6 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
       <div class="brand" @click="go('/')">
         <div class="brand-logo"><span class="d"></span><span class="d"></span><span class="d"></span></div>
         <div class="brand-name">다대다</div>
-        <div class="brand-sub">BETA</div>
       </div>
 
       <div class="nav-menu">
@@ -78,10 +77,6 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
           <input placeholder="기업명, 직무 검색" @keydown.enter="globalSearch($event.target.value)" />
         </div>
-        <div class="nav-icon-btn" title="알림" @click="go('/notifications')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
-          <span class="dot"></span>
-        </div>
         <div class="nav-auth" v-if="!auth.isLoggedIn">
           <button class="nav-login-btn" @click="auth.openLogin()">로그인 / 회원가입</button>
         </div>
@@ -106,11 +101,6 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
   <footer class="footer" v-if="$route.name !== 'signup' && !$route.path.startsWith('/admin')">
     <div class="footer-inner">
       <div>© 2026 다대다. All rights reserved.</div>
-      <div class="footer-links">
-        <a>이용약관</a>
-        <a>개인정보처리방침</a>
-        <a>고객센터</a>
-      </div>
     </div>
   </footer>
 
