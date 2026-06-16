@@ -258,7 +258,7 @@ onMounted(() => {
             <h2 class="mp-h1" style="margin:4px 0 4px;">즐겨찾기</h2>
             <p class="mp-sub" style="margin-bottom:20px;">관심 있는 면접방을 모아뒀어요. 총 14개 중 3개 표시</p>
             <div class="rooms-grid">
-              <div v-for="(f, i) in favs" :key="i" class="room-card" @click="router.push('/rooms')">
+              <div v-for="(f, i) in favs" :key="i" class="room-card">
                 <div class="room-top"><div class="room-co"><div class="company-logo" :class="f.logo">{{ f.short }}</div><div><div class="room-co-name">{{ f.co }}</div><div class="room-co-role">모의 면접방</div></div></div><span class="badge badge-green">즐겨찾기 ★</span></div>
                 <h3 class="room-title">{{ f.title }}</h3>
                 <div class="room-tags"><span class="badge">난이도 {{ f.diff }}</span><span class="badge badge-blue">기출 기반</span></div>

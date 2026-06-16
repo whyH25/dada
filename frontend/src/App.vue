@@ -17,9 +17,6 @@ function requireAuth(action) {
   }
 }
 function go(path) { router.push(path) }
-function globalSearch(q) {
-  router.push({ path: '/rooms', query: { q: (q || '').trim() } })
-}
 
 const profileOpen = ref(false)
 const profileRef = ref(null)
@@ -66,11 +63,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
       </div>
 
       <div class="nav-right">
-        <div class="nav-search">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-          <input placeholder="기업명, 직무 검색" @keydown.enter="globalSearch($event.target.value)" />
-        </div>
-        <div class="nav-auth" v-if="!auth.isLoggedIn">
+<div class="nav-auth" v-if="!auth.isLoggedIn">
           <button class="nav-login-btn" @click="auth.openLogin()">로그인 / 회원가입</button>
         </div>
         <div class="nav-profile has-dropdown" v-else ref="profileRef" @click.stop="toggleProfile">
