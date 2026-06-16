@@ -21,8 +21,13 @@ function formatDate(d) {
 }
 
 onMounted(async () => {
-  notice.value = await fetchNotice(route.params.id)
-  loading.value = false
+  try {
+    notice.value = await fetchNotice(route.params.id)
+  } catch {
+    notice.value = null
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -38,8 +43,14 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-if="loading" style="text-align:center;padding:80px 0;color:var(--ink-400);">불러오는 중...</div>
-      <div v-else-if="!notice" style="text-align:center;padding:80px 0;color:var(--ink-400);">공지사항을 찾을 수 없습니다.</div>
+      <div v-if="loading" class="nv-state">불러오는 중...</div>
+
+      <div v-else-if="!notice" class="nv-not-found">
+        <div class="nv-not-found-icon">📢</div>
+        <h2>공지사항을 찾을 수 없습니다</h2>
+        <p>삭제되었거나 존재하지 않는 공지사항입니다.</p>
+        <button class="btn btn-ghost" @click="router.push('/notices')">목록으로</button>
+      </div>
 
       <article v-else class="notice-detail">
         <div class="nd-meta-row">
@@ -60,6 +71,17 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.nv-state { text-align: center; padding: 80px 0; color: var(--ink-400); }
+
+.nv-not-found {
+  text-align: center;
+  padding: 80px 0;
+  color: var(--ink-500);
+}
+.nv-not-found-icon { font-size: 40px; margin-bottom: 16px; }
+.nv-not-found h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--ink-800); }
+.nv-not-found p { font-size: 14px; margin-bottom: 24px; }
+
 .notice-detail { padding: 8px 0 40px; }
 .nd-meta-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .nd-date, .nd-views { font-size: 13px; color: var(--ink-400, #9ca3af); }

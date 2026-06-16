@@ -184,7 +184,6 @@ onMounted(() => {
           <div class="hot-nav">
             <button class="hot-arrow" @click="slideHot(-1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg></button>
             <button class="hot-arrow" @click="slideHot(1)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18l6-6-6-6"/></svg></button>
-            <a class="section-link" @click="slideHot(1)">더보기 ›</a>
           </div>
         </div>
         <div class="hot-track" ref="hotTrack">
@@ -262,81 +261,88 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 상세 모달 -->
-    <div v-if="selected" class="auth-overlay open" @click.self="closeDetail">
-      <div class="auth-modal jd-modal" role="dialog" aria-modal="true">
-        <button class="auth-close" @click="closeDetail">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
+    <!-- 사이드 드로어 -->
+    <transition name="drawer">
+      <div v-if="selected" class="drawer-overlay" @click.self="closeDetail">
+        <div class="drawer" role="dialog" aria-modal="true">
 
-        <!-- 기업명 -->
-        <div class="jd-head">
-          <div class="jd-co-circle">{{ selected.companyName.charAt(0) }}</div>
-          <div class="jd-head-text">
-            <div class="jd-co">{{ selected.companyName }}</div>
-            <div class="jd-role">{{ selected.jobTitle }}</div>
+          <!-- 컬러 히어로 배너 -->
+          <div class="drawer-hero">
+            <button class="drawer-close-hero" @click="closeDetail">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <div class="drawer-hero-circle">{{ selected.companyName.charAt(0) }}</div>
+            <div class="drawer-hero-name">{{ selected.companyName }}</div>
+            <div class="drawer-hero-role">{{ selected.jobTitle }}</div>
           </div>
-        </div>
 
-        <hr class="jd-divider" />
+          <!-- 스크롤 가능한 본문 -->
+          <div class="drawer-body">
 
-        <!-- 상세 소개 -->
-        <p class="jd-intro" v-if="selected.description">{{ selected.description }}</p>
-        <p class="jd-intro jd-empty" v-else>등록된 소개가 없습니다.</p>
+            <!-- 기업형태 · 채용직무 · 채용형태 -->
+            <div class="jd-meta-row">
+              <div class="jd-meta-item" v-if="selected.companyType">
+                <span class="jd-meta-label">기업 형태</span>
+                <span class="jd-meta-val">{{ selected.companyType }}</span>
+              </div>
+              <div class="jd-meta-item">
+                <span class="jd-meta-label">채용 직무</span>
+                <span class="jd-meta-val">{{ selected.jobTitle }}</span>
+              </div>
+              <div class="jd-meta-item" v-if="selected.employmentType">
+                <span class="jd-meta-label">채용 형태</span>
+                <span class="jd-meta-val">{{ selected.employmentType }}</span>
+              </div>
+            </div>
 
-        <hr class="jd-divider" />
+            <hr class="jd-divider" />
 
-        <!-- 기업형태 · 채용직무 · 채용형태 -->
-        <div class="jd-meta-row">
-          <div class="jd-meta-item" v-if="selected.companyType">
-            <span class="jd-meta-label">기업 형태</span>
-            <span class="jd-meta-val">{{ selected.companyType }}</span>
-          </div>
-          <div class="jd-meta-item">
-            <span class="jd-meta-label">채용 직무</span>
-            <span class="jd-meta-val">{{ selected.jobTitle }}</span>
-          </div>
-          <div class="jd-meta-item" v-if="selected.employmentType">
-            <span class="jd-meta-label">채용 형태</span>
-            <span class="jd-meta-val">{{ selected.employmentType }}</span>
-          </div>
-        </div>
+            <!-- 상세 소개 -->
+            <p class="drawer-section-label">기업 소개</p>
+            <p class="jd-intro" v-if="selected.description">{{ selected.description }}</p>
+            <p class="jd-intro jd-empty" v-else>등록된 소개가 없습니다.</p>
 
-        <!-- 서류 시작 / 서류 마감 -->
-        <div class="jd-date-strip">
-          <div class="jd-date-item">
-            <span class="jd-date-dot dot-start"></span>
-            <div>
-              <div class="jd-date-label">서류 시작</div>
-              <div class="jd-date-val">{{ formatDate(selected.startDate) }}</div>
+            <hr class="jd-divider" />
+
+            <!-- 서류 시작 / 서류 마감 -->
+            <p class="drawer-section-label">지원 일정</p>
+            <div class="jd-date-strip">
+              <div class="jd-date-item">
+                <span class="jd-date-dot dot-start"></span>
+                <div>
+                  <div class="jd-date-label">서류 시작</div>
+                  <div class="jd-date-val">{{ formatDate(selected.startDate) }}</div>
+                </div>
+              </div>
+              <div class="jd-date-sep"></div>
+              <div class="jd-date-item">
+                <span class="jd-date-dot dot-end"></span>
+                <div>
+                  <div class="jd-date-label">서류 마감</div>
+                  <div class="jd-date-val">{{ formatDate(selected.endDate) }}</div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="jd-date-sep"></div>
-          <div class="jd-date-item">
-            <span class="jd-date-dot dot-end"></span>
-            <div>
-              <div class="jd-date-label">서류 마감</div>
-              <div class="jd-date-val">{{ formatDate(selected.endDate) }}</div>
-            </div>
-          </div>
-        </div>
 
-        <!-- 버튼 -->
-        <div class="jd-actions">
-          <button class="jd-save" :class="{ on: isSaved(selected.scheduleId) }" style="margin-right:auto;"
-            @click="toggleSave(selected.scheduleId)">
-            <svg width="14" height="14" viewBox="0 0 24 24"
-              :fill="isSaved(selected.scheduleId) ? 'currentColor' : 'none'"
-              stroke="currentColor" stroke-width="2">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            {{ isSaved(selected.scheduleId) ? '내 일정' : '관심 일정' }}
-          </button>
-          <a v-if="selected.jobUrl" :href="selected.jobUrl" target="_blank" class="btn btn-primary btn-sm">공고 원문 보기</a>
-          <button v-else class="btn btn-primary btn-sm" disabled style="opacity:.5;cursor:default;">공고 원문 없음</button>
+          <!-- 하단 고정 버튼 영역 -->
+          <div class="drawer-footer">
+            <button class="drawer-btn-bookmark" :class="{ on: isSaved(selected.scheduleId) }"
+              @click="toggleSave(selected.scheduleId)">
+              <svg width="15" height="15" viewBox="0 0 24 24"
+                :fill="isSaved(selected.scheduleId) ? 'currentColor' : 'none'"
+                stroke="currentColor" stroke-width="2">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              {{ isSaved(selected.scheduleId) ? '내 일정 등록됨' : '관심 일정 추가' }}
+            </button>
+            <a v-if="selected.jobUrl" :href="selected.jobUrl" target="_blank" class="drawer-btn-primary">공고 원문 보기 →</a>
+            <button v-else class="drawer-btn-primary disabled" disabled>공고 원문 없음</button>
+          </div>
+
         </div>
       </div>
-    </div>
+    </transition>
   </main>
 </template>
 
@@ -416,5 +422,145 @@ onMounted(() => {
   width: 1px; height: 36px;
   background: var(--ink-200, #e5e7eb);
   margin: 0 16px; flex-shrink: 0;
+}
+
+.jd-intro {
+  font-size: 14px; line-height: 1.8;
+  color: var(--ink-600, #4b5563);
+  white-space: pre-line;
+  margin: 0;
+}
+
+/* ─── 사이드 드로어 ──────────────────────────────────── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 300;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 400px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  z-index: 301;
+  overflow: hidden;
+}
+
+/* 컬러 히어로 배너 */
+.drawer-hero {
+  position: relative;
+  padding: 36px 24px 28px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  background: linear-gradient(135deg, #1a6b45 0%, #308860 60%, #3aaf78 100%);
+}
+.drawer-close-hero {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 32px; height: 32px;
+  border-radius: 8px; border: none;
+  background: rgba(255,255,255,0.2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  transition: background 0.15s;
+}
+.drawer-close-hero:hover { background: rgba(255,255,255,0.35); }
+.drawer-hero-circle {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: rgba(255,255,255,0.25);
+  font-size: 24px; font-weight: 800; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.drawer-hero-name {
+  font-size: 20px; font-weight: 800; color: #fff;
+  line-height: 1.2;
+}
+.drawer-hero-role {
+  font-size: 13px; color: rgba(255,255,255,0.8);
+  font-weight: 500;
+}
+
+/* 본문 */
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 24px 8px;
+}
+
+.drawer-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-400, #9ca3af);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* 하단 고정 버튼 */
+.drawer-footer {
+  flex-shrink: 0;
+  padding: 16px 24px;
+  border-top: 1px solid var(--ink-150, #e5e7eb);
+  display: flex;
+  gap: 10px;
+  background: #fff;
+}
+.drawer-btn-bookmark {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 16px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--ink-200, #e5e7eb);
+  background: #fff; color: var(--ink-600, #4b5563);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.drawer-btn-bookmark.on {
+  border-color: var(--green-400, #4ade80);
+  background: var(--green-50, #f0fdf4);
+  color: var(--green-700, #15803d);
+}
+.drawer-btn-bookmark:hover { border-color: var(--ink-400); }
+.drawer-btn-bookmark.on:hover { background: var(--green-100, #dcfce7); }
+.drawer-btn-primary {
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 16px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  border: none; text-decoration: none;
+  background: var(--green-500, #22c55e); color: #fff;
+  transition: background 0.15s;
+}
+.drawer-btn-primary:hover { background: var(--green-600, #16a34a); }
+.drawer-btn-primary.disabled { opacity: 0.4; cursor: default; }
+
+/* 드로어 슬라이드 트랜지션 */
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.25s ease;
+}
+.drawer-enter-active .drawer,
+.drawer-leave-active .drawer {
+  transition: transform 0.25s ease;
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+}
+.drawer-enter-from .drawer,
+.drawer-leave-to .drawer {
+  transform: translateX(100%);
 }
 </style>
