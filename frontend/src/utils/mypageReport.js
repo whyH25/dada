@@ -191,9 +191,10 @@ export function panelApplicants(r) {
 }
 
 export function panelQuestions(r) {
+  const avg = r.questions.length ? Math.round(r.questions.reduce((a, q) => a + q.score, 0) / r.questions.length) : 0
   return `
     <div class="card">
-      <div class="card-header"><h3 class="card-title">질문별 상세 피드백 (${r.questions.length}문항)</h3><span class="text-sm text-muted">평균 ${Math.round(r.questions.reduce((a, q) => a + q.score, 0) / r.questions.length)}점</span></div>
+      <div class="card-header"><h3 class="card-title">질문별 상세 피드백 (${r.questions.length}문항)</h3><span class="text-sm text-muted">평균 ${avg}점</span></div>
       <div class="q-list">
         ${r.questions.map((q) => `
           <div class="q-item open">
@@ -201,7 +202,24 @@ export function panelQuestions(r) {
               <div><div class="q-num">${q.q}</div><div class="q-text">${q.text}</div></div>
               <div class="q-meta">${q.label ? `<span class="badge badge-${q.label[1]}">${q.label[0]}</span>` : ''}<span class="q-score" ${q.score < 70 ? 'style="color:var(--accent-red)"' : ''}>${q.score}</span></div>
             </div>
-            <div class="q-body">${q.body}<div class="q-tag-row">${q.tags.map((t) => `<span class="badge badge-outline">${t}</span>`).join('')}</div></div>
+            <div class="q-body">
+              ${q.answerText ? `
+                <div style="margin-bottom:10px;">
+                  <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+                    <span style="flex-shrink:0;padding:2px 8px;border-radius:99px;background:var(--green-500,#309860);color:#fff;font-size:11px;font-weight:700;">나</span>
+                    <p style="margin:0;font-size:13px;line-height:1.75;color:var(--ink-800);white-space:pre-wrap;">${q.answerText}</p>
+                  </div>
+                  ${q.applicantAnswers.map(a => `
+                    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;">
+                      <span style="flex-shrink:0;padding:2px 8px;border-radius:99px;background:var(--accent-blue,#1f6fe5);color:#fff;font-size:11px;font-weight:700;">${a.name}</span>
+                      <p style="margin:0;font-size:13px;line-height:1.75;color:var(--ink-700);white-space:pre-wrap;">${a.text}</p>
+                    </div>`).join('')}
+                </div>
+                <div style="height:1px;background:var(--ink-150);margin:12px 0;"></div>` : ''}
+              <div style="font-size:12px;font-weight:600;color:var(--ink-400);margin-bottom:6px;letter-spacing:.04em;">AI 피드백</div>
+              ${q.body}
+              <div class="q-tag-row">${q.tags.map((t) => `<span class="badge badge-outline">${t}</span>`).join('')}</div>
+            </div>
           </div>`).join('')}
       </div>
     </div>`

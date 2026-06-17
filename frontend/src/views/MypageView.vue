@@ -1,20 +1,19 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { reports } from '../stores/seed.js'
-import { scoreColor, reportPanel } from '../utils/mypageReport.js'
 import { toast } from '../utils/toast.js'
 import { useAuthStore } from '../stores/auth.js'
 import { updateUserApi, deleteUserApi } from '../api/authApi.js'
+import { fetchMyInterviewRooms, fetchRoomScenarios, fetchRoomReport } from '../api/mypageApi.js'
+import { reportPanel } from '../utils/mypageReport.js'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 
-// section: reports | report-detail | favorites | resume | cover | portfolio | account | billing
+// section: reports | report-detail | favorites | resume | portfolio | account | billing
 const section = ref('reports')
-const currentReport = ref(0)
 const reportTab = ref('overview')
 
 const reportTabs = [
@@ -23,13 +22,141 @@ const reportTabs = [
 ]
 
 function gotoMy(s) { section.value = s; window.scrollTo(0, 0) }
-function openReport(i) { currentReport.value = i; reportTab.value = 'overview'; section.value = 'report-detail'; window.scrollTo(0, 0) }
 function setTab(k) { reportTab.value = k; window.scrollTo(0, 0) }
 
-const r = computed(() => reports[currentReport.value])
-const panelHtml = computed(() => reportPanel(r.value, reportTab.value))
-const best = computed(() => Math.max(...reports.map((x) => x.score)))
-const avg = computed(() => Math.round(reports.reduce((a, x) => a + x.score, 0) / reports.length))
+// ---- 면접 기록 목록 ----
+const myRooms = ref([])
+const roomsLoading = ref(false)
+
+async function loadMyRooms() {
+  roomsLoading.value = true
+  try {
+    myRooms.value = await fetchMyInterviewRooms()
+  } catch (e) {
+    toast(e.message)
+  } finally {
+    roomsLoading.value = false
+  }
+}
+
+// ---- 면접 기록 상세 ----
+const currentRoom = ref(null)
+const roomScenarios = ref([])
+const scenariosLoading = ref(false)
+// AI 분석 리포트 데이터 (없으면 null)
+const roomReport = ref(null)
+
+async function openRoom(room) {
+  currentRoom.value = room
+  reportTab.value = 'overview'
+  roomScenarios.value = []
+  roomReport.value = null
+  section.value = 'report-detail'
+  window.scrollTo(0, 0)
+  scenariosLoading.value = true
+  try {
+    // 시나리오 + 리포트 병렬 조회 (리포트 없으면 null)
+    const [scenarios, report] = await Promise.all([
+      fetchRoomScenarios(room.roomId),
+      fetchRoomReport(room.roomId).catch(() => null),
+    ])
+    roomScenarios.value = scenarios
+    roomReport.value = report
+  } catch (e) {
+    toast(e.message)
+  } finally {
+    scenariosLoading.value = false
+  }
+}
+
+// API 응답 데이터 → mypageReport.js panelXxx 함수 입력 형식으로 변환
+// scenarios: roomScenarios — AI 지원자 답변을 question_seq 기준으로 매핑
+function transformReportForPanel(data, scenarios = []) {
+  const rep = data.report
+  const me = [rep.compExpertise ?? 0, rep.compLogic ?? 0, rep.compCommu ?? 0, rep.compCulture ?? 0, rep.compPressure ?? 0]
+  const wpm = rep.speechWpm ?? 180
+  const wpmStatus = wpm < 160 ? ['느림', 'amber'] : wpm > 260 ? ['빠름', 'amber'] : ['적정', 'green']
+
+  // AI 경쟁 지원자 전체 평균 점수 (5개 역량 대리값으로 사용)
+  const aiApps = data.applicants.filter(a => !a.isUser)
+  const aiAvg = aiApps.length ? Math.round(aiApps.reduce((s, a) => s + (a.score ?? 70), 0) / aiApps.length) : 70
+
+  // applicantId → name 맵 (지원자 분석 데이터에서 추출)
+  const appNameMap = {}
+  for (const a of data.applicants) {
+    if (!a.isUser && a.applicantId) appNameMap[a.applicantId] = a.name ?? 'AI 지원자'
+  }
+
+  // question_seq → APPLICANT 답변 목록 (시나리오에서 추출)
+  const appAnswersBySeq = {}
+  for (const s of scenarios) {
+    if (s.turnRole === 'APPLICANT' && s.questionSeq > 0 && s.speechText) {
+      const name = appNameMap[s.turnRefId] ?? 'AI 지원자'
+      ;(appAnswersBySeq[s.questionSeq] ??= []).push({ name, text: s.speechText })
+    }
+  }
+
+  return {
+    score: rep.overallScore,
+    aiComment: rep.aiComment,
+    logic: rep.compLogicDetail,
+    me,
+    ai: me.map(() => aiAvg),
+    pass: [75, 78, 80, 72, 70],
+    speech: {
+      wpm,
+      wpmStatus,
+      filler: rep.speechFiller ?? 0,
+      avgLen: 40,
+      wait: 2,
+      tone: { pitch: 65, stability: 72, energy: 68 },
+    },
+    applicants: data.applicants.map(a => ({
+      name: a.name ?? (a.isUser ? '나' : 'AI 지원자'),
+      score: a.score ?? 0,
+      me: !!a.isUser,
+      strength: a.strength ?? '',
+      weak: a.weakness ?? '',
+    })),
+    questions: data.questions.map(q => ({
+      q: `Q${q.questionSeq}`,
+      text: q.questionText ?? '',
+      answerText: q.answerText ?? '',
+      applicantAnswers: appAnswersBySeq[q.questionSeq] ?? [],
+      score: q.score ?? 0,
+      label: q.label
+        ? [q.label, q.label === '우수' ? 'green' : q.label === '미흡' ? 'red' : 'amber']
+        : null,
+      body: q.feedback ?? '',
+      tags: q.tags ? q.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+    })),
+  }
+}
+
+// 현재 탭에 맞는 패널 HTML (리포트 있을 때만)
+const currentPanelHtml = computed(() => {
+  if (!roomReport.value) return ''
+  return reportPanel(transformReportForPanel(roomReport.value, roomScenarios.value), reportTab.value)
+})
+
+// ---- 헬퍼 ----
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}.${m}.${day}`
+}
+function formatDateTime(dateStr) {
+  if (!dateStr) return '-'
+  const d = new Date(dateStr)
+  return `${formatDate(dateStr)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+function diffLabel(d) { return d === 'HARD' ? '상' : d === 'MEDIUM' ? '중' : '하' }
+function statusLabel(s) { return s === 'COMPLETED' ? '완료' : s === 'IN_PROGRESS' ? '진행 중' : s === 'CANCELLED' ? '취소' : s || '-' }
+function statusBadgeClass(s) { return s === 'COMPLETED' ? 'badge-green' : s === 'IN_PROGRESS' ? 'badge-blue' : '' }
+function applicantTypeLabel(t) { return t === 'NEW' ? '신입' : t === 'INTERN' ? '인턴' : t === 'EXPERIENCED' ? '경력' : t || '-' }
 
 // ---- 서류 관리 ----
 const docMeta = {
@@ -78,18 +205,9 @@ function startEdit() {
 
 async function submitEdit() {
   editError.value = ''
-  if (!editName.value.trim()) {
-    editError.value = '이름을 입력해주세요.'
-    return
-  }
-  if (editPwd.value && editPwd.value.length < 8) {
-    editError.value = '비밀번호는 8자 이상이어야 합니다.'
-    return
-  }
-  if (editPwd.value && editPwd.value !== editPwdConfirm.value) {
-    editError.value = '비밀번호가 일치하지 않습니다.'
-    return
-  }
+  if (!editName.value.trim()) { editError.value = '이름을 입력해주세요.'; return }
+  if (editPwd.value && editPwd.value.length < 8) { editError.value = '비밀번호는 8자 이상이어야 합니다.'; return }
+  if (editPwd.value && editPwd.value !== editPwdConfirm.value) { editError.value = '비밀번호가 일치하지 않습니다.'; return }
   editLoading.value = true
   try {
     const payload = { userName: editName.value.trim() }
@@ -123,16 +241,6 @@ async function withdrawUser() {
   }
 }
 
-// ---- 계정 ----
-const notifPrefs = reactive({ schedule: true, report: true, community: false, marketing: false })
-const notifMeta = [
-  ['schedule', '면접 일정 알림', 'D-7 | D-3 | D-1 시점에 마감 임박 공고를 알려드려요'],
-  ['report', '리포트 생성 알림', '면접 종료 후 분석 리포트가 발행되면 알려드려요'],
-  ['community', '커뮤니티 활동 알림', '내 글의 댓글|오픈톡 새 메시지를 알려드려요'],
-  ['marketing', '마케팅 | 혜택 알림', '이벤트, 프로모션, 할인 소식을 받아볼게요'],
-]
-function onNotifChange() { toast('알림 설정이 저장되었어요.') }
-
 // ---- 즐겨찾기 ----
 const favs = [
   { co: '삼성전자', logo: 'samsung', short: 'S', title: 'DS부문 반도체 설계 다대다 면접', diff: '중' },
@@ -150,6 +258,7 @@ const sideDocCount = (t) => docs[t].length
 
 onMounted(() => {
   if (route.query.section) section.value = route.query.section
+  loadMyRooms()
 })
 </script>
 
@@ -173,7 +282,7 @@ onMounted(() => {
             </div>
             <div class="side-item" :class="{ active: section === 'reports' || section === 'report-detail' }" @click="gotoMy('reports')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></svg>
-              리포트 <span class="count">23</span>
+              리포트 <span class="count">{{ myRooms.length }}</span>
             </div>
           </div>
           <div class="side-section">
@@ -202,29 +311,38 @@ onMounted(() => {
 
         <!-- Dynamic content -->
         <div id="mypage-content">
-          <!-- 리포트 목록 -->
+
+          <!-- ===== 면접 기록 목록 ===== -->
           <template v-if="section === 'reports'">
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 리포트</div>
             <div class="flex-between" style="margin:4px 0 20px;">
-              <div><h2 class="mp-h1">리포트</h2><p class="mp-sub">완료한 모의 면접의 분석 리포트를 모아봤어요. 총 {{ reports.length }}건</p></div>
+              <div><h2 class="mp-h1">리포트</h2><p class="mp-sub">완료한 모의 면접의 기록을 모아봤어요. 총 {{ myRooms.length }}건</p></div>
             </div>
             <div class="mp-stat-row">
-              <div class="mp-stat"><div class="mp-stat-label">총 면접</div><div class="mp-stat-val">{{ reports.length }}<span>회</span></div></div>
-              <div class="mp-stat"><div class="mp-stat-label">평균 점수</div><div class="mp-stat-val" :style="{ color: scoreColor(avg) }">{{ avg }}<span>점</span></div></div>
-              <div class="mp-stat"><div class="mp-stat-label">최고 점수</div><div class="mp-stat-val" style="color:var(--green-500);">{{ best }}<span>점</span></div></div>
-              <div class="mp-stat"><div class="mp-stat-label">동일 직무 평균</div><div class="mp-stat-val" style="color:var(--ink-500);">74<span>점</span></div></div>
+              <div class="mp-stat"><div class="mp-stat-label">총 면접</div><div class="mp-stat-val">{{ myRooms.length }}<span>회</span></div></div>
+              <div class="mp-stat"><div class="mp-stat-label">완료</div><div class="mp-stat-val" style="color:var(--green-500);">{{ myRooms.filter(r => r.status === 'COMPLETED').length }}<span>회</span></div></div>
+              <div class="mp-stat"><div class="mp-stat-label">진행 중</div><div class="mp-stat-val" style="color:var(--accent-blue,#1f6fe5);">{{ myRooms.filter(r => r.status === 'IN_PROGRESS').length }}<span>회</span></div></div>
             </div>
             <div class="card" style="padding:0; overflow:hidden;">
-              <div class="card-header" style="padding:18px 20px 14px; border-bottom:1px solid var(--ink-150); margin-bottom:0;"><h3 class="card-title">전체 리포트</h3><span class="text-sm text-muted">최신순</span></div>
-              <table class="history-table report-table">
-                <thead><tr><th>기업 / 직무</th><th>일시</th><th>난이도</th><th>점수</th><th>상태</th><th></th></tr></thead>
+              <div class="card-header" style="padding:18px 20px 14px; border-bottom:1px solid var(--ink-150); margin-bottom:0;">
+                <h3 class="card-title">전체 리포트</h3><span class="text-sm text-muted">최신순</span>
+              </div>
+              <div v-if="roomsLoading" style="padding:48px; text-align:center; color:var(--ink-400);">불러오는 중...</div>
+              <div v-else-if="!myRooms.length" style="padding:48px; text-align:center; color:var(--ink-400);">면접 기록이 없습니다.</div>
+              <table v-else class="history-table report-table">
+                <thead><tr><th>기업 / 직무</th><th>지원유형</th><th>일시</th><th>난이도</th><th>상태</th><th></th></tr></thead>
                 <tbody>
-                  <tr v-for="(rp, i) in reports" :key="i" @click="openReport(i)">
-                    <td><div style="display:flex; align-items:center; gap:10px;"><div class="company-logo" :class="rp.logo" style="width:30px;height:30px;font-size:12px;">{{ rp.short }}</div><div><strong>{{ rp.co }}</strong> | {{ rp.role }}</div></div></td>
-                    <td><span class="text-sm text-muted">{{ rp.date }}</span></td>
-                    <td><span class="badge">{{ rp.diff }}</span></td>
-                    <td><strong :style="{ color: scoreColor(rp.score) }">{{ rp.score }}</strong></td>
-                    <td><span class="badge badge-green">분석 완료</span></td>
+                  <tr v-for="room in myRooms" :key="room.roomId" style="cursor:pointer;" @click="openRoom(room)">
+                    <td>
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="company-logo" style="width:30px;height:30px;font-size:12px;">{{ room.companyName?.charAt(0) }}</div>
+                        <div><strong>{{ room.companyName }}</strong><span v-if="room.jobName" class="text-muted"> | {{ room.jobName }}</span></div>
+                      </div>
+                    </td>
+                    <td><span class="text-sm text-muted">{{ applicantTypeLabel(room.applicantType) }}</span></td>
+                    <td><span class="text-sm text-muted">{{ formatDate(room.startedAt) }}</span></td>
+                    <td><span class="badge">{{ diffLabel(room.difficulty) }}</span></td>
+                    <td><span class="badge" :class="statusBadgeClass(room.status)">{{ statusLabel(room.status) }}</span></td>
                     <td><span class="report-go">리포트 보기 ›</span></td>
                   </tr>
                 </tbody>
@@ -232,27 +350,44 @@ onMounted(() => {
             </div>
           </template>
 
-          <!-- 리포트 상세 -->
-          <template v-else-if="section === 'report-detail'">
-            <div class="breadcrumb">마이페이지 <span class="sep">›</span> <a @click="gotoMy('reports')" style="cursor:pointer;">리포트</a> <span class="sep">›</span> {{ r.co }}</div>
+          <!-- ===== 면접 기록 상세 ===== -->
+          <template v-else-if="section === 'report-detail' && currentRoom">
+            <div class="breadcrumb">마이페이지 <span class="sep">›</span> <a @click="gotoMy('reports')" style="cursor:pointer;">리포트</a> <span class="sep">›</span> {{ currentRoom.companyName }}</div>
             <div class="feedback-head" style="margin-top:8px;">
               <div class="feedback-co">
-                <div class="company-logo" :class="r.logo" style="width:48px;height:48px;font-size:18px;border-radius:8px;">{{ r.short }}</div>
-                <div><h2 class="feedback-title">{{ r.co }} | {{ r.role }} 다대다 면접</h2><div class="feedback-sub">{{ r.date }} ({{ r.day }}) {{ r.time }} | {{ r.dur }} | 난이도 {{ r.diff }}</div></div>
+                <div class="company-logo" style="width:48px;height:48px;font-size:18px;border-radius:8px;">{{ currentRoom.companyName?.charAt(0) }}</div>
+                <div>
+                  <h2 class="feedback-title">{{ currentRoom.companyName }}<span v-if="currentRoom.jobName"> | {{ currentRoom.jobName }}</span></h2>
+                  <div class="feedback-sub">{{ formatDateTime(currentRoom.startedAt) }} | 난이도 {{ diffLabel(currentRoom.difficulty) }} | {{ applicantTypeLabel(currentRoom.applicantType) }}</div>
+                </div>
               </div>
               <div class="feedback-meta">
-                <div><div class="feedback-meta-label">총평 점수</div><div class="feedback-meta-val" :style="{ color: scoreColor(r.score), fontSize: '24px' }">{{ r.score }} <span style="font-size:13px; color:var(--ink-500); font-weight:500;">/ 100</span></div></div>
-                <div><div class="feedback-meta-label">동일 직무 평균</div><div class="feedback-meta-val" style="color:var(--ink-500);">{{ r.avg }}</div></div>
-                <button class="btn btn-secondary" style="align-self:center;" @click="toast('PDF 리포트를 내보냅니다. (데모)')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>PDF 리포트</button>
+                <div>
+                  <div class="feedback-meta-label">상태</div>
+                  <div class="feedback-meta-val"><span class="badge" :class="statusBadgeClass(currentRoom.status)">{{ statusLabel(currentRoom.status) }}</span></div>
+                </div>
               </div>
             </div>
+
             <div class="tabs" style="margin-bottom:22px;">
               <div v-for="[k, label] in reportTabs" :key="k" class="tab" :class="{ active: reportTab === k }" @click="setTab(k)">{{ label }}</div>
             </div>
-            <div v-html="panelHtml"></div>
+
+            <!-- 불러오는 중 -->
+            <div v-if="scenariosLoading" style="padding:48px; text-align:center; color:var(--ink-400);">불러오는 중...</div>
+
+            <!-- 리포트 있을 때: 기존 panelXxx UI 재사용 -->
+            <div v-else-if="roomReport" v-html="currentPanelHtml"></div>
+
+            <!-- 리포트 없을 때: 모든 탭 공통 안내 -->
+            <div v-else class="card" style="padding:56px 20px; text-align:center; color:var(--ink-400);">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 14px; display:block; opacity:.35;"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+              <div style="font-weight:600; margin-bottom:6px; color:var(--ink-700);">분석 데이터가 없습니다</div>
+              <div class="text-sm text-muted">면접 종료 후 AI 분석이 완료되면 리포트가 제공됩니다.</div>
+            </div>
           </template>
 
-          <!-- 즐겨찾기 -->
+          <!-- ===== 즐겨찾기 ===== -->
           <template v-else-if="section === 'favorites'">
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 즐겨찾기</div>
             <h2 class="mp-h1" style="margin:4px 0 4px;">즐겨찾기</h2>
@@ -267,7 +402,7 @@ onMounted(() => {
             </div>
           </template>
 
-          <!-- 서류 관리 -->
+          <!-- ===== 서류 관리 ===== -->
           <template v-else-if="['resume', 'portfolio'].includes(section)">
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 서류 관리 <span class="sep">›</span> {{ docMeta[section].title }}</div>
             <div class="flex-between" style="margin:4px 0 20px;">
@@ -292,7 +427,7 @@ onMounted(() => {
             </div>
           </template>
 
-          <!-- 회원정보 -->
+          <!-- ===== 회원정보 ===== -->
           <template v-else-if="section === 'account'">
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 계정 <span class="sep">›</span> 회원정보</div>
             <h2 class="mp-h1" style="margin:4px 0 20px;">회원정보</h2>
@@ -362,7 +497,7 @@ onMounted(() => {
             -->
           </template>
 
-          <!-- 구독 및 결제 -->
+          <!-- ===== 구독 및 결제 ===== -->
           <template v-else-if="section === 'billing'">
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 계정 <span class="sep">›</span> 구독 및 결제</div>
             <h2 class="mp-h1" style="margin:4px 0 20px;">구독 및 결제</h2>
@@ -396,6 +531,7 @@ onMounted(() => {
               <button class="btn btn-danger" @click="toast('회원 탈퇴 절차를 안내합니다. (데모)')">회원 탈퇴</button>
             </div>
           </template>
+
         </div>
       </div>
     </div>

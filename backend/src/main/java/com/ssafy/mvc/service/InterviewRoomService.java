@@ -91,6 +91,10 @@ public class InterviewRoomService {
         interviewScenarioDao.insertScenarios(scenarios);
     }
 
+    public List<InterviewRoomDto> getRoomsByUserId(Long userId) {
+        return interviewRoomDao.selectByUserId(userId);
+    }
+
     public void updateStatus(Long roomId, String status) {
         interviewRoomDao.updateStatus(roomId, status);
     }

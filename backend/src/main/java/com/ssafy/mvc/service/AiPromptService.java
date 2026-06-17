@@ -40,6 +40,11 @@ public class AiPromptService {
             6. 면접관의 발화는 turnRole을 "INTERVIEWER"로 작성하세요.
             7. 경쟁 지원자의 발화는 turnRole을 "APPLICANT"로 작성하세요.
             8. 실제 사용자가 답변해야 하는 차례는 turnRole을 "USER"로 작성하세요.
+            9. questionSeq는 다음 기준으로 반드시 정확하게 부여하세요.
+               - USER 또는 APPLICANT의 답변이 뒤따르는 모든 INTERVIEWER 질문 턴: 1부터 순서대로 부여 (자기소개 포함)
+               - 그 질문에 응답하는 USER/APPLICANT 턴: INTERVIEWER와 동일한 번호
+               - 답변자가 없는 순수 인사/마무리 발언(예: "안녕하세요", "수고하셨습니다")만 0으로 설정
+               - 자기소개, 직무 관련 질문 등 답변이 뒤따르는 모든 질문은 반드시 1 이상의 번호를 부여하세요.
 
             [ID 및 환각 방지 규칙]
             9. INTERVIEWER의 turnRefId는 반드시 제공된 면접관 페르소나의 interviewer_id 중 하나만 사용하세요.
@@ -109,6 +114,7 @@ public class AiPromptService {
               "difficulty": string,
               "scenario": [
                 {
+                  "questionSeq": number,
                   "turnOrder": number,
                   "turnRole": "INTERVIEWER" | "APPLICANT" | "USER",
                   "turnRefId": number | null,
@@ -235,6 +241,7 @@ public class AiPromptService {
             List<InterviewScenarioDto> scenarios = new ArrayList<>();
             for (JsonNode turn : jsonNode.path("scenario")) {
                 InterviewScenarioDto s = new InterviewScenarioDto();
+                s.setQuestionSeq(turn.path("questionSeq").asInt(0));
                 s.setTurnOrder(turn.path("turnOrder").asInt());
                 s.setTurnRole(turn.path("turnRole").asText());
                 s.setTurnRefId(turn.path("turnRefId").isNull() ? null : turn.path("turnRefId").asLong());

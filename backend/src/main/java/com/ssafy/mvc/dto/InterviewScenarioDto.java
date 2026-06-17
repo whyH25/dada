@@ -7,6 +7,7 @@ public class InterviewScenarioDto {
     private String scenarioType;
     private Long parentScenarioId;
 
+    private Integer questionSeq;
     private Integer turnOrder;
     private String turnRole;
     private Long turnRefId;
@@ -27,6 +28,9 @@ public class InterviewScenarioDto {
 
     public Long getParentScenarioId() { return parentScenarioId; }
     public void setParentScenarioId(Long parentScenarioId) { this.parentScenarioId = parentScenarioId; }
+
+    public Integer getQuestionSeq() { return questionSeq; }
+    public void setQuestionSeq(Integer questionSeq) { this.questionSeq = questionSeq; }
 
     public Integer getTurnOrder() { return turnOrder; }
     public void setTurnOrder(Integer turnOrder) { this.turnOrder = turnOrder; }

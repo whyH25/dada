@@ -1,7 +1,9 @@
 package com.ssafy.mvc.controller;
 
+import com.ssafy.mvc.dao.InterviewScenarioDao;
 import com.ssafy.mvc.dto.CustomUserDetailsDto;
 import com.ssafy.mvc.dto.InterviewRoomDto;
+import com.ssafy.mvc.dto.InterviewScenarioDto;
 import com.ssafy.mvc.dto.InterviewStartResultDto;
 import com.ssafy.mvc.service.InterviewRoomService;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,6 +23,21 @@ import java.util.Map;
 public class InterviewRoomController {
 
     private final InterviewRoomService interviewRoomService;
+    private final InterviewScenarioDao interviewScenarioDao;
+
+    // 내 면접 기록 조회
+    @GetMapping
+    public ResponseEntity<List<InterviewRoomDto>> getMyRooms(
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
+        Long userId = userDetails.getUserDto().getUserId();
+        return ResponseEntity.ok(interviewRoomService.getRoomsByUserId(userId));
+    }
+
+    // 면접 시나리오(질문·답변) 조회
+    @GetMapping("/{roomId}/scenarios")
+    public ResponseEntity<List<InterviewScenarioDto>> getScenarios(@PathVariable Long roomId) {
+        return ResponseEntity.ok(interviewScenarioDao.selectByRoomId(roomId));
+    }
 
     // 면접방 생성 및 서류 텍스트 추출 후 DB 저장
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.ReportDao">
+
+    <!-- 리포트 마스터 저장 (생성된 report_id 자동 반영) -->
+    <insert id="insertReport" parameterType="com.ssafy.mvc.dto.InterviewReportDto"
+            useGeneratedKeys="true" keyProperty="reportId">
+        INSERT INTO interview_report (
+            room_id, overall_score, ai_comment,
+            comp_expertise, comp_expertise_detail,
+            comp_logic, comp_logic_detail,
+            comp_commu, comp_commu_detail,
+            comp_culture, comp_culture_detail,
+            comp_pressure, comp_pressure_detail,
+            speech_wpm, speech_filler
+        ) VALUES (
+            #{roomId}, #{overallScore}, #{aiComment},
+            #{compExpertise}, #{compExpertiseDetail},
+            #{compLogic}, #{compLogicDetail},
+            #{compCommu}, #{compCommuDetail},
+            #{compCulture}, #{compCultureDetail},
+            #{compPressure}, #{compPressureDetail},
+            #{speechWpm}, #{speechFiller}
+        )
+    </insert>
+
+    <!-- 지원자별 점수·강약점 일괄 저장 (name 없음 — 조회 시 JOIN으로 파생) -->
+    <insert id="insertApplicants">
+        INSERT INTO report_applicant (report_id, room_id, is_user, applicant_id, score, strength, weakness)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.reportId}, #{item.roomId}, #{item.isUser}, #{item.applicantId},
+             #{item.score}, #{item.strength}, #{item.weakness})
+        </foreach>
+    </insert>
+
+    <!-- 질문별 상세 평가 일괄 저장 -->
+    <insert id="insertQuestions">
+        INSERT INTO report_question (report_id, room_id, question_seq, question_text, answer_text, score, label, feedback, tags)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.reportId}, #{item.roomId}, #{item.questionSeq}, #{item.questionText}, #{item.answerText},
+             #{item.score}, #{item.label}, #{item.feedback}, #{item.tags})
+        </foreach>
+    </insert>
+
+    <!-- room_id로 리포트 마스터 조회 -->
+    <select id="selectByRoomId" parameterType="long" resultType="com.ssafy.mvc.dto.InterviewReportDto">
+        SELECT report_id, room_id, overall_score, ai_comment,
+               comp_expertise, comp_expertise_detail,
+               comp_logic, comp_logic_detail,
+               comp_commu, comp_commu_detail,
+               comp_culture, comp_culture_detail,
+               comp_pressure, comp_pressure_detail,
+               speech_wpm, speech_filler, created_at
+        FROM interview_report
+        WHERE room_id = #{roomId}
+    </select>
+
+    <!-- 리포트의 지원자 목록 조회 (name 컬럼 없음 — 서비스 레이어에서 보충) -->
+    <select id="selectApplicantsByReportId" parameterType="long" resultType="com.ssafy.mvc.dto.ReportApplicantDto">
+        SELECT id, report_id, room_id, is_user, applicant_id, score, strength, weakness
+        FROM report_applicant
+        WHERE report_id = #{reportId}
+    </select>
+
+    <!-- 리포트의 질문별 상세 목록 조회 -->
+    <select id="selectQuestionsByReportId" parameterType="long" resultType="com.ssafy.mvc.dto.ReportQuestionDto">
+        SELECT id, report_id, room_id, question_seq, question_text, answer_text, score, label, feedback, tags
+        FROM report_question
+        WHERE report_id = #{reportId}
+        ORDER BY question_seq
+    </select>
+
+</mapper>

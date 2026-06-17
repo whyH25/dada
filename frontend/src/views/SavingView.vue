@@ -1,13 +1,23 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useFlowStore } from '../stores/flow.js'
 
 const router = useRouter()
+const flow = useFlowStore()
 const labels = ['음성 | 영상 업로드', '답변 텍스트 변환', '역량별 점수 산출', '리포트 발행']
 const active = ref(1)
 let timer = null
 
 onMounted(() => {
+  // 리포트 생성 API fire-and-forget (결과를 기다리지 않고 화면 전환)
+  if (flow.roomId) {
+    fetch(`http://localhost:8080/api/interview-rooms/${flow.roomId}/report`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(err => console.warn('리포트 생성 요청 실패:', err))
+  }
+
   let idx = 1
   timer = setInterval(() => {
     idx++
