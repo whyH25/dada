@@ -353,7 +353,6 @@ onMounted(() => {
             <div class="side-profile-avatar">{{ user?.userName?.charAt(0) }}</div>
             <div class="side-profile-name">{{ user?.userName }}</div>
             <div class="side-profile-email">{{ user?.userEmail }}</div>
-            <div class="side-profile-meta">PRO 멤버 | 26.12.31 만료</div>
           </div>
           <div class="side-section">
             <div class="side-section-title">면접 관리</div>
@@ -532,7 +531,6 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="info-row"><div class="info-label">가입일</div><div class="info-val">{{ user?.createdAt || '-' }}</div></div>
-                <div class="info-row"><div class="info-label">요금제</div><div class="info-val"><span class="badge badge-green">PRO 멤버</span></div></div>
               </div>
               <p v-if="editError" class="auth-error" style="margin-top:8px;">{{ editError }}</p>
               <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--ink-150); text-align:right;">
