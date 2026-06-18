@@ -27,7 +27,6 @@ const errorMsg = ref('')
 let timer = null
 
 onMounted(() => {
-  // AI 대본 생성 API 호출과 애니메이션 동시 진행
   const apiPromise = startInterview(flow.roomId)
     .then(result => {
       flow.scenarios             = result.scenario              || []
@@ -35,7 +34,10 @@ onMounted(() => {
       flow.applicantPersonaIds   = result.applicantPersonaIds   || []
       flow.personaNames          = result.personaNames          || {}
     })
-    .catch(err => { errorMsg.value = err.message || 'AI 대본 생성에 실패했습니다.' })
+    .catch(err => {
+      errorMsg.value = err.message || 'AI 대본 생성에 실패했습니다.'
+      clearInterval(timer)
+    })
 
   let idx = 1
   timer = setInterval(() => {
@@ -43,8 +45,8 @@ onMounted(() => {
     active.value = idx
     if (idx >= labels.value.length) {
       clearInterval(timer)
-      // 애니메이션 완료 후 API 응답 대기, 실패해도 진입
-      apiPromise.finally(() => setTimeout(() => router.push('/interview'), 3000))
+      // 에러 없을 때만 면접 화면으로 진입
+      apiPromise.then(() => setTimeout(() => router.push('/interview'), 3000))
     }
   }, 850)
 })
@@ -69,6 +71,19 @@ function stepClass(i) {
       <p style="margin-top:18px;color:#e53e3e;font-size:13px;font-weight:600;">
         면접방을 생성하는 중입니다. 창을 닫거나 다른 페이지로 이동하지 마세요.
       </p>
+    </div>
+
+    <!-- 이용권 부족 모달 -->
+    <div v-if="errorMsg" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
+      <div style="background:#fff;border-radius:16px;padding:40px 36px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round" style="margin:0 auto 14px;display:block;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.8" fill="#e53e3e" stroke="none"/></svg>
+        <h3 style="font-size:18px;font-weight:700;color:#111;margin-bottom:10px;">이용권이 부족해요</h3>
+        <p style="font-size:14px;color:#6b7280;margin-bottom:24px;">{{ errorMsg }}<br/>이용권을 충전하고 면접을 시작해보세요.</p>
+        <button
+          style="width:100%;padding:12px 0;background:#2c7a4b;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;"
+          @click="router.push('/mypage?section=billing')"
+        >이용권 충전하러 가기</button>
+      </div>
     </div>
   </main>
 </template>

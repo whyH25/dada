@@ -67,9 +67,16 @@ public class InterviewRoomController {
 
     // 페르소나 선정 → AI 대본 생성 → 시나리오 저장 → 상태 IN_PROGRESS 전환
     @PostMapping("/{roomId}/start")
-    public ResponseEntity<InterviewStartResultDto> startInterview(@PathVariable Long roomId) {
-        InterviewStartResultDto result = interviewRoomService.startInterview(roomId);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<?> startInterview(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
+        try {
+            Long userId = userDetails.getUserDto().getUserId();
+            InterviewStartResultDto result = interviewRoomService.startInterview(roomId, userId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     // 면접 상태 업데이트 (COMPLETED / CANCELLED)

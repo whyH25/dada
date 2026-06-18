@@ -4,11 +4,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDataStore } from '../stores/data.js'
 import { useFlowStore } from '../stores/flow.js'
 import { useDeviceCheck } from '../composables/useDeviceCheck.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const route = useRoute()
 const router = useRouter()
 const data = useDataStore()
 const flow = useFlowStore()
+const auth = useAuthStore()
+
+const showTicketModal = ref(false)
 
 const idx = computed(() => Number(route.params.id) || 0)
 const r = computed(() => data.rooms[idx.value])
@@ -35,6 +39,10 @@ function goBack() {
 }
 
 function startInterview() {
+  if ((auth.user?.ticketCount ?? 0) <= 0) {
+    showTicketModal.value = true
+    return
+  }
   flow.currentRoom = idx.value
   stopDeviceCheck()
   router.push('/prep')
@@ -219,6 +227,23 @@ onUnmounted(() => stopDeviceCheck())
         </div>
       </template>
 
+    </div>
+
+    <!-- 이용권 부족 모달 -->
+    <div v-if="showTicketModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;">
+      <div style="background:#fff;border-radius:16px;padding:40px 36px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="1.8" stroke-linecap="round" style="margin:0 auto 14px;display:block;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.5" r="0.8" fill="#e53e3e" stroke="none"/></svg>
+        <h3 style="font-size:18px;font-weight:700;color:#111;margin-bottom:10px;">이용권이 부족해요</h3>
+        <p style="font-size:14px;color:#6b7280;margin-bottom:24px;">이용권을 충전하고<br/>면접을 시작해보세요.</p>
+        <button
+          style="width:100%;padding:12px 0;background:#2c7a4b;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;"
+          @click="router.push('/mypage?section=billing')"
+        >이용권 충전하러 가기</button>
+        <button
+          style="width:100%;padding:10px 0;background:#fff;color:#6b7280;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;cursor:pointer;"
+          @click="showTicketModal = false"
+        >닫기</button>
+      </div>
     </div>
   </main>
 </template>

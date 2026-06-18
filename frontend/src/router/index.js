@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useAdminAuthStore } from '../stores/adminAuth.js'
 
-const GATED = ['create', 'interview', 'interview-intro', 'room-intro', 'mypage', 'post-create', 'post-edit']
+const GATED = ['create', 'interview', 'room-intro', 'mypage', 'post-create', 'post-edit']
 const ADMIN_GATED = ['admin', 'admin-jobs', 'admin-users', 'admin-stories', 'admin-notices', 'admin-posts']
 
 const routes = [
@@ -34,6 +34,8 @@ const routes = [
   { path: '/notices', name: 'notices', component: () => import('../views/NoticesView.vue') },
   { path: '/notifications', name: 'notifications', component: () => import('../views/NotificationsView.vue') },
   { path: '/mypage', name: 'mypage', component: () => import('../views/MypageView.vue') },
+  { path: '/payment/success', name: 'payment-success', component: () => import('../views/PaymentSuccessView.vue') },
+  { path: '/payment/fail',    name: 'payment-fail',    component: () => import('../views/PaymentFailView.vue') },
   { path: '/signup', name: 'signup', component: () => import('../views/SignupView.vue') },
   { path: '/notices/:id', name: 'notice', component: () => import('../views/NoticeView.vue') },
 

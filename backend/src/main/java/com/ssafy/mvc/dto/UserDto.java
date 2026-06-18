@@ -12,6 +12,7 @@ public class UserDto implements java.io.Serializable {
     private String userStatus;
     private Integer emailVerified;
     private String createdAt;
+    private int ticketCount;
 
     public Long getUserIdx() {
         return userId;
@@ -88,5 +89,13 @@ public class UserDto implements java.io.Serializable {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getTicketCount() {
+        return ticketCount;
+    }
+
+    public void setTicketCount(int ticketCount) {
+        this.ticketCount = ticketCount;
     }
 }

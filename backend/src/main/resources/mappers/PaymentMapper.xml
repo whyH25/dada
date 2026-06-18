@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.PaymentDao">
+
+    <insert id="insert" parameterType="com.ssafy.mvc.dto.PaymentDto">
+        INSERT INTO payments (user_id, order_id, plan_name, amount, tickets, status)
+        VALUES (#{userId}, #{orderId}, #{planName}, #{amount}, #{tickets}, 'READY')
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE payments
+        SET status = #{status}, payment_key = #{paymentKey}, approved_at = #{approvedAt}
+        WHERE order_id = #{orderId}
+    </update>
+
+    <select id="existsByOrderId" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM payments WHERE order_id = #{orderId}
+    </select>
+
+    <select id="selectByUserId" resultType="com.ssafy.mvc.dto.PaymentDto">
+        SELECT payment_id, user_id, order_id, payment_key, plan_name, amount, tickets,
+               status, approved_at, created_at
+        FROM payments
+        WHERE user_id = #{userId} AND status = 'DONE'
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

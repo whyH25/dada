@@ -21,4 +21,10 @@ public interface UserDao {
     void updateUser(UserDto user);
 
     void deleteUser(@Param("userId") Long userId);
+
+    void addTickets(@Param("userId") Long userId, @Param("tickets") int tickets);
+
+    void useTicket(@Param("userId") Long userId);
+
+    int getTicketCount(@Param("userId") Long userId);
 }

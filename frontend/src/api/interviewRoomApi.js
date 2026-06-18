@@ -80,8 +80,9 @@ export async function startInterview(roomId) {
     credentials: 'include',
   })
   if (!res.ok) {
-    const msg = await res.text()
-    throw new Error(msg || 'AI 대본 생성에 실패했습니다.')
+    let msg = 'AI 대본 생성에 실패했습니다.'
+    try { const data = await res.json(); if (data.message) msg = data.message } catch { /* ignore */ }
+    throw new Error(msg)
   }
   return res.json()
 }

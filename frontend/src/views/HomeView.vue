@@ -13,6 +13,7 @@ const ACCENTS = ['#308860', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4
 const stories = ref([])
 const posts = ref([])
 
+
 function go(p) { router.push(p) }
 function requireAuth(action) {
   if (auth.isLoggedIn) { typeof action === 'function' ? action() : router.push('/' + action) }
@@ -57,7 +58,7 @@ onMounted(async () => {
             혼자 준비하기 어려운 면접, 이제 AI와 함께하세요. AI 면접관과 AI 지원자가 함께하는 실전형 시뮬레이션으로 실제 면접 분위기와 맞춤형 피드백을 경험해보세요.
           </p>
           <div class="hero-actions">
-            <button class="hero-btn-primary" @click="requireAuth('create')">
+            <button class="hero-btn-primary" @click="go('/interview-intro')">
               빠른 시작
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
@@ -74,7 +75,7 @@ onMounted(async () => {
           </button>
           <div class="feature-art art-a" aria-hidden="true"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
         </div>
-        <div class="feature-card fc-b" @click="requireAuth('create')">
+        <div class="feature-card fc-b" @click="go('/interview-intro')">
           <h3 class="feature-card-title">직무도 난이도도<br />내 마음대로!<br />나만의 다대다<br />면접방을 만들어요.</h3>
           <button class="feature-pill">면접방 생성
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -133,6 +134,8 @@ onMounted(async () => {
           <div v-if="stories.length === 0" class="story-empty">등록된 합격 스토리가 없습니다.</div>
         </div>
       </section>
+
+
 
       <!-- 기업별 오픈톡 + 자유게시판 -->
       <section class="split-2">

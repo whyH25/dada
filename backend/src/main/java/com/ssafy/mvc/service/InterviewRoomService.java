@@ -4,6 +4,7 @@ import com.ssafy.mvc.dao.AiPersonaDao;
 import com.ssafy.mvc.dao.InterviewRoomDao;
 import com.ssafy.mvc.dao.InterviewRoomPersonaDao;
 import com.ssafy.mvc.dao.InterviewScenarioDao;
+import com.ssafy.mvc.dao.UserDao;
 import com.ssafy.mvc.dao.UserPortfolioDao;
 import com.ssafy.mvc.dao.UserResumeDao;
 import com.ssafy.mvc.dto.AiApplicantDto;
@@ -33,6 +34,7 @@ public class InterviewRoomService {
     private final AiPromptService aiPromptService;
     private final UserResumeDao userResumeDao;
     private final UserPortfolioDao userPortfolioDao;
+    private final UserDao userDao;
 
     // 마이페이지에 등록된 이력서/포트폴리오를 선택해 면접방 생성
     // resumeId/portfolioId가 가리키는 row의 parsed_text·file_name을 면접방에 스냅샷으로 복사
@@ -69,8 +71,16 @@ public class InterviewRoomService {
     }
 
     // 페르소나 선정 → DB 저장 → AI 대본 생성 → 시나리오 저장 → 상태 전환
-    public InterviewStartResultDto startInterview(Long roomId) {
+    public InterviewStartResultDto startInterview(Long roomId, Long userId) {
         InterviewRoomDto room = interviewRoomDao.selectByRoomId(roomId);
+
+        if (!room.getUserId().equals(userId))
+            throw new IllegalStateException("접근 권한이 없습니다.");
+
+        if (userDao.getTicketCount(userId) <= 0)
+            throw new IllegalStateException("티켓이 부족합니다. 충전 후 이용해주세요.");
+
+        userDao.useTicket(userId);
 
         List<AiInterviewerDto> interviewers = aiPersonaDao.selectRandomInterviewers(room.getAiInterviewerCnt());
         // aiApplicantCnt가 0이면 조회 생략

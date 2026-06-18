@@ -49,6 +49,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/posts/mine").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/posts", "/api/posts/*", "/api/posts/*/comments").permitAll()
 
+                // 결제 API 전체 인증 필요
+                .requestMatchers("/api/payments/**").authenticated()
+
                 // /api/admin/login, /api/admin/logout 을 먼저 허용했으므로
                 // 나머지 /api/admin/** 은 ADMIN 권한 필요
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

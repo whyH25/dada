@@ -12,6 +12,7 @@ const userName = ref('')
 const userPhone = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
+const showSuccessModal = ref(false)
 
 const verificationCode = ref('')
 const codeSent = ref(false)
@@ -149,8 +150,7 @@ async function handleSignup() {
       userName: userName.value.trim(),
       userPhone: userPhone.value.trim() || null,
     })
-    alert('회원가입이 완료되었습니다.')
-    router.push('/')
+    showSuccessModal.value = true
   } catch (e) {
     errorMsg.value = e.message || '회원가입 중 오류가 발생했습니다.'
   } finally {
@@ -255,6 +255,20 @@ async function handleSignup() {
       </div>
     </div>
   </div>
+
+  <!-- 회원가입 완료 모달 -->
+  <div v-if="showSuccessModal" class="signup-modal-overlay">
+    <div class="signup-modal">
+      <div class="signup-modal-icon">🎉</div>
+      <h3 class="signup-modal-title">회원가입 완료!</h3>
+      <p class="signup-modal-desc">
+        가입을 환영해요!<br>
+        무료 이용권 <strong>1장</strong>이 지급되었어요.
+      </p>
+      <p class="signup-modal-sub">지금 바로 AI 모의 면접을 체험해보세요.</p>
+      <button class="btn btn-primary btn-block" @click="router.push('/')">무료 면접 시작하기</button>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -351,5 +365,48 @@ async function handleSignup() {
   color: #e53e3e;
   font-size: 13px;
   margin: 4px 0 10px;
+}
+.signup-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.signup-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 36px;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+.signup-modal-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.signup-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-900, #111);
+  margin: 0 0 12px;
+}
+.signup-modal-desc {
+  font-size: 15px;
+  color: var(--ink-600, #444);
+  line-height: 1.6;
+  margin: 0 0 6px;
+}
+.signup-modal-desc strong {
+  color: var(--green-600, #2c7a4b);
+  font-size: 18px;
+}
+.signup-modal-sub {
+  font-size: 13px;
+  color: var(--ink-400, #888);
+  margin: 0 0 24px;
 }
 </style>
