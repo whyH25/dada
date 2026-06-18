@@ -142,4 +142,22 @@
         SELECT post_id FROM post_likes WHERE user_id = #{userId}
     </select>
 
+    <select id="selectByUserId" resultType="com.ssafy.mvc.dto.PostDto">
+        SELECT
+            p.post_id,
+            p.user_id,
+            p.category,
+            p.title,
+            p.views,
+            p.created_at,
+            p.is_anonymous AS anonymous,
+            u.user_name AS author_name,
+            (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
+            (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
+        FROM posts p
+        JOIN users u ON p.user_id = u.user_id
+        WHERE p.user_id = #{userId}
+        ORDER BY p.created_at DESC
+    </select>
+
 </mapper>

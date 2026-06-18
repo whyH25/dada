@@ -45,8 +45,12 @@ function search() {
 }
 
 function goWrite() {
-  if (!auth.isLoggedIn) { auth.openLogin('/community/board/new'); return }
-  router.push('/community/board/new')
+  const cat = activeCat.value === '전체' ? '자유' : activeCat.value
+  if (!auth.isLoggedIn) {
+    auth.openLogin(() => router.push({ path: '/community/board/new', query: { category: cat } }))
+    return
+  }
+  router.push({ path: '/community/board/new', query: { category: cat } })
 }
 
 function formatDate(d) {

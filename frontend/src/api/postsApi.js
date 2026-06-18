@@ -26,6 +26,11 @@ export async function fetchPost(id) {
   return { post: data.data ?? null, related: data.related ?? [] }
 }
 
+export async function fetchMyPosts() {
+  const data = await json(await fetch(`${BASE}/posts/mine`, OPTS))
+  return data.data ?? []
+}
+
 export async function createPost(payload) {
   const data = await json(await fetch(`${BASE}/posts`, { ...JSON_OPTS, method: 'POST', body: JSON.stringify(payload) }))
   return data

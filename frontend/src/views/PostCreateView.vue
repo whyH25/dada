@@ -48,7 +48,11 @@ async function submit() {
       const res = await createPost(payload)
       router.push('/community/board/' + res.postId)
     }
-  } catch {
+  } catch (e) {
+    if (String(e.message) === '401') {
+      auth.openLogin(() => submit())
+      return
+    }
     err.value = '저장 중 오류가 발생했습니다.'
   } finally {
     submitting.value = false

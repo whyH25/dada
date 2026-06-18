@@ -1,11 +1,12 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { toast } from '../utils/toast.js'
 import { useAuthStore } from '../stores/auth.js'
 import { updateUserApi, deleteUserApi } from '../api/authApi.js'
 import { fetchMyInterviewRooms, fetchRoomScenarios, fetchRoomReport } from '../api/mypageApi.js'
 import { fetchMyFiles, uploadFile, deleteFile } from '../api/userFileApi.js'
+import { fetchMyPosts } from '../api/postsApi.js'
 import { reportPanel } from '../utils/mypageReport.js'
 
 const router = useRouter()
@@ -13,7 +14,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 
-// section: reports | report-detail | favorites | resume | portfolio | account | billing
+// section: reports | report-detail | resume | portfolio | account | my-posts | billing
 const section = ref('reports')
 const reportTab = ref('overview')
 
@@ -255,12 +256,24 @@ async function withdrawUser() {
   }
 }
 
-// ---- 즐겨찾기 ----
-const favs = [
-  { co: '삼성전자', logo: 'samsung', short: 'S', title: 'DS부문 반도체 설계 다대다 면접', diff: '중' },
-  { co: '카카오', logo: 'kakao', short: 'K', title: '카카오 백엔드 신입 공채 면접', diff: '상' },
-  { co: '토스', logo: 'toss', short: 'T', title: '토스 서버 경력 다대다 면접', diff: '상' },
-]
+// ---- 내가 쓴 글 ----
+const myPosts = ref([])
+const myPostsLoading = ref(false)
+
+async function loadMyPosts() {
+  myPostsLoading.value = true
+  try {
+    myPosts.value = await fetchMyPosts()
+  } catch (e) {
+    toast(e.message)
+  } finally {
+    myPostsLoading.value = false
+  }
+}
+
+watch(section, (s) => {
+  if (s === 'my-posts' && !myPosts.value.length && !myPostsLoading.value) loadMyPosts()
+})
 
 // ---- 결제 ----
 const plans = [
@@ -292,10 +305,6 @@ onMounted(() => {
           </div>
           <div class="side-section">
             <div class="side-section-title">면접 관리</div>
-            <div class="side-item" :class="{ active: section === 'favorites' }" @click="gotoMy('favorites')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-              즐겨찾기 <span class="count">14</span>
-            </div>
             <div class="side-item" :class="{ active: section === 'reports' || section === 'report-detail' }" @click="gotoMy('reports')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6M9 13h6M9 17h4" /></svg>
               리포트 <span class="count">{{ myRooms.length }}</span>
@@ -317,6 +326,10 @@ onMounted(() => {
             <div class="side-item" :class="{ active: section === 'account' }" @click="gotoMy('account')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
               회원정보
+            </div>
+            <div class="side-item" :class="{ active: section === 'my-posts' }" @click="gotoMy('my-posts')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 12h8M8 16h5"/></svg>
+              내가 쓴 글 <span class="count">{{ myPosts.length }}</span>
             </div>
             <div class="side-item" :class="{ active: section === 'billing' }" @click="gotoMy('billing')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
@@ -400,21 +413,6 @@ onMounted(() => {
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 14px; display:block; opacity:.35;"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
               <div style="font-weight:600; margin-bottom:6px; color:var(--ink-700);">분석 데이터가 없습니다</div>
               <div class="text-sm text-muted">면접 종료 후 AI 분석이 완료되면 리포트가 제공됩니다.</div>
-            </div>
-          </template>
-
-          <!-- ===== 즐겨찾기 ===== -->
-          <template v-else-if="section === 'favorites'">
-            <div class="breadcrumb">마이페이지 <span class="sep">›</span> 즐겨찾기</div>
-            <h2 class="mp-h1" style="margin:4px 0 4px;">즐겨찾기</h2>
-            <p class="mp-sub" style="margin-bottom:20px;">관심 있는 면접방을 모아뒀어요. 총 14개 중 3개 표시</p>
-            <div class="rooms-grid">
-              <div v-for="(f, i) in favs" :key="i" class="room-card">
-                <div class="room-top"><div class="room-co"><div class="company-logo" :class="f.logo">{{ f.short }}</div><div><div class="room-co-name">{{ f.co }}</div><div class="room-co-role">모의 면접방</div></div></div><span class="badge badge-green">즐겨찾기 ★</span></div>
-                <h3 class="room-title">{{ f.title }}</h3>
-                <div class="room-tags"><span class="badge">난이도 {{ f.diff }}</span><span class="badge badge-blue">기출 기반</span></div>
-                <div class="room-foot"><span class="text-sm text-muted">예상 소요 30~40분</span><button class="btn btn-sm btn-primary" @click.stop="router.push('/rooms')">입장하기 →</button></div>
-              </div>
             </div>
           </template>
 
@@ -512,6 +510,29 @@ onMounted(() => {
               </div>
             </div>
             -->
+          </template>
+
+          <!-- ===== 내가 쓴 글 ===== -->
+          <template v-else-if="section === 'my-posts'">
+            <div class="breadcrumb">마이페이지 <span class="sep">›</span> 계정 <span class="sep">›</span> 내가 쓴 글</div>
+            <div class="flex-between" style="margin:4px 0 20px;">
+              <div><h2 class="mp-h1">내가 쓴 글</h2><p class="mp-sub">자유게시판에 작성한 게시글입니다. 총 {{ myPosts.length }}건</p></div>
+            </div>
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div v-if="myPostsLoading" style="padding:48px; text-align:center; color:var(--ink-400);">불러오는 중...</div>
+              <div v-else-if="!myPosts.length" style="padding:48px; text-align:center; color:var(--ink-400);">작성한 게시글이 없습니다.</div>
+              <table v-else class="history-table">
+                <thead><tr><th>분류</th><th>제목</th><th>날짜</th><th>댓글</th></tr></thead>
+                <tbody>
+                  <tr v-for="p in myPosts" :key="p.postId" style="cursor:pointer;" @click="router.push('/community/board/' + p.postId)">
+                    <td><span class="badge">{{ p.category }}</span></td>
+                    <td><strong>{{ p.title }}</strong></td>
+                    <td><span class="text-sm text-muted">{{ formatDate(p.createdAt) }}</span></td>
+                    <td><span class="text-sm text-muted">{{ p.commentCount }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </template>
 
           <!-- ===== 구독 및 결제 ===== -->

@@ -23,4 +23,5 @@ public interface PostDao {
     void deleteLike(@Param("userId") Long userId, @Param("postId") Long postId);
     boolean existsLike(@Param("userId") Long userId, @Param("postId") Long postId);
     List<Long> selectLikedPostIds(@Param("userId") Long userId);
+    List<PostDto> selectByUserId(@Param("userId") Long userId);
 }

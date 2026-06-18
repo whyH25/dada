@@ -61,6 +61,13 @@ public class PostController {
         return ResponseEntity.ok(Map.of("success", true, "data", post, "related", related));
     }
 
+    @GetMapping("/api/posts/mine")
+    public ResponseEntity<?> listMyPosts(@AuthenticationPrincipal CustomUserDetailsDto userDetails) {
+        Long userId = userDetails.getUserDto().getUserId();
+        List<PostDto> posts = postDao.selectByUserId(userId);
+        return ResponseEntity.ok(Map.of("success", true, "data", posts, "total", posts.size()));
+    }
+
     @PostMapping("/api/posts")
     public ResponseEntity<?> createPost(
             @RequestBody Map<String, Object> body,
