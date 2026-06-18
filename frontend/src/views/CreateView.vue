@@ -5,6 +5,7 @@ import { useDataStore } from '../stores/data.js'
 import { useFlowStore } from '../stores/flow.js'
 import { useAuthStore } from '../stores/auth.js'
 import { fetchJobCategories, createInterviewRoom } from '../api/interviewRoomApi.js'
+import { fetchMyFiles } from '../api/userFileApi.js'
 import { startSession } from '../api/sessionApi.js'
 import { useDeviceCheck } from '../composables/useDeviceCheck.js'
 
@@ -40,9 +41,11 @@ const sel = reactive({
   applicants: '1명',
 })
 
-// 파일 상태
-const resumeFile = ref(null)
-const portfolioFile = ref(null)
+// 마이페이지에 등록된 서류 목록 (직접 업로드 대신 선택만 가능)
+const resumes = ref([])
+const portfolios = ref([])
+const selectedResumeId = ref(null)
+const selectedPortfolioId = ref(null)
 
 // 로딩 / 에러
 const submitting = ref(false)
@@ -70,8 +73,8 @@ const estimatedTime = computed(() => {
 
 const submittedDocCount = computed(() => {
   let c = 0
-  if (resumeFile.value) c++
-  if (portfolioFile.value) c++
+  if (selectedResumeId.value) c++
+  if (selectedPortfolioId.value) c++
   return c
 })
 
@@ -86,6 +89,13 @@ onMounted(async () => {
   } catch {
     // API 연결 전이거나 오류 시 빈 목록 유지
   }
+
+  try {
+    resumes.value = await fetchMyFiles('resume')
+    portfolios.value = await fetchMyFiles('portfolio')
+  } catch {
+    // 마이페이지에 등록된 서류가 없거나 조회 실패 시 빈 목록 유지
+  }
 })
 
 function onJobChange(e) {
@@ -97,19 +107,11 @@ function onJobChange(e) {
 }
 
 function onResumeChange(e) {
-  resumeFile.value = e.target.files[0] || null
+  selectedResumeId.value = e.target.value ? Number(e.target.value) : null
 }
 
 function onPortfolioChange(e) {
-  portfolioFile.value = e.target.files[0] || null
-}
-
-function removeResume() {
-  resumeFile.value = null
-}
-
-function removePortfolio() {
-  portfolioFile.value = null
+  selectedPortfolioId.value = e.target.value ? Number(e.target.value) : null
 }
 
 function gotoStep2() {
@@ -135,8 +137,8 @@ async function startInterview() {
       employmentType: sel.type,
       interviewerCount: interviewerCount.value,
       aiApplicantCount: applicantCount.value,
-      resumeFile: resumeFile.value,
-      portfolioFile: portfolioFile.value,
+      resumeId: selectedResumeId.value,
+      portfolioId: selectedPortfolioId.value,
     })
     flow.roomId = roomResult.roomId
 
@@ -257,55 +259,32 @@ async function startInterview() {
             <div class="form-section">
               <div class="form-section-head">
                 <h3 class="form-section-title">제출 서류 <span style="font-size:13px;font-weight:400;color:var(--ink-400)">(선택)</span></h3>
-                <p class="form-section-sub">업로드한 서류 기반으로 면접관이 맞춤형 질문을 생성합니다.</p>
+                <p class="form-section-sub">마이페이지에 등록한 서류 중에서 선택하면 면접관이 맞춤형 질문을 생성합니다.</p>
               </div>
               <div class="form-section-body">
-                <div class="upload-grid">
-
-                  <!-- 이력서 및 자기소개서 -->
-                  <label class="upload" :class="{ uploaded: resumeFile }" style="cursor:pointer">
-                    <input type="file" accept=".pdf,.doc,.docx" style="display:none" @change="onResumeChange" />
-                    <template v-if="resumeFile">
-                      <div class="upload-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
-                      </div>
-                      <div>
-                        <div class="upload-title">{{ resumeFile.name }}</div>
-                        <div class="upload-sub">{{ (resumeFile.size / 1024).toFixed(0) }} KB</div>
-                      </div>
-                      <button class="btn btn-sm btn-ghost" style="margin-left:auto" @click.prevent="removeResume">삭제</button>
-                    </template>
-                    <template v-else>
-                      <div class="upload-icon" style="margin:0 auto 8px">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                      </div>
-                      <div class="upload-title">이력서 및 자기소개서</div>
-                      <div class="upload-sub">PDF | DOC | 최대 10MB</div>
-                    </template>
-                  </label>
-
-                  <!-- 포트폴리오 -->
-                  <label class="upload" :class="{ uploaded: portfolioFile }" style="cursor:pointer">
-                    <input type="file" accept=".pdf,.doc,.docx" style="display:none" @change="onPortfolioChange" />
-                    <template v-if="portfolioFile">
-                      <div class="upload-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
-                      </div>
-                      <div>
-                        <div class="upload-title">{{ portfolioFile.name }}</div>
-                        <div class="upload-sub">{{ (portfolioFile.size / 1024).toFixed(0) }} KB</div>
-                      </div>
-                      <button class="btn btn-sm btn-ghost" style="margin-left:auto" @click.prevent="removePortfolio">삭제</button>
-                    </template>
-                    <template v-else>
-                      <div class="upload-icon" style="margin:0 auto 8px">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                      </div>
-                      <div class="upload-title">포트폴리오</div>
-                      <div class="upload-sub">PDF | DOC | 최대 50MB</div>
-                    </template>
-                  </label>
-
+                <div class="form-row">
+                  <div class="field">
+                    <label class="field-label">이력서 및 자기소개서</label>
+                    <select class="select" :value="selectedResumeId ?? ''" @change="onResumeChange">
+                      <option value="">선택 안 함</option>
+                      <option v-for="r in resumes" :key="r.id" :value="r.id">{{ r.fileName }}</option>
+                    </select>
+                    <p class="text-sm text-muted" style="margin-top:6px;">
+                      등록한 이력서가 없거나 더 추가하고 싶다면
+                      <span style="color:var(--accent-blue,#1f6fe5);cursor:pointer;" @click="router.push({ path: '/mypage', query: { section: 'resume' } })">마이페이지에서 등록하기</span>
+                    </p>
+                  </div>
+                  <div class="field">
+                    <label class="field-label">포트폴리오</label>
+                    <select class="select" :value="selectedPortfolioId ?? ''" @change="onPortfolioChange">
+                      <option value="">선택 안 함</option>
+                      <option v-for="p in portfolios" :key="p.id" :value="p.id">{{ p.fileName }}</option>
+                    </select>
+                    <p class="text-sm text-muted" style="margin-top:6px;">
+                      등록한 포트폴리오가 없거나 더 추가하고 싶다면
+                      <span style="color:var(--accent-blue,#1f6fe5);cursor:pointer;" @click="router.push({ path: '/mypage', query: { section: 'portfolio' } })">마이페이지에서 등록하기</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

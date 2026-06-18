@@ -1,12 +1,19 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth.js'
 import LoginModal from './components/LoginModal.vue'
 import InterestModal from './components/InterestModal.vue'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+
+// /prep, /saving: 처리 중 화면이라 네비게이션·푸터 숨김 + 스크롤 차단
+const NO_CHROME_ROUTES = ['prep', 'saving']
+watch(() => route.name, (name) => {
+  document.body.style.overflow = NO_CHROME_ROUTES.includes(name) ? 'hidden' : ''
+}, { immediate: true })
 
 function requireAuth(action) {
   if (auth.isLoggedIn) {
@@ -39,7 +46,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 
 <template>
   <!-- ============ TOP NAVIGATION ============ -->
-  <nav class="nav" v-if="!$route.path.startsWith('/admin')">
+  <nav class="nav" v-if="!$route.path.startsWith('/admin') && !NO_CHROME_ROUTES.includes($route.name)">
     <div class="nav-inner">
       <div class="brand" @click="go('/')">
         <div class="brand-logo"><span class="d"></span><span class="d"></span><span class="d"></span></div>
@@ -84,7 +91,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
   </router-view>
 
   <!-- 푸터 -->
-  <footer class="footer" v-if="$route.name !== 'signup' && !$route.path.startsWith('/admin')">
+  <footer class="footer" v-if="$route.name !== 'signup' && !$route.path.startsWith('/admin') && !NO_CHROME_ROUTES.includes($route.name)">
     <div class="footer-inner">
       <div>© 2026 다대다. All rights reserved.</div>
     </div>

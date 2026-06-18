@@ -5,6 +5,7 @@ import { toast } from '../utils/toast.js'
 import { useAuthStore } from '../stores/auth.js'
 import { updateUserApi, deleteUserApi } from '../api/authApi.js'
 import { fetchMyInterviewRooms, fetchRoomScenarios, fetchRoomReport } from '../api/mypageApi.js'
+import { fetchMyFiles, uploadFile, deleteFile } from '../api/userFileApi.js'
 import { reportPanel } from '../utils/mypageReport.js'
 
 const router = useRouter()
@@ -158,34 +159,47 @@ function statusLabel(s) { return s === 'COMPLETED' ? '완료' : s === 'IN_PROGRE
 function statusBadgeClass(s) { return s === 'COMPLETED' ? 'badge-green' : s === 'IN_PROGRESS' ? 'badge-blue' : '' }
 function applicantTypeLabel(t) { return t === 'NEW' ? '신입' : t === 'INTERN' ? '인턴' : t === 'EXPERIENCED' ? '경력' : t || '-' }
 
-// ---- 서류 관리 ----
+// ---- 서류 관리 (마이페이지에 등록 → 면접방 생성 시 선택해서 재사용) ----
 const docMeta = {
   resume: { title: '이력서/자기소개서', accept: '.pdf,.doc,.docx', hint: 'PDF | DOC | 최대 10MB' },
-  portfolio: { title: '포트폴리오', accept: '.pdf,.zip', hint: 'PDF | ZIP | URL | 최대 50MB' },
+  portfolio: { title: '포트폴리오', accept: '.pdf,.doc,.docx', hint: 'PDF | DOC | 최대 50MB' },
 }
-const docs = reactive({
-  resume: [
-    { name: '이력서_김지원_v4.pdf', size: '324 KB', date: '26.05.20', main: true },
-    { name: '자기소개서_카카오_백엔드.pdf', size: '210 KB', date: '26.05.19', main: false },
-    { name: '자기소개서_공통_v2.docx', size: '188 KB', date: '26.05.10', main: false },
-  ],
-  portfolio: [{ name: '포트폴리오_2026.pdf', size: '6.2 MB', date: '26.05.12', main: false }],
-})
-function uploadDoc(type, e) {
+const docs = reactive({ resume: [], portfolio: [] })
+const docsLoading = reactive({ resume: false, portfolio: false })
+
+async function loadDocs(type) {
+  docsLoading[type] = true
+  try {
+    docs[type] = await fetchMyFiles(type)
+  } catch (e) {
+    toast(e.message)
+  } finally {
+    docsLoading[type] = false
+  }
+}
+
+async function uploadDoc(type, e) {
   const f = e.target.files && e.target.files[0]
-  if (!f) return
-  const kb = f.size / 1024
-  const size = kb > 1024 ? (kb / 1024).toFixed(1) + ' MB' : Math.round(kb) + ' KB'
-  docs[type].push({ name: f.name, size, date: '26.06.01', main: docs[type].length === 0 })
   e.target.value = ''
-  toast(`${docMeta[type].title}가 업로드되었어요.`)
+  if (!f) return
+  try {
+    const saved = await uploadFile(type, f)
+    docs[type].unshift(saved)
+    toast(`${docMeta[type].title}가 업로드되었어요.`)
+  } catch (err) {
+    toast(err.message)
+  }
 }
-function deleteDoc(type, i) {
-  const wasMain = docs[type][i].main
-  docs[type].splice(i, 1)
-  if (wasMain && docs[type].length) docs[type][0].main = true
+
+async function deleteDoc(type, i) {
+  const item = docs[type][i]
+  try {
+    await deleteFile(type, item.id)
+    docs[type].splice(i, 1)
+  } catch (err) {
+    toast(err.message)
+  }
 }
-function setMainDoc(type, i) { docs[type].forEach((d, j) => (d.main = j === i)) }
 
 // ---- 회원정보 수정 ----
 const isEditing = ref(false)
@@ -259,6 +273,8 @@ const sideDocCount = (t) => docs[t].length
 onMounted(() => {
   if (route.query.section) section.value = route.query.section
   loadMyRooms()
+  loadDocs('resume')
+  loadDocs('portfolio')
 })
 </script>
 
@@ -415,12 +431,13 @@ onMounted(() => {
               <div class="doc-drop-hint">파일을 선택하거나 드래그하세요 | {{ docMeta[section].hint }}</div>
             </label>
             <div class="doc-list">
-              <div v-if="!docs[section].length" class="doc-empty">아직 업로드한 {{ docMeta[section].title }}가 없어요.</div>
-              <div v-for="(d, i) in docs[section]" :key="i" class="doc-item">
+              <div v-if="docsLoading[section]" class="doc-empty">불러오는 중...</div>
+              <div v-else-if="!docs[section].length" class="doc-empty">아직 업로드한 {{ docMeta[section].title }}가 없어요.</div>
+              <div v-for="(d, i) in docs[section]" :key="d.id" class="doc-item">
                 <div class="doc-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg></div>
-                <div class="doc-info"><div class="doc-name">{{ d.name }} <span v-if="d.main" class="badge badge-green">대표</span></div><div class="doc-meta">{{ d.size }} | 업로드 {{ d.date }}</div></div>
+                <div class="doc-info"><div class="doc-name">{{ d.fileName }}</div><div class="doc-meta">업로드 {{ formatDateTime(d.createdAt) }}</div></div>
                 <div class="doc-actions">
-                  <button v-if="!d.main" class="btn btn-sm btn-ghost" @click="setMainDoc(section, i)">대표 지정</button>
+                  <a class="btn btn-sm btn-ghost" :href="d.downloadUrl" target="_blank" rel="noopener">다운로드</a>
                   <button class="btn btn-sm btn-ghost doc-del" @click="deleteDoc(section, i)">삭제</button>
                 </div>
               </div>

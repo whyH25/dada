@@ -11,15 +11,15 @@ const data = useDataStore()
 
 const r = computed(() => data.rooms[flow.currentRoom])
 const sub = computed(() =>
-  r.value ? `${r.value.co} ${r.value.role} 면접장에 입장하고 있어요.` : 'AI 면접관과 경쟁 지원자를 면접장에 입장시키는 중입니다.'
+  r.value ? `회사명 : ${r.value.co} | 직무 : ${r.value.role}` : 'AI 면접관과 경쟁 지원자를 면접장에 입장시키는 중입니다.'
 )
 
 const interviewerCount = computed(() => r.value?.interviewerCount ?? 2)
+const applicantCount = computed(() => r.value?.aiApplicantCount ?? 0)
 const labels = computed(() => [
-  '면접방 입장 확인',
-  `AI 면접관 ${interviewerCount.value}명 준비`,
+  '면접방 준비 중',
+  `AI 면접관 ${interviewerCount.value}명 | AI 지원자 ${applicantCount.value}명 준비 중`,
   'AI 대본 생성 중',
-  '카메라 | 마이크 연결',
 ])
 
 const active = ref(1)
@@ -44,7 +44,7 @@ onMounted(() => {
     if (idx >= labels.value.length) {
       clearInterval(timer)
       // 애니메이션 완료 후 API 응답 대기, 실패해도 진입
-      apiPromise.finally(() => setTimeout(() => router.push('/interview'), 700))
+      apiPromise.finally(() => setTimeout(() => router.push('/interview'), 3000))
     }
   }, 850)
 })
@@ -66,6 +66,9 @@ function stepClass(i) {
       <div class="wait-steps">
         <div v-for="(l, i) in labels" :key="i" class="wait-step" :class="stepClass(i)">{{ l }}</div>
       </div>
+      <p style="margin-top:18px;color:#e53e3e;font-size:13px;font-weight:600;">
+        면접방을 생성하는 중입니다. 창을 닫거나 다른 페이지로 이동하지 마세요.
+      </p>
     </div>
   </main>
 </template>

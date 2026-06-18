@@ -14,7 +14,7 @@ function goCreate() { router.push('/create') }
     <div class="intro-inner">
       <div class="intro-heading">
         <p class="intro-eyebrow">AI 면접 시뮬레이션</p>
-        <h1 class="intro-title">다대다 면접,<br />이렇게 진행됩니다</h1>
+        <h1 class="intro-title">다대다 면접,이렇게 진행됩니다</h1>
       </div>
 
       <div class="intro-grid">
@@ -72,14 +72,15 @@ function goCreate() { router.push('/create') }
 
 <style scoped>
 .intro-page {
-  min-height: 100vh;
+  /* nav(61px) + footer(76px, margin-top 제거됨)를 뺀 나머지 한 화면 안에 들어가도록 높이를 맞춰서 스크롤 없이 보이게 함 */
+  min-height: calc(100vh - 61px - 76px);
   background: #f3f4f6;
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 64px 24px 80px;
+  padding: 28px 24px;
 }
 
 .blob {
@@ -108,24 +109,24 @@ function goCreate() { router.push('/create') }
 .intro-inner {
   position: relative;
   width: 100%;
-  max-width: 900px;
+  max-width: 1300px;
   z-index: 1;
 }
 
 .intro-heading {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 50px;
 }
 .intro-eyebrow {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #1a6b45;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
 }
 .intro-title {
-  font-size: clamp(28px, 4vw, 40px);
+  font-size: clamp(20px, 2.6vw, 28px);
   font-weight: 800;
   color: #111827;
   line-height: 1.3;
@@ -133,23 +134,23 @@ function goCreate() { router.push('/create') }
 
 .intro-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .intro-card {
   background: #fff;
-  border-radius: 20px;
-  padding: 32px 28px 28px;
+  border-radius: 16px;
+  padding: 24px 18px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
 .icard-title {
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 800;
-  line-height: 1.35;
-  margin-bottom: 16px;
+  line-height: 1.3;
+  margin-bottom: 10px;
 }
 .icard-title.green  { color: #1a6b45; }
 .icard-title.blue   { color: #308860; }
@@ -157,21 +158,21 @@ function goCreate() { router.push('/create') }
 .icard-title.purple { color: #6cc492; }
 
 .icard-body {
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 13.5px;
+  line-height: 1.6;
   color: #374151;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 .icard-note {
   font-size: 12px;
   color: #9ca3af;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .intro-cta-card {
   background: #fff;
-  border-radius: 20px;
-  padding: 28px 36px;
+  border-radius: 16px;
+  padding: 16px 28px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
@@ -207,7 +208,11 @@ function goCreate() { router.push('/create') }
 .cta-btn:hover { background: #155a38; transform: translateY(-1px); }
 .cta-btn:active { transform: translateY(0); }
 
+@media (max-width: 900px) {
+  .intro-grid { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 640px) {
+  .intro-page { min-height: 0; align-items: flex-start; }
   .intro-grid { grid-template-columns: 1fr; }
   .intro-cta-card { flex-direction: column; align-items: flex-start; }
   .cta-btn { width: 100%; justify-content: center; }

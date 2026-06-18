@@ -4,17 +4,19 @@ import com.ssafy.mvc.dao.AiPersonaDao;
 import com.ssafy.mvc.dao.InterviewRoomDao;
 import com.ssafy.mvc.dao.InterviewRoomPersonaDao;
 import com.ssafy.mvc.dao.InterviewScenarioDao;
+import com.ssafy.mvc.dao.UserPortfolioDao;
+import com.ssafy.mvc.dao.UserResumeDao;
 import com.ssafy.mvc.dto.AiApplicantDto;
 import com.ssafy.mvc.dto.AiInterviewerDto;
 import com.ssafy.mvc.dto.InterviewRoomDto;
 import com.ssafy.mvc.dto.InterviewRoomPersonaDto;
 import com.ssafy.mvc.dto.InterviewScenarioDto;
 import com.ssafy.mvc.dto.InterviewStartResultDto;
+import com.ssafy.mvc.dto.UserPortfolioDto;
+import com.ssafy.mvc.dto.UserResumeDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,21 +31,31 @@ public class InterviewRoomService {
     private final InterviewRoomPersonaDao interviewRoomPersonaDao;
     private final InterviewScenarioDao interviewScenarioDao;
     private final AiPromptService aiPromptService;
-    private final DocumentParseService documentParseService;
+    private final UserResumeDao userResumeDao;
+    private final UserPortfolioDao userPortfolioDao;
 
-    // 서류 파일 텍스트 추출 후 면접방 생성 (resumeId/portfolioId는 현재 미사용으로 0 저장)
-    public InterviewRoomDto createRoom(InterviewRoomDto dto, MultipartFile resumeFile, MultipartFile portfolioFile) throws IOException {
-        String resumeText = (resumeFile != null && !resumeFile.isEmpty())
-                ? documentParseService.parseFile(resumeFile) : "";
-        String portfolioText = (portfolioFile != null && !portfolioFile.isEmpty())
-                ? documentParseService.parseFile(portfolioFile) : "";
+    // 마이페이지에 등록된 이력서/포트폴리오를 선택해 면접방 생성
+    // resumeId/portfolioId가 가리키는 row의 parsed_text·file_name을 면접방에 스냅샷으로 복사
+    public InterviewRoomDto createRoom(InterviewRoomDto dto) {
+        if (dto.getResumeId() != null) {
+            UserResumeDto resume = userResumeDao.selectById(dto.getResumeId());
+            if (resume == null || !resume.getUserId().equals(dto.getUserId())) {
+                throw new IllegalArgumentException("선택한 이력서를 찾을 수 없습니다.");
+            }
+            dto.setResumeFileName(resume.getFileName());
+            dto.setResumeText(resume.getParsedText());
+        }
 
-        dto.setResumeId(0L);
-        dto.setPortfolioId(0L);
-        dto.setResumeText(resumeText);
-        dto.setPortfolioText(portfolioText);
+        if (dto.getPortfolioId() != null) {
+            UserPortfolioDto portfolio = userPortfolioDao.selectById(dto.getPortfolioId());
+            if (portfolio == null || !portfolio.getUserId().equals(dto.getUserId())) {
+                throw new IllegalArgumentException("선택한 포트폴리오를 찾을 수 없습니다.");
+            }
+            dto.setPortfolioFileName(portfolio.getFileName());
+            dto.setPortfolioText(portfolio.getParsedText());
+        }
+
         dto.setStatus("READY");
-
         interviewRoomDao.insertInterviewRoom(dto);
         return dto;
     }

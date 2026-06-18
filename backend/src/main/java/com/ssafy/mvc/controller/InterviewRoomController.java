@@ -7,13 +7,10 @@ import com.ssafy.mvc.dto.InterviewScenarioDto;
 import com.ssafy.mvc.dto.InterviewStartResultDto;
 import com.ssafy.mvc.service.InterviewRoomService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -39,8 +36,8 @@ public class InterviewRoomController {
         return ResponseEntity.ok(interviewScenarioDao.selectByRoomId(roomId));
     }
 
-    // 면접방 생성 및 서류 텍스트 추출 후 DB 저장
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // 면접방 생성: 파일 업로드 대신 마이페이지에 등록된 이력서/포트폴리오를 resumeId, portfolioId로 선택
+    @PostMapping
     public ResponseEntity<InterviewRoomDto> createRoom(
             @AuthenticationPrincipal CustomUserDetailsDto userDetails,
             @RequestParam String companyName,
@@ -49,9 +46,9 @@ public class InterviewRoomController {
             @RequestParam String applicantType,
             @RequestParam(required = false) Integer aiInterviewerCnt,
             @RequestParam Integer aiApplicantCnt,
-            @RequestParam(required = false) MultipartFile resumeFile,
-            @RequestParam(required = false) MultipartFile portfolioFile
-    ) throws IOException {
+            @RequestParam(required = false) Long resumeId,
+            @RequestParam(required = false) Long portfolioId
+    ) {
 
         InterviewRoomDto dto = new InterviewRoomDto();
         dto.setUserId(userDetails.getUserDto().getUserId());
@@ -61,8 +58,10 @@ public class InterviewRoomController {
         dto.setApplicantType(applicantType);
         dto.setAiInterviewerCnt(aiInterviewerCnt != null ? aiInterviewerCnt : 3);
         dto.setAiApplicantCnt(aiApplicantCnt);
+        dto.setResumeId(resumeId);
+        dto.setPortfolioId(portfolioId);
 
-        InterviewRoomDto result = interviewRoomService.createRoom(dto, resumeFile, portfolioFile);
+        InterviewRoomDto result = interviewRoomService.createRoom(dto);
         return ResponseEntity.ok(result);
     }
 

@@ -1238,20 +1238,7 @@ onUnmounted(() => {
 }
 .iv-start-btn {
   margin-top: 12px;
-  background: #ccff00;
-  border: none;
-  border-radius: 14px;
-  color: #0d1117;
-  font-size: 18px;
-  font-weight: 800;
-  padding: 18px 52px;
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
-}
-.iv-start-btn:hover { background: #b8e600; transform: scale(1.03); }
-.iv-end-overlay-btn {
-  margin-top: 12px;
-  background: #dc2626;
+  background: var(--green-500, #308860);
   border: none;
   border-radius: 14px;
   color: #fff;
@@ -1261,7 +1248,20 @@ onUnmounted(() => {
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
 }
-.iv-end-overlay-btn:hover { background: #b91c1c; transform: scale(1.03); }
+.iv-start-btn:hover { background: var(--green-650, #286930); transform: scale(1.03); }
+.iv-end-overlay-btn {
+  margin-top: 12px;
+  background: var(--green-500, #308860);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 18px 52px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.iv-end-overlay-btn:hover { background: var(--green-650, #286930); transform: scale(1.03); }
 
 /* ── USER 턴 답변 바 ── */
 .iv-user-turn-bar {

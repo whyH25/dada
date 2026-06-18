@@ -14,8 +14,10 @@
             ai_interviewer_cnt,
             ai_applicant_cnt,
             resume_id,
+            resume_file_name,
             resume_text,
             portfolio_id,
+            portfolio_file_name,
             portfolio_text,
             status
         ) VALUES (
@@ -27,8 +29,10 @@
             #{aiInterviewerCnt},
             #{aiApplicantCnt},
             #{resumeId},
+            #{resumeFileName},
             #{resumeText},
             #{portfolioId},
+            #{portfolioFileName},
             #{portfolioText},
             #{status}
         )
@@ -38,7 +42,8 @@
         SELECT ir.room_id, ir.user_id, ir.applicant_type, ir.company_name, ir.job_id,
                cj.job_name,
                ir.difficulty, ir.ai_interviewer_cnt, ir.ai_applicant_cnt,
-               ir.resume_id, ir.resume_text, ir.portfolio_id, ir.portfolio_text,
+               ir.resume_id, ir.resume_file_name, ir.resume_text,
+               ir.portfolio_id, ir.portfolio_file_name, ir.portfolio_text,
                ir.status, ir.started_at, ir.ended_at
         FROM interview_room ir
         LEFT JOIN category_job cj ON ir.job_id = cj.job_id

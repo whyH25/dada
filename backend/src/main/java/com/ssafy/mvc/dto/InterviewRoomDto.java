@@ -23,8 +23,10 @@ public class InterviewRoomDto {
     private Integer aiApplicantCnt;
 
     private Long resumeId;
+    private String resumeFileName;
     private String resumeText;
     private Long portfolioId;
+    private String portfolioFileName;
     private String portfolioText;
 
     private String status;
@@ -93,6 +95,12 @@ public class InterviewRoomDto {
 	public void setResumeId(Long resumeId) {
 		this.resumeId = resumeId;
 	}
+	public String getResumeFileName() {
+		return resumeFileName;
+	}
+	public void setResumeFileName(String resumeFileName) {
+		this.resumeFileName = resumeFileName;
+	}
 	public String getResumeText() {
 		return resumeText;
 	}
@@ -104,6 +112,12 @@ public class InterviewRoomDto {
 	}
 	public void setPortfolioId(Long portfolioId) {
 		this.portfolioId = portfolioId;
+	}
+	public String getPortfolioFileName() {
+		return portfolioFileName;
+	}
+	public void setPortfolioFileName(String portfolioFileName) {
+		this.portfolioFileName = portfolioFileName;
 	}
 	public String getPortfolioText() {
 		return portfolioText;
@@ -136,8 +150,9 @@ public class InterviewRoomDto {
 		return "InterviewRoomDto [roomId=" + roomId + ", userId=" + userId + ", applicantType=" + applicantType
 				+ ", companyName=" + companyName + ", jobId=" + jobId + ", difficulty=" + difficulty
 				+ ", aiInterviewerCnt=" + aiInterviewerCnt + ", aiApplicantCnt=" + aiApplicantCnt + ", resumeId="
-				+ resumeId + ", resumeText=" + resumeText + ", portfolioId=" + portfolioId + ", portfolioText="
-				+ portfolioText + ", status=" + status + ", startedAt=" + startedAt + ", endedAt=" + endedAt + "]";
+				+ resumeId + ", resumeFileName=" + resumeFileName + ", resumeText=" + resumeText + ", portfolioId="
+				+ portfolioId + ", portfolioFileName=" + portfolioFileName + ", portfolioText=" + portfolioText
+				+ ", status=" + status + ", startedAt=" + startedAt + ", endedAt=" + endedAt + "]";
 	}
 	
     

@@ -11,7 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -125,19 +129,160 @@ public class AiPromptService {
             }
             """;
 
+    private static final String ANALYSIS_PROMPT_TEMPLATE = """
+            당신은 면접 평가 전문가입니다.
+            아래 면접 정보와 질문/답변 내용을 바탕으로 지원자를 종합적으로 평가하세요.
+            반드시 JSON만 응답하세요. JSON 외의 문자(설명, 마크다운, 코드블록)는 절대 출력하지 마세요.
+
+            [면접 정보]
+            회사: {company}
+            직무: {job}
+            지원 유형: {type}
+            난이도: {difficulty}
+
+            [AI 경쟁 지원자 목록]
+            {applicantList}
+
+            [면접 Q&A]
+            (나: 실제 사용자 답변 / 나머지: AI 경쟁 지원자 답변)
+            {qaSection}
+
+            [평가 항목 안내]
+            - compExpertise: 직무 전문성 (기술적 지식, 직무 관련 경험의 깊이)
+            - compLogic: 논리적 사고력 (구조적 설명, 인과관계, 결론 도출)
+            - compCommu: 커뮤니케이션 (명확한 표현, 답변의 흐름과 전달력)
+            - compCulture: 조직 적합성 (가치관, 협업 태도, 성장 마인드셋)
+            - compPressure: 압박 대응력 (어려운 질문에서의 태도 유지 및 대처)
+            - speechWpm: 예상 말하기 속도 (분당 어절 수, 총 답변 어절 수 ÷ 총 답변 시간(분)으로 추정)
+            - speechFiller: 추임새 예상 횟수 ("음", "어", "그", "저", "뭐" 등 답변 내 등장 횟수 합산)
+
+            [출력 JSON 형식]
+            {
+              "overallScore": number (0-100),
+              "aiComment": string (종합 평가 코멘트),
+              "compExpertise": number (0-100),
+              "compExpertiseDetail": string,
+              "compLogic": number (0-100),
+              "compLogicDetail": string,
+              "compCommu": number (0-100),
+              "compCommuDetail": string,
+              "compCulture": number (0-100),
+              "compCultureDetail": string,
+              "compPressure": number (0-100),
+              "compPressureDetail": string,
+              "speechWpm": number,
+              "speechFiller": number,
+              "applicants": [
+                {
+                  "isUser": true,
+                  "personaId": null,
+                  "name": "나",
+                  "score": number (0-100),
+                  "strength": string (핵심 강점 1~2문장),
+                  "weakness": string (개선 포인트 1~2문장)
+                }
+              ],
+              "questions": [
+                {
+                  "questionSeq": number,
+                  "questionText": string,
+                  "answerText": string (사용자 답변 원문),
+                  "score": number (0-100),
+                  "label": "우수" | "양호" | "보통" | "미흡",
+                  "feedback": string (구체적 피드백),
+                  "tags": string (쉼표로 구분된 키워드, 예: "논리성,구체성,직무연관")
+                }
+              ]
+            }
+
+            [주의사항]
+            - applicants 배열에는 반드시 사용자("나") 항목을 포함하고, AI 경쟁 지원자가 있다면 각각 추가하세요.
+            - AI 경쟁 지원자 항목의 personaId는 위 경쟁 지원자 목록에 나온 persona_id 값을 그대로 사용하세요.
+            - questions 배열은 사용자가 답변한 질문만 포함하세요 (사용자 답변이 없으면 제외).
+            """;
+
     // 프롬프트 생성 → OpenAI 호출 → 프롬프트 기록 저장 → 응답 파싱
     public InterviewStartResultDto generateScript(InterviewRoomDto room,
                                              List<AiInterviewerDto> interviewers,
                                              List<AiApplicantDto> applicants) {
         String prompt = buildPrompt(room, interviewers, applicants);
-        String responseBody = callOpenAi(prompt);
+        String responseBody = callOpenAi(prompt,
+                "당신은 모의면접 대본을 생성하는 AI입니다. 반드시 JSON 형식으로만 응답하세요.", 0.7);
 
-        savePromptRecord(room.getRoomId(), prompt, responseBody);
+        savePromptRecord(room.getRoomId(), "SCRIPT_KR", prompt, responseBody);
 
         InterviewStartResultDto script = parseScript(responseBody);
         // AI가 반환한 roomId 대신 실제 roomId로 덮어씀 (환각 방지)
         script.setRoomId(room.getRoomId());
         return script;
+    }
+
+    // 면접 종료 후 Q&A 분석 프롬프트 생성 → OpenAI 호출 → 프롬프트 기록 저장 → JSON 파싱
+    // (분석 결과를 DB 3개 테이블에 저장하는 건 ReportService 담당)
+    public JsonNode generateReportAnalysis(InterviewRoomDto room,
+                                            List<InterviewScenarioDto> scenarios,
+                                            Map<Long, String> applicantNames) {
+        String prompt = buildAnalysisPrompt(room, scenarios, applicantNames);
+        String responseBody = callOpenAi(prompt,
+                "당신은 면접 평가 전문가입니다. 반드시 JSON 형식으로만 응답하세요.", 0.3);
+
+        savePromptRecord(room.getRoomId(), "REPORT", prompt, responseBody);
+
+        return extractContent(responseBody);
+    }
+
+    private String buildAnalysisPrompt(InterviewRoomDto room,
+                                       List<InterviewScenarioDto> scenarios,
+                                       Map<Long, String> applicantNames) {
+        // question_seq > 0 인 턴들을 seq 순서대로 그루핑
+        Map<Integer, List<InterviewScenarioDto>> groups = new TreeMap<>();
+        for (InterviewScenarioDto s : scenarios) {
+            if (s.getQuestionSeq() != null && s.getQuestionSeq() > 0) {
+                groups.computeIfAbsent(s.getQuestionSeq(), k -> new ArrayList<>()).add(s);
+            }
+        }
+
+        // 질문별 Q&A 텍스트 구성
+        StringBuilder qa = new StringBuilder();
+        for (Map.Entry<Integer, List<InterviewScenarioDto>> entry : groups.entrySet()) {
+            String question = "";
+            String userAnswer = "(답변 없음)";
+            Map<String, String> appAnswers = new LinkedHashMap<>();
+
+            for (InterviewScenarioDto s : entry.getValue()) {
+                switch (s.getTurnRole()) {
+                    case "INTERVIEWER" -> question = nvl(s.getSpeechText(), "");
+                    case "USER" -> userAnswer = nvl(s.getAnswerText(), "(답변 없음)");
+                    case "APPLICANT" -> {
+                        if (s.getTurnRefId() != null) {
+                            String name = applicantNames.getOrDefault(s.getTurnRefId(), "AI지원자" + s.getTurnRefId());
+                            appAnswers.put(name, nvl(s.getSpeechText(), ""));
+                        }
+                    }
+                }
+            }
+
+            qa.append("Q").append(entry.getKey()).append(". ").append(question).append("\n");
+            qa.append("  나: ").append(userAnswer).append("\n");
+            for (Map.Entry<String, String> app : appAnswers.entrySet()) {
+                qa.append("  ").append(app.getKey()).append(": ").append(app.getValue()).append("\n");
+            }
+            qa.append("\n");
+        }
+
+        // AI 경쟁 지원자 목록 (없으면 "없음")
+        String applicantList = applicantNames.isEmpty() ? "없음" :
+                applicantNames.entrySet().stream()
+                        .map(e -> e.getValue() + " (persona_id: " + e.getKey() + ")")
+                        .collect(Collectors.joining("\n"));
+
+        return ANALYSIS_PROMPT_TEMPLATE
+                .replace("{company}", nvl(room.getCompanyName(), "미정"))
+                .replace("{job}", nvl(room.getJobName(), "미정"))
+                .replace("{type}", nvl(room.getApplicantType(), "NEW"))
+                .replace("{difficulty}", nvl(room.getDifficulty(), "NORMAL"))
+                .replace("{applicantList}", applicantList)
+                .replace("{qaSection}", qa.toString().trim());
     }
 
     private String buildPrompt(InterviewRoomDto room,
@@ -184,26 +329,22 @@ public class AiPromptService {
         return sb.toString().trim();
     }
 
-    private String callOpenAi(String userPrompt) {
+    // 대본 생성·리포트 분석이 공통으로 쓰는 OpenAI 호출 (system 메시지/temperature만 다름)
+    private String callOpenAi(String userPrompt, String systemMessage, double temperature) {
         try {
+            String escapedSystem = objectMapper.writeValueAsString(systemMessage);
             String escapedPrompt = objectMapper.writeValueAsString(userPrompt);
             String requestBody = """
                     {
                       "model": "gpt-4o",
                       "messages": [
-                        {
-                          "role": "system",
-                          "content": "당신은 모의면접 대본을 생성하는 AI입니다. 반드시 JSON 형식으로만 응답하세요."
-                        },
-                        {
-                          "role": "user",
-                          "content": %s
-                        }
+                        { "role": "system", "content": %s },
+                        { "role": "user", "content": %s }
                       ],
                       "response_format": { "type": "json_object" },
-                      "temperature": 0.7
+                      "temperature": %s
                     }
-                    """.formatted(escapedPrompt);
+                    """.formatted(escapedSystem, escapedPrompt, temperature);
 
             return openAiRestClient.post()
                     .uri(chatPath)
@@ -214,12 +355,23 @@ public class AiPromptService {
             throw new RuntimeException("OpenAI 호출 실패", e);
         }
     }
+
+    // OpenAI 응답 envelope(choices[0].message.content)에서 실제 JSON 본문만 추출
+    private JsonNode extractContent(String responseBody) {
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            String content = root.path("choices").get(0).path("message").path("content").asText();
+            return objectMapper.readTree(content);
+        } catch (Exception e) {
+            throw new RuntimeException("AI 응답 파싱 실패", e);
+        }
+    }
     
     // 프롬프트 저장
-    private void savePromptRecord(Long roomId, String promptText, String responseText) {
+    private void savePromptRecord(Long roomId, String promptType, String promptText, String responseText) {
         InterviewPromptDto dto = new InterviewPromptDto();
         dto.setRoomId(roomId);
-        dto.setPromptType("SCRIPT");
+        dto.setPromptType(promptType);
         dto.setPromptText(promptText);
         dto.setResponseText(responseText);
         interviewPromptDao.insertPrompt(dto);

@@ -49,18 +49,24 @@ export async function fetchJobCategories() {
   }
 }
 
-export async function createInterviewRoom({ companyName, jobId, difficulty, employmentType, interviewerCount, aiApplicantCount, resumeFile, portfolioFile }) {
-  const form = new FormData()
-  form.append('companyName', companyName)
-  if (jobId != null) form.append('jobId', jobId)
-  form.append('difficulty', difficulty)
-  form.append('applicantType', EMPLOYMENT_TYPE_MAP[employmentType] ?? 'NEW')
-  form.append('aiInterviewerCnt', interviewerCount)
-  form.append('aiApplicantCnt', aiApplicantCount)
-  if (resumeFile) form.append('resumeFile', resumeFile)
-  if (portfolioFile) form.append('portfolioFile', portfolioFile)
+export async function createInterviewRoom({ companyName, jobId, difficulty, employmentType, interviewerCount, aiApplicantCount, resumeId, portfolioId }) {
+  // 파일 업로드 대신 마이페이지에 등록된 이력서/포트폴리오의 id만 전달
+  const params = new URLSearchParams()
+  params.append('companyName', companyName)
+  if (jobId != null) params.append('jobId', jobId)
+  params.append('difficulty', difficulty)
+  params.append('applicantType', EMPLOYMENT_TYPE_MAP[employmentType] ?? 'NEW')
+  params.append('aiInterviewerCnt', interviewerCount)
+  params.append('aiApplicantCnt', aiApplicantCount)
+  if (resumeId != null) params.append('resumeId', resumeId)
+  if (portfolioId != null) params.append('portfolioId', portfolioId)
 
-  const res = await fetch(`${BASE}/interview-rooms`, { method: 'POST', body: form, credentials: 'include' })
+  const res = await fetch(`${BASE}/interview-rooms`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params,
+    credentials: 'include',
+  })
   if (!res.ok) {
     const msg = await res.text()
     throw new Error(msg || '면접방 생성에 실패했습니다.')

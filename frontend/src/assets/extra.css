@@ -453,6 +453,12 @@
 .wait-step.done::before { border-color: var(--green-500); background: var(--green-500); content: "✓"; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; animation: none; }
 @keyframes waitSpin { to { transform: rotate(360deg); } }
 
+/* done 화면은 네비/푸터가 그대로 보이므로, .page의 min-height(100vh - nav)에서
+   footer가 차지하는 높이까지 더 빼서 nav + 본문 + footer 합이 한 화면(100vh)을 넘지 않게 한다.
+   nav: 60(nav-inner) + 1(border-bottom) = 61px
+   footer: 1(border-top) + 56(padding) + 18.75(텍스트 줄높이, line-height 1.5) ≈ 76px (margin-top 제거됨) */
+#page-done { min-height: calc(100vh - 61px - 76px); }
+
 /* =========================
    Community panels + study
    ========================= */
