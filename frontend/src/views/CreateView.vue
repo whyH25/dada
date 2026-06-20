@@ -30,6 +30,7 @@ watch(step, val => {
 
 onUnmounted(() => stopDeviceCheck())
 const company = ref('')
+const companyRef = ref(null)
 const selectedJobId = ref(null)
 const selectedJobName = ref('')
 const jobCategories = ref([])
@@ -117,6 +118,7 @@ function onPortfolioChange(e) {
 function gotoStep2() {
   if (!company.value.trim()) {
     errorMsg.value = '회사명을 입력해주세요.'
+    companyRef.value?.focus()
     return
   }
   errorMsg.value = ''
@@ -204,7 +206,7 @@ async function startInterview() {
                 <div class="form-row">
                   <div class="field">
                     <label class="field-label">회사명 <span class="req">*</span></label>
-                    <input class="input" v-model="company" placeholder="예) 카카오, 삼성전자 DS부문" />
+                    <input class="input" v-model="company" placeholder="예) 카카오, 삼성전자 DS부문" ref="companyRef" />
                   </div>
                   <div class="field">
                     <label class="field-label">직무 선택 <span class="req">*</span></label>
@@ -313,13 +315,11 @@ async function startInterview() {
               <div class="text-sm text-muted" style="margin-bottom: 10px;">
                 총 {{ 1 + interviewerCount + applicantCount }}명 | 면접관 {{ interviewerCount }} + 본인 + AI 지원자 {{ applicantCount }}
               </div>
-              <button class="btn btn-secondary btn-block" disabled style="opacity:0.6">다음 단계에서 생성</button>
+              <!-- 에러 메시지 -->
+              <p v-if="errorMsg" style="color:var(--accent-red, #c2493a);font-size:13px;">{{ errorMsg }}</p>
             </div>
           </aside>
         </div>
-
-        <!-- 에러 메시지 -->
-        <div v-if="errorMsg" style="color:var(--red-500);margin-bottom:12px;font-size:14px;">{{ errorMsg }}</div>
 
         <div class="create-actions">
           <button class="btn btn-ghost" @click="router.push('/')">취소</button>

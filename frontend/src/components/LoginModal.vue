@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 
@@ -8,11 +8,33 @@ const emit = defineEmits(['login-success'])
 const router = useRouter()
 const auth = useAuthStore()
 
+const REMEMBERED_EMAIL_KEY = 'rememberedEmail'
+
 const userEmail = ref('')
 const userPwd = ref('')
+const rememberId = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
 const successMsg = ref('')
+
+// 저장된 아이디가 있으면 입력란에 미리 채워둠
+onMounted(() => {
+  const saved = localStorage.getItem(REMEMBERED_EMAIL_KEY)
+  if (saved) {
+    userEmail.value = saved
+    rememberId.value = true
+  }
+})
+
+// 모달이 닫힐 때(로그인 성공/수동 닫기 공통)마다 비밀번호는 항상 비우고,
+// 아이디는 "아이디 저장"이 꺼져 있을 때만 비움
+watch(() => auth.loginOpen, (open) => {
+  if (open) return
+  userPwd.value = ''
+  errorMsg.value = ''
+  successMsg.value = ''
+  if (!rememberId.value) userEmail.value = ''
+})
 
 const emailRef = ref(null)
 const pwdRef = ref(null)
@@ -45,6 +67,12 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.doLogin(userEmail.value, userPwd.value, router)
+    // 아이디 저장 체크 여부에 따라 이메일을 기기에 저장/삭제
+    if (rememberId.value) {
+      localStorage.setItem(REMEMBERED_EMAIL_KEY, userEmail.value.trim())
+    } else {
+      localStorage.removeItem(REMEMBERED_EMAIL_KEY)
+    }
     successMsg.value = '로그인에 성공했습니다.'
     emit('login-success')
   } catch (e) {
@@ -66,7 +94,7 @@ async function handleLogin() {
         <div class="auth-brand-name">다대다</div>
       </div>
       <h2 class="auth-title">로그인이 필요해요</h2>
-      <p class="auth-sub">면접 참여·면접방 생성·이력서 등록은 로그인 후 이용할 수 있어요.</p>
+      <p class="auth-sub">면접방 생성·이력서 등록은 로그인 후 이용할 수 있어요.</p>
 
       <div class="auth-field">
         <label class="auth-label">이메일</label>
@@ -77,8 +105,8 @@ async function handleLogin() {
         <input class="input" type="password" v-model="userPwd" placeholder="비밀번호" @keyup.enter="handleLogin" ref="pwdRef" />
       </div>
       <div class="auth-row">
-        <label class="auth-remember"><input type="checkbox" /> 로그인 상태 유지</label>
-        <a class="auth-forgot">비밀번호 찾기</a>
+        <label class="auth-remember"><input type="checkbox" v-model="rememberId" /> 아이디 저장</label>
+        <a class="auth-forgot">아이디/비밀번호 찾기</a>
       </div>
 
       <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
@@ -88,11 +116,11 @@ async function handleLogin() {
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
 
-      <div class="auth-divider"><span>또는</span></div>
+      <!-- <div class="auth-divider"><span>또는</span></div>
       <div class="auth-social">
         <button class="auth-social-btn kakao">카카오로 시작하기</button>
         <button class="auth-social-btn">Google 계정으로 계속</button>
-      </div>
+      </div> -->
       <div class="auth-foot">
         아직 회원이 아니신가요? <a style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/signup') }">회원가입</a>
       </div>

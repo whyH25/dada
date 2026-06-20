@@ -73,4 +73,23 @@
         ORDER BY question_seq
     </select>
 
+    <!-- 면접 종료(ended_at) + 1일이 지났고 아직 알림을 안 보낸 리포트의 수신자 정보 조회 -->
+    <select id="selectPendingNotifications" resultType="com.ssafy.mvc.dto.ReportNotificationDto">
+        SELECT ir.report_id      AS reportId,
+               u.user_email      AS userEmail,
+               u.user_name       AS userName,
+               room.company_name AS companyName
+        FROM interview_report ir
+        JOIN interview_room room ON room.room_id = ir.room_id
+        JOIN users u ON u.user_id = room.user_id
+        WHERE ir.notified_at IS NULL
+          AND room.ended_at IS NOT NULL
+          AND room.ended_at + INTERVAL 1 DAY <![CDATA[<=]]> NOW()
+    </select>
+
+    <!-- 알림 메일 발송 시각 기록 (중복 발송 방지) -->
+    <update id="markNotified">
+        UPDATE interview_report SET notified_at = NOW() WHERE report_id = #{reportId}
+    </update>
+
 </mapper>

@@ -39,31 +39,6 @@ export function radarSVG(axes, series, size) {
   return `<svg viewBox="0 0 ${size} ${size}" class="radar-svg">${g}</svg>`
 }
 
-export function speedGauge(wpm, status) {
-  const pct = Math.max(4, Math.min(100, ((wpm - 120) / (320 - 120)) * 100))
-  return `
-    <div class="speed-gauge">
-      <div class="speed-bar">
-        <div class="speed-zone slow">느림</div>
-        <div class="speed-zone ok">적정</div>
-        <div class="speed-zone fast">빠름</div>
-        <div class="speed-marker" style="left:${pct}%"><span>${wpm} WPM</span></div>
-      </div>
-      <div class="speed-foot"><span>120</span><span class="badge badge-${status[1]}">${status[0]}</span><span>320</span></div>
-    </div>`
-}
-function toneBar(label, v, lo, hi) {
-  return `<div class="tone-item">
-    <div class="tone-head"><span>${label}</span><strong>${v}</strong></div>
-    <div class="tone-track"><div class="tone-fill" style="width:${v}%"></div></div>
-    <div class="tone-ends"><span>${lo}</span><span>${hi}</span></div>
-  </div>`
-}
-function fillerRow(word, n) {
-  const w = Math.min(100, n * 9)
-  return `<div class="filler-row"><span class="filler-word">${word}</span><div class="filler-track"><div class="filler-bar" style="width:${w}%"></div></div><span class="filler-n">${n}회</span></div>`
-}
-
 export function panelOverview(r) {
   const bars = compLabels.map((l, i) => `
     <div class="score-item">
@@ -80,11 +55,10 @@ export function panelOverview(r) {
       <div class="card">
         <div class="card-header"><h3 class="card-title">역량별 점수</h3></div>
         <div class="score-grid">${bars}</div>
+        <div class="kv-row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--ink-150);">
+          <span>평균 답변 길이</span><strong>${r.speech.avgLen}초</strong>
+        </div>
       </div>
-    </div>
-    <div class="card" style="margin-top:16px;">
-      <div class="card-header"><h3 class="card-title">발화 속도</h3><span class="text-sm text-muted">분당 단어 수(WPM) 기준</span></div>
-      ${speedGauge(r.speech.wpm, r.speech.wpmStatus)}
     </div>
     <div class="card" style="margin-top:16px;">
       <div class="card-header"><h3 class="card-title">총평 요약</h3></div>
@@ -130,39 +104,6 @@ export function panelCompetency(r) {
       <div class="card-header"><h3 class="card-title">논리력 상세 분석</h3><span class="badge ${r.me[logicIdx] >= 80 ? 'badge-green' : 'badge-amber'}">${r.me[logicIdx]}점</span></div>
       <p class="rep-summary">${r.logic}</p>
       <div class="ai-comment"><div class="ai-comment-head"><span class="ai-badge">AI 코멘트</span></div><p>${r.aiComment}</p></div>
-    </div>`
-}
-
-export function panelSpeech(r) {
-  const s = r.speech, tone = s.tone
-  return `
-    <div class="rep-grid-2">
-      <div class="card">
-        <div class="card-header"><h3 class="card-title">발화 속도</h3></div>
-        ${speedGauge(s.wpm, s.wpmStatus)}
-        <div class="divider"></div>
-        <div class="kv-row"><span>평균 답변 길이</span><strong>${s.avgLen}초</strong></div>
-        <div class="kv-row"><span>답변 대기 시간</span><strong>${s.wait}초</strong></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3 class="card-title">목소리 톤 분석</h3></div>
-        <div class="tone-list">
-          ${toneBar('음높이 변화', tone.pitch, '단조로움', '풍부함')}
-          ${toneBar('목소리 안정성', tone.stability, '떨림', '안정적')}
-          ${toneBar('에너지 / 자신감', tone.energy, '낮음', '높음')}
-        </div>
-      </div>
-    </div>
-    <div class="card" style="margin-top:16px;">
-      <div class="card-header"><h3 class="card-title">필러(군더더기) 사용 분석</h3><span class="badge ${s.filler > 20 ? 'badge-red' : s.filler > 12 ? 'badge-amber' : 'badge-green'}">${s.filler > 20 ? '개선 필요' : s.filler > 12 ? '보통' : '양호'}</span></div>
-      <div class="filler-total">총 <strong>${s.filler}회</strong> · 분당 ${(s.filler / 35 * 60 / 60).toFixed(1)}회</div>
-      <div class="filler-list">
-        ${fillerRow('음…', Math.round(s.filler * 0.4))}
-        ${fillerRow('어…', Math.round(s.filler * 0.3))}
-        ${fillerRow('그…', Math.round(s.filler * 0.18))}
-        ${fillerRow('약간', Math.round(s.filler * 0.12))}
-      </div>
-      <p class="rep-hint">압박형 질문(Q3) 구간에서 필러 사용이 집중적으로 증가했습니다. 답변 전 1초 정지 후 시작하는 습관을 들이면 필러를 줄일 수 있습니다.</p>
     </div>`
 }
 
@@ -228,7 +169,6 @@ export function panelQuestions(r) {
 export function reportPanel(r, tab) {
   if (tab === 'overview') return panelOverview(r)
   if (tab === 'competency') return panelCompetency(r)
-  if (tab === 'speech') return panelSpeech(r)
   if (tab === 'applicants') return panelApplicants(r)
   return panelQuestions(r)
 }

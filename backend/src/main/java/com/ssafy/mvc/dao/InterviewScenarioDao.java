@@ -15,5 +15,8 @@ public interface InterviewScenarioDao {
 
     InterviewScenarioDto selectForTts(Long scenarioId);
 
-    void updateAnswerText(@Param("scenarioId") Long scenarioId, @Param("answerText") String answerText);
+    // STT로 받은 답변 텍스트(없으면 null)와 답변 완료까지 걸린 시간(초)을 함께 저장
+    void updateAnswer(@Param("scenarioId") Long scenarioId,
+                       @Param("answerText") String answerText,
+                       @Param("answerSec") Integer answerSec);
 }

@@ -19,4 +19,6 @@ public interface UserService {
     void updateUser(UserDto user);
 
     void deleteUser(Long userId);
+
+    boolean verifyPassword(UserDto user, String rawPassword);
 }

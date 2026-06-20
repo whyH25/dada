@@ -43,24 +43,28 @@ public class GoogleSpeechController {
                 .body(audioBytes);
     }
 
-    // 음성 → 텍스트 변환 + answer_text DB 저장
+    // 음성 → 텍스트 변환 + answer_text/answer_sec DB 저장
+    // audioFile은 마이크 스트림이 없는 등의 사유로 없을 수 있어 필수로 받지 않음
     @PostMapping(value = "/stt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> stt(
-            @RequestParam MultipartFile audioFile,
-            @RequestParam(required = false) Long scenarioId
+            @RequestParam(required = false) MultipartFile audioFile,
+            @RequestParam(required = false) Long scenarioId,
+            @RequestParam(required = false) Integer answerSec
     ) throws IOException {
         String transcript = "";
         try {
-            transcript = googleSttService.transcribe(audioFile.getBytes());
+            if (audioFile != null && !audioFile.isEmpty()) {
+                transcript = googleSttService.transcribe(audioFile.getBytes());
+            }
         } catch (Exception e) {
             log.error("Google STT 실패 (scenarioId={}): {}", scenarioId, e.getMessage());
         }
 
-        if (scenarioId != null && !transcript.isBlank()) {
-            interviewScenarioDao.updateAnswerText(scenarioId, transcript);
-            log.info("answer_text 저장 완료 (scenarioId={}, length={})", scenarioId, transcript.length());
+        if (scenarioId != null) {
+            interviewScenarioDao.updateAnswer(scenarioId, transcript.isBlank() ? null : transcript, answerSec);
+            log.info("answer 저장 완료 (scenarioId={}, answerSec={}, textLength={})", scenarioId, answerSec, transcript.length());
         } else {
-            log.warn("answer_text 저장 스킵 (scenarioId={}, transcript='{}')", scenarioId, transcript);
+            log.warn("answer 저장 스킵 (scenarioId={}, transcript='{}')", scenarioId, transcript);
         }
 
         return ResponseEntity.ok(Map.of("transcript", transcript));

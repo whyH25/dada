@@ -54,6 +54,18 @@ export async function deleteUserApi() {
   return data
 }
 
+export async function verifyPasswordApi(password) {
+  const response = await fetch('http://localhost:8080/api/users/me/verify-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ password }),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.message || '비밀번호가 일치하지 않습니다.')
+  return data
+}
+
 export async function updateUserApi(updateData) {
   const response = await fetch('http://localhost:8080/api/users/me', {
     method: 'PATCH',

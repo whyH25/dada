@@ -1,9 +1,11 @@
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 import { useRouter, useRoute } from 'vue-router'
 import { toast } from '../utils/toast.js'
 import { useAuthStore } from '../stores/auth.js'
-import { updateUserApi, deleteUserApi } from '../api/authApi.js'
+import { updateUserApi, deleteUserApi, verifyPasswordApi } from '../api/authApi.js'
 import { fetchMyInterviewRooms, fetchRoomScenarios, fetchRoomReport } from '../api/mypageApi.js'
 import { fetchMyFiles, uploadFile, deleteFile } from '../api/userFileApi.js'
 import { fetchMyPosts } from '../api/postsApi.js'
@@ -20,7 +22,7 @@ const section = ref('reports')
 const reportTab = ref('overview')
 
 const reportTabs = [
-  ['overview', '종합 평가'], ['competency', '역량 분석'], ['speech', '발화 분석'],
+  ['overview', '종합 평가'], ['competency', '역량 분석'],
   ['applicants', '지원자 분석'], ['questions', '질문별 상세'],
 ]
 
@@ -77,8 +79,6 @@ async function openRoom(room) {
 function transformReportForPanel(data, scenarios = []) {
   const rep = data.report
   const me = [rep.compExpertise ?? 0, rep.compLogic ?? 0, rep.compCommu ?? 0, rep.compCulture ?? 0, rep.compPressure ?? 0]
-  const wpm = rep.speechWpm ?? 180
-  const wpmStatus = wpm < 160 ? ['느림', 'amber'] : wpm > 260 ? ['빠름', 'amber'] : ['적정', 'green']
 
   // AI 경쟁 지원자 전체 평균 점수 (5개 역량 대리값으로 사용)
   const aiApps = data.applicants.filter(a => !a.isUser)
@@ -99,6 +99,14 @@ function transformReportForPanel(data, scenarios = []) {
     }
   }
 
+  // 평균 답변 시간: USER 턴의 answer_sec(답변 완료까지 걸린 시간)만 모아 평균
+  const userAnswerSecs = scenarios
+    .filter(s => s.turnRole === 'USER' && s.answerSec != null)
+    .map(s => s.answerSec)
+  const avgAnswerSec = userAnswerSecs.length
+    ? Math.round(userAnswerSecs.reduce((sum, v) => sum + v, 0) / userAnswerSecs.length)
+    : 0
+
   return {
     score: rep.overallScore,
     aiComment: rep.aiComment,
@@ -107,12 +115,7 @@ function transformReportForPanel(data, scenarios = []) {
     ai: me.map(() => aiAvg),
     pass: [75, 78, 80, 72, 70],
     speech: {
-      wpm,
-      wpmStatus,
-      filler: rep.speechFiller ?? 0,
-      avgLen: 40,
-      wait: 2,
-      tone: { pitch: 65, stability: 72, energy: 68 },
+      avgLen: avgAnswerSec,
     },
     applicants: data.applicants.map(a => ({
       name: a.name ?? (a.isUser ? '나' : 'AI 지원자'),
@@ -142,6 +145,74 @@ const currentPanelHtml = computed(() => {
   return reportPanel(transformReportForPanel(roomReport.value, roomScenarios.value), reportTab.value)
 })
 
+// ---- 리포트 4탭을 하나의 PDF로 다운로드 ----
+const reportPanelRef = ref(null)
+const pdfGenerating = ref(false)
+
+async function downloadReportPdf() {
+  if (!roomReport.value || pdfGenerating.value) return
+  pdfGenerating.value = true
+  const originalTab = reportTab.value
+
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 10
+    const contentWidth = pageWidth - margin * 2
+
+    for (let i = 0; i < reportTabs.length; i++) {
+      const [key, label] = reportTabs[i]
+      reportTab.value = key
+      await nextTick()
+      // v-html 렌더링과 레이아웃(레이더 SVG 등) 안정화 대기
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      const el = reportPanelRef.value
+      if (!el) continue
+
+      // jsPDF 기본 폰트는 한글을 못 그리므로, 제목도 캡처 대상 DOM에 임시로 끼워 이미지로 같이 캡처
+      const titleEl = document.createElement('h2')
+      titleEl.textContent = label
+      titleEl.style.cssText = 'font-size:22px;font-weight:800;color:#111827;margin:0 0 16px;'
+      el.prepend(titleEl)
+
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      el.removeChild(titleEl)
+
+      const pxPerMm = canvas.width / contentWidth
+
+      if (i > 0) pdf.addPage()
+
+      // 캔버스가 한 페이지보다 길면 잘라서 여러 페이지에 나눠 붙임
+      let srcY = 0
+      while (srcY < canvas.height) {
+        const availableHeightMm = pageHeight - margin * 2
+        const sliceHeightPx = Math.min(canvas.height - srcY, Math.floor(availableHeightMm * pxPerMm))
+
+        const sliceCanvas = document.createElement('canvas')
+        sliceCanvas.width = canvas.width
+        sliceCanvas.height = sliceHeightPx
+        sliceCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx)
+
+        const sliceImgHeightMm = sliceHeightPx / pxPerMm
+        pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, contentWidth, sliceImgHeightMm)
+
+        srcY += sliceHeightPx
+        if (srcY < canvas.height) pdf.addPage()
+      }
+    }
+
+    const companyName = currentRoom.value?.companyName ?? '면접'
+    pdf.save(`${companyName}_면접리포트.pdf`)
+  } catch (e) {
+    toast('PDF 생성에 실패했습니다.')
+  } finally {
+    reportTab.value = originalTab
+    pdfGenerating.value = false
+  }
+}
+
 // ---- 헬퍼 ----
 function formatDate(dateStr) {
   if (!dateStr) return '-'
@@ -156,6 +227,21 @@ function formatDateTime(dateStr) {
   const d = new Date(dateStr)
   return `${formatDate(dateStr)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
+// 리포트는 생성되어도 면접 종료 시점(ended_at) + 1일이 지나야 열람 가능
+const REPORT_DELAY_MS = 24 * 60 * 60 * 1000
+function reportOpenAt(room) {
+  if (!room.endedAt) return null
+  return new Date(new Date(room.endedAt).getTime() + REPORT_DELAY_MS)
+}
+function isReportOpen(room) {
+  const openAt = reportOpenAt(room)
+  return !!openAt && openAt <= new Date()
+}
+function reportOpenAtLabel(room) {
+  const openAt = reportOpenAt(room)
+  return openAt ? formatDateTime(openAt) : ''
+}
+
 function diffLabel(d) { return d === 'HARD' ? '상' : d === 'MEDIUM' ? '중' : '하' }
 function statusLabel(s) { return s === 'COMPLETED' ? '완료' : s === 'IN_PROGRESS' ? '진행 중' : s === 'CANCELLED' ? '취소' : s || '-' }
 function statusBadgeClass(s) { return s === 'COMPLETED' ? 'badge-green' : s === 'IN_PROGRESS' ? 'badge-blue' : '' }
@@ -211,12 +297,41 @@ const editPwdConfirm = ref('')
 const editError = ref('')
 const editLoading = ref(false)
 
+// 수정 전 본인 확인 (현재 비밀번호 일치 확인)
+const isVerifying = ref(false)
+const verifyPwd = ref('')
+const verifyError = ref('')
+const verifyLoading = ref(false)
+
 function startEdit() {
-  editName.value = user.value?.userName || ''
-  editPwd.value = ''
-  editPwdConfirm.value = ''
-  editError.value = ''
-  isEditing.value = true
+  verifyPwd.value = ''
+  verifyError.value = ''
+  isVerifying.value = true
+}
+
+function cancelVerify() {
+  isVerifying.value = false
+  verifyPwd.value = ''
+  verifyError.value = ''
+}
+
+async function confirmPassword() {
+  verifyError.value = ''
+  if (!verifyPwd.value) { verifyError.value = '비밀번호를 입력해주세요.'; return }
+  verifyLoading.value = true
+  try {
+    await verifyPasswordApi(verifyPwd.value)
+    isVerifying.value = false
+    editName.value = user.value?.userName || ''
+    editPwd.value = ''
+    editPwdConfirm.value = ''
+    editError.value = ''
+    isEditing.value = true
+  } catch (e) {
+    verifyError.value = e.message
+  } finally {
+    verifyLoading.value = false
+  }
 }
 
 async function submitEdit() {
@@ -412,7 +527,7 @@ onMounted(() => {
               <table v-else class="history-table report-table">
                 <thead><tr><th>기업 / 직무</th><th>지원유형</th><th>일시</th><th>난이도</th><th>상태</th><th></th></tr></thead>
                 <tbody>
-                  <tr v-for="room in myRooms" :key="room.roomId" style="cursor:pointer;" @click="openRoom(room)">
+                  <tr v-for="room in myRooms" :key="room.roomId" :style="{ cursor: isReportOpen(room) ? 'pointer' : 'default' }" @click="isReportOpen(room) && openRoom(room)">
                     <td>
                       <div style="display:flex; align-items:center; gap:10px;">
                         <div class="company-logo" style="width:30px;height:30px;font-size:12px;">{{ room.companyName?.charAt(0) }}</div>
@@ -423,7 +538,13 @@ onMounted(() => {
                     <td><span class="text-sm text-muted">{{ formatDate(room.startedAt) }}</span></td>
                     <td><span class="badge">{{ diffLabel(room.difficulty) }}</span></td>
                     <td><span class="badge" :class="statusBadgeClass(room.status)">{{ statusLabel(room.status) }}</span></td>
-                    <td><span class="report-go">리포트 보기 ›</span></td>
+                    <td>
+                      <span v-if="isReportOpen(room)" class="report-go">리포트 보기 ›</span>
+                      <span v-else class="text-sm text-muted" style="line-height:1.5;">
+                        리포트 생성중
+                        <template v-if="reportOpenAtLabel(room)"><br />{{ reportOpenAtLabel(room) }} 공개</template>
+                      </span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -449,15 +570,20 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="tabs" style="margin-bottom:22px;">
-              <div v-for="[k, label] in reportTabs" :key="k" class="tab" :class="{ active: reportTab === k }" @click="setTab(k)">{{ label }}</div>
+            <div class="flex-between" style="margin-bottom:22px;">
+              <div class="tabs" style="margin-bottom:0;">
+                <div v-for="[k, label] in reportTabs" :key="k" class="tab" :class="{ active: reportTab === k }" @click="setTab(k)">{{ label }}</div>
+              </div>
+              <button v-if="roomReport" class="btn btn-sm btn-secondary" :disabled="pdfGenerating" @click="downloadReportPdf">
+                {{ pdfGenerating ? 'PDF 생성 중...' : 'PDF 다운로드' }}
+              </button>
             </div>
 
             <!-- 불러오는 중 -->
             <div v-if="scenariosLoading" style="padding:48px; text-align:center; color:var(--ink-400);">불러오는 중...</div>
 
             <!-- 리포트 있을 때: 기존 panelXxx UI 재사용 -->
-            <div v-else-if="roomReport" v-html="currentPanelHtml"></div>
+            <div v-else-if="roomReport" ref="reportPanelRef" v-html="currentPanelHtml"></div>
 
             <!-- 리포트 없을 때: 모든 탭 공통 안내 -->
             <div v-else class="card" style="padding:56px 20px; text-align:center; color:var(--ink-400);">
@@ -500,14 +626,26 @@ onMounted(() => {
             <div class="card">
               <div class="card-header">
                 <h3 class="card-title">기본 정보</h3>
-                <button v-if="!isEditing" class="btn btn-sm btn-secondary" @click="startEdit">
+                <button v-if="!isEditing && !isVerifying" class="btn btn-sm btn-secondary" @click="startEdit">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z" /></svg>
                   정보 수정
                 </button>
-                <button v-else class="btn btn-sm btn-primary" :disabled="editLoading" @click="submitEdit">
+                <button v-else-if="isEditing" class="btn btn-sm btn-primary" :disabled="editLoading" @click="submitEdit">
                   {{ editLoading ? '저장 중...' : '완료' }}
                 </button>
               </div>
+
+              <!-- 본인 확인: 정보 수정 전 현재 비밀번호 확인 -->
+              <div v-if="isVerifying" style="margin:0 20px 16px; padding:14px 16px; background:var(--ink-50); border-radius:8px;">
+                <p style="font-size:13px; color:var(--ink-600); margin-bottom:8px;">정보를 수정하려면 현재 비밀번호를 입력해주세요.</p>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <input class="input input-inline" type="password" v-model="verifyPwd" placeholder="현재 비밀번호" style="flex:1;" @keyup.enter="confirmPassword" />
+                  <button class="btn btn-sm btn-primary" :disabled="verifyLoading" @click="confirmPassword">{{ verifyLoading ? '확인 중...' : '확인' }}</button>
+                  <button class="btn btn-sm btn-ghost" @click="cancelVerify">취소</button>
+                </div>
+                <p v-if="verifyError" class="auth-error" style="margin-top:8px;">{{ verifyError }}</p>
+              </div>
+
               <div class="info-grid">
                 <div class="info-row"><div class="info-label">아이디</div><div class="info-val">{{ user?.userEmail }}</div></div>
                 <div class="info-row">

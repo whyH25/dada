@@ -22,14 +22,18 @@
     <!-- INSERT 후 생성된 scenarioId 포함하여 재조회 -->
     <select id="selectByRoomId" parameterType="long" resultType="com.ssafy.mvc.dto.InterviewScenarioDto">
         SELECT scenario_id, room_id, scenario_type, parent_scenario_id,
-               question_seq, turn_order, turn_role, turn_ref_id, speech_text, answer_text, timeout_sec
+               question_seq, turn_order, turn_role, turn_ref_id, speech_text, answer_text, answer_sec, timeout_sec
         FROM interview_scenario
         WHERE room_id = #{roomId}
         ORDER BY turn_order
     </select>
 
-    <update id="updateAnswerText">
-        UPDATE interview_scenario SET answer_text = #{answerText} WHERE scenario_id = #{scenarioId}
+    <!-- answer_text는 STT 실패 시 null로 넘어올 수 있어 그때는 기존 값을 덮어쓰지 않음 -->
+    <update id="updateAnswer">
+        UPDATE interview_scenario
+        SET answer_sec = #{answerSec}
+            <if test="answerText != null">, answer_text = #{answerText}</if>
+        WHERE scenario_id = #{scenarioId}
     </update>
 
     <!-- TTS 호출용: speech_text + turn_role/turn_ref_id 기반으로 voice_type JOIN 조회 -->

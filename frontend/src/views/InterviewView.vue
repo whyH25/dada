@@ -118,11 +118,14 @@ const userTimerText = computed(() => {
 let userCountdownTimer = null
 let mediaRecorder = null
 let audioChunks = []
+let userTurnStartedAt = 0
 
 function startUserTurn(turn) {
   userTurnActive.value = true
   userTurnTimeLeft.value = Math.min(turn.timeoutSec ?? 55, 55)
   audioChunks = []
+  // 시스템 시계 변경에 영향받지 않는 단조 증가 타이머로 시작 시점을 기록
+  userTurnStartedAt = performance.now()
 
   // 마이크 스트림으로 녹음 시작
   if (myStream.value) {
@@ -146,25 +149,29 @@ function finishUserTurn() {
 
   const scenarioId = flow.scenarios[currentTurnIndex.value]?.scenarioId
   const nextIndex  = currentTurnIndex.value + 1
+  // 턴 시작부터 답변 완료(버튼 클릭 또는 타임아웃)까지 걸린 실제 시간
+  const answerSec  = Math.round((performance.now() - userTurnStartedAt) / 1000)
 
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.onstop = async () => {
-      if (audioChunks.length > 0 && scenarioId) await sendStt(audioChunks, scenarioId)
+      if (scenarioId) await sendStt(audioChunks, scenarioId, answerSec)
       mediaRecorder = null
       playTurn(nextIndex)
     }
     mediaRecorder.stop()
   } else {
+    if (scenarioId) sendStt(audioChunks, scenarioId, answerSec)
     mediaRecorder = null
     playTurn(nextIndex)
   }
 }
 
-async function sendStt(chunks, scenarioId) {
+async function sendStt(chunks, scenarioId, answerSec) {
   try {
     const form = new FormData()
-    form.append('audioFile', new Blob(chunks, { type: 'audio/webm' }), 'answer.webm')
+    if (chunks.length > 0) form.append('audioFile', new Blob(chunks, { type: 'audio/webm' }), 'answer.webm')
     form.append('scenarioId', String(scenarioId))
+    form.append('answerSec', String(answerSec))
     await fetch('http://localhost:8080/api/speech/stt', {
       method: 'POST',
       credentials: 'include',

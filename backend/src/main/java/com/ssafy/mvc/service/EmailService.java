@@ -53,4 +53,16 @@ public class EmailService {
     public void clearCode(String email) {
         store.remove(email);
     }
+
+    // 면접 종료 1일 후 리포트 열람이 가능해졌을 때 보내는 안내 메일
+    public void sendReportReadyMail(String email, String userName, String companyName) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(email);
+        message.setSubject("[다대다] 면접 리포트가 도착했어요");
+        message.setText((userName != null && !userName.isBlank() ? userName : "회원") + "님,\n\n"
+                + companyName + " 모의면접 리포트 분석이 완료되어 열람 가능합니다.\n"
+                + "마이페이지 > 리포트에서 확인해보세요.");
+        mailSender.send(message);
+    }
 }

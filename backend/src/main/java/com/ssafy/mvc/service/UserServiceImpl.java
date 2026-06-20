@@ -79,4 +79,13 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         userDao.deleteUser(userId);
     }
+
+    // 회원정보 수정 전 본인 확인용 비밀번호 검증
+    // 로그인 응답에서 세션 객체의 userPwd를 null로 지워버리므로, 세션 값 대신 DB에서 새로 조회해 비교한다
+    @Override
+    public boolean verifyPassword(UserDto user, String rawPassword) {
+        if (rawPassword == null) return false;
+        UserDto fresh = userDao.selectUserByEmail(user.getUserEmail());
+        return fresh != null && encoder.matches(rawPassword, fresh.getUserPwd());
+    }
 }
