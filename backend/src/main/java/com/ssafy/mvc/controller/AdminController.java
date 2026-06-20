@@ -2,9 +2,13 @@ package com.ssafy.mvc.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,7 +22,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ssafy.mvc.dao.JobScheduleDao;
 import com.ssafy.mvc.dao.NoticeDao;
@@ -31,6 +37,7 @@ import com.ssafy.mvc.dto.JobScheduleDto;
 import com.ssafy.mvc.dto.NoticeDto;
 import com.ssafy.mvc.dto.StoryDto;
 import com.ssafy.mvc.dto.UserDto;
+import com.ssafy.mvc.service.GcsStorageService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -38,11 +45,16 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 public class AdminController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
+    private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
+    private static final long MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB
+
     private final UserDao userDao;
     private final JobScheduleDao jobScheduleDao;
     private final StoryDao storyDao;
     private final NoticeDao noticeDao;
     private final PostDao postDao;
+    private final GcsStorageService gcsStorageService;
     private final AuthenticationManager adminAuthManager;
 
     public AdminController(
@@ -51,12 +63,14 @@ public class AdminController {
             StoryDao storyDao,
             NoticeDao noticeDao,
             PostDao postDao,
+            GcsStorageService gcsStorageService,
             @Qualifier("adminAuthManager") AuthenticationManager adminAuthManager) {
         this.userDao = userDao;
         this.jobScheduleDao = jobScheduleDao;
         this.storyDao = storyDao;
         this.noticeDao = noticeDao;
         this.postDao = postDao;
+        this.gcsStorageService = gcsStorageService;
         this.adminAuthManager = adminAuthManager;
     }
 
@@ -173,6 +187,32 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("success", true, "data", storyDao.selectAll()));
     }
 
+    @GetMapping("/api/admin/stories/{id}")
+    public ResponseEntity<?> getStory(@PathVariable("id") Long storyId) {
+        StoryDto story = storyDao.selectById(storyId);
+        if (story == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "message", "스토리를 찾을 수 없습니다."));
+        return ResponseEntity.ok(Map.of("success", true, "data", story));
+    }
+
+    @PostMapping(value = "/api/admin/stories/thumbnail", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadStoryThumbnail(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty())
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "파일이 없습니다."));
+        if (!ALLOWED_IMAGE_TYPES.contains(file.getContentType()))
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "이미지 파일만 업로드 가능합니다. (JPEG, PNG, GIF, WEBP)"));
+        if (file.getSize() > MAX_THUMBNAIL_SIZE)
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "파일 크기는 5MB 이하여야 합니다."));
+        try {
+            String url = gcsStorageService.uploadPublic("thumbnails", file);
+            return ResponseEntity.ok(Map.of("success", true, "url", url));
+        } catch (Exception e) {
+            log.error("썸네일 GCS 업로드 실패: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "썸네일 업로드에 실패했습니다: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/api/admin/stories")
     public ResponseEntity<?> createStory(@RequestBody StoryDto story) {
         storyDao.insert(story);
@@ -190,7 +230,9 @@ public class AdminController {
 
     @DeleteMapping("/api/admin/stories/{id}")
     public ResponseEntity<?> deleteStory(@PathVariable("id") Long storyId) {
+        StoryDto story = storyDao.selectById(storyId);
         storyDao.delete(storyId);
+        if (story != null) gcsStorageService.deleteByPublicUrl(story.getThumbnail());
         return ResponseEntity.ok(Map.of("success", true, "message", "스토리가 삭제되었습니다."));
     }
 
@@ -199,6 +241,14 @@ public class AdminController {
     @GetMapping("/api/admin/notices")
     public ResponseEntity<?> getNotices() {
         return ResponseEntity.ok(Map.of("success", true, "data", noticeDao.selectAll()));
+    }
+
+    @GetMapping("/api/admin/notices/{id}")
+    public ResponseEntity<?> getNotice(@PathVariable("id") Long noticeId) {
+        NoticeDto notice = noticeDao.selectById(noticeId);
+        if (notice == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("success", false, "message", "공지사항을 찾을 수 없습니다."));
+        return ResponseEntity.ok(Map.of("success", true, "data", notice));
     }
 
     @PostMapping("/api/admin/notices")

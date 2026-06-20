@@ -398,6 +398,7 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  cursor: pointer;
 }
 .card-link:hover { color: var(--green-500); }
 

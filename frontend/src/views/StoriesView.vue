@@ -85,7 +85,10 @@ onMounted(load)
           :style="{ '--accent': ACCENTS[i % ACCENTS.length] }"
           @click="router.push('/story/' + s.storyId)"
         >
-          <div class="sc-accent-bar" />
+          <div v-if="s.thumbnail" class="sc-thumb">
+            <img :src="s.thumbnail" :alt="s.title" />
+          </div>
+          <div v-else class="sc-accent-bar" />
           <div class="sc-body">
             <div class="sc-top">
               <span class="sc-tag">합격 스토리</span>
@@ -145,13 +148,10 @@ onMounted(load)
 /* 갤러리 그리드 */
 .story-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
-@media (max-width: 1100px) {
-  .story-grid { grid-template-columns: repeat(3, 1fr); }
-}
 @media (max-width: 740px) {
   .story-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -181,6 +181,23 @@ onMounted(load)
   flex-shrink: 0;
 }
 
+/* 썸네일 이미지 */
+.sc-thumb {
+  height: 180px;
+  overflow: hidden;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin: 10px 10px 0;
+}
+.sc-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s;
+}
+.story-card:hover .sc-thumb img { transform: scale(1.04); }
+
 .sc-body {
   padding: 20px 20px 14px;
   flex: 1;
@@ -198,7 +215,7 @@ onMounted(load)
 .sc-tag {
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--green-500, #308860);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }

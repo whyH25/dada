@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { fetchStory, fetchStories, toggleLike } from '../api/storiesApi.js'
@@ -45,6 +45,7 @@ function formatDate(d) {
 }
 
 onMounted(load)
+watch(() => route.params.id, load)
 </script>
 
 <template>
@@ -55,7 +56,6 @@ onMounted(load)
         <div class="breadcrumb">
           홈 <span class="sep">›</span>
           <a @click="router.push('/stories')" style="cursor:pointer;">합격 스토리</a>
-          <span class="sep">›</span> 자세히 보기
         </div>
       </div>
 
@@ -100,7 +100,6 @@ onMounted(load)
               </svg>
               좋아요 {{ story.likes }}
             </button>
-            <button class="btn btn-ghost" @click="router.push('/stories')">목록으로</button>
           </div>
         </article>
 
@@ -114,10 +113,11 @@ onMounted(load)
             <div
               v-for="s in moreStories" :key="s.storyId"
               class="sv-more-card"
-              @click="router.push('/stories/' + s.storyId)"
+              @click="router.push('/story/' + s.storyId)"
             >
-              <div class="sv-card-thumb" :style="{ background: accent(s.storyId) }">
-                <span class="sv-card-thumb-label">합격 스토리</span>
+              <div class="sv-card-thumb" :style="s.thumbnail ? {} : { background: accent(s.storyId) }">
+                <img v-if="s.thumbnail" :src="s.thumbnail" :alt="s.title" class="sv-card-thumb-img" />
+                <span v-else class="sv-card-thumb-label">합격 스토리</span>
               </div>
               <div class="sv-card-body">
                 <div class="sv-card-cat">합격 스토리</div>
@@ -228,7 +228,17 @@ onMounted(load)
   align-items: flex-end;
   padding: 10px 12px;
   position: relative;
+  overflow: hidden;
 }
+.sv-card-thumb-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+.sv-more-card:hover .sv-card-thumb-img { transform: scale(1.04); }
 .sv-card-thumb-label {
   font-size: 11px;
   font-weight: 700;

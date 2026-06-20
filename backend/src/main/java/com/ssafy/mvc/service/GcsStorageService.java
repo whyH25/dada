@@ -24,6 +24,9 @@ public class GcsStorageService {
     @Value("${gcs.bucket}")
     private String bucket;
 
+    @Value("${gcs.thumbnail-bucket}")
+    private String thumbnailBucket;
+
     // 파일을 prefix(resume/portfolio) 하위에 UUID로 저장하고 내부 식별용 gs:// 경로를 반환
     public String upload(String prefix, MultipartFile file) throws IOException {
         String objectName = prefix + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
@@ -42,13 +45,38 @@ public class GcsStorageService {
         return url.toString();
     }
 
+    // 썸네일 공개 버킷에 업로드하고 직접 접근 가능한 HTTPS URL 반환
+    public String uploadPublic(String prefix, MultipartFile file) throws IOException {
+        String ext = extractExtension(file.getOriginalFilename());
+        String objectName = prefix + "/" + UUID.randomUUID() + ext;
+        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(thumbnailBucket, objectName))
+                .setContentType(file.getContentType())
+                .build();
+        storage.create(blobInfo, file.getBytes());
+        return "https://storage.googleapis.com/" + thumbnailBucket + "/" + objectName;
+    }
+
     // 마이페이지에서 원본 삭제 시 GCS 객체도 함께 제거
     public void delete(String gsUri) {
         if (gsUri == null || gsUri.isBlank()) return;
         storage.delete(BlobId.of(bucket, toObjectName(gsUri)));
     }
 
+    // uploadPublic으로 저장된 공개 URL에서 GCS 객체 삭제
+    public void deleteByPublicUrl(String publicUrl) {
+        if (publicUrl == null || publicUrl.isBlank()) return;
+        String prefix = "https://storage.googleapis.com/" + thumbnailBucket + "/";
+        if (!publicUrl.startsWith(prefix)) return;
+        storage.delete(BlobId.of(thumbnailBucket, publicUrl.substring(prefix.length())));
+    }
+
     private String toObjectName(String gsUri) {
         return gsUri.substring(("gs://" + bucket + "/").length());
+    }
+
+    private String extractExtension(String filename) {
+        if (filename == null) return "";
+        int dot = filename.lastIndexOf('.');
+        return dot >= 0 ? filename.substring(dot).toLowerCase() : "";
     }
 }

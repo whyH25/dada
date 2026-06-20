@@ -11,9 +11,10 @@ const loading = ref(false)
 const showModal = ref(false)
 const editTarget = ref(null)
 const form = ref(emptyForm())
+const thumbnailUploading = ref(false)
 
 function emptyForm() {
-  return { title: '', content: '' }
+  return { title: '', content: '', thumbnail: '' }
 }
 
 async function load() {
@@ -25,22 +26,48 @@ async function load() {
   } finally { loading.value = false }
 }
 
-function openCreate() { editTarget.value = null; form.value = emptyForm(); showModal.value = true }
-function openEdit(s) {
-  editTarget.value = s
-  form.value = { title: s.title, content: s.content || '' }
+function openCreate() {
+  editTarget.value = null
+  form.value = emptyForm()
   showModal.value = true
 }
+
+async function openEdit(s) {
+  editTarget.value = s
+  const res = await fetch(`${BASE}/stories/${s.storyId}`, OPTS)
+  const data = await res.json()
+  const full = data.data || s
+  form.value = { title: full.title, content: full.content || '', thumbnail: full.thumbnail || '' }
+  showModal.value = true
+}
+
 function closeModal() { showModal.value = false }
 
+async function handleThumbnail(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  thumbnailUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${BASE}/stories/thumbnail`, { method: 'POST', credentials: 'include', body: fd })
+    const data = await res.json()
+    if (data.success) form.value.thumbnail = data.url
+    else alert(data.message || '썸네일 업로드에 실패했습니다.')
+  } finally {
+    thumbnailUploading.value = false
+  }
+}
+
 async function submit() {
-  if (!form.value.title || !form.value.content) {
+  if (!form.value.title || !form.value.content || form.value.content === '<p><br></p>') {
     alert('제목과 본문은 필수입니다.'); return
   }
   const url = editTarget.value ? `${BASE}/stories/${editTarget.value.storyId}` : `${BASE}/stories`
   const method = editTarget.value ? 'PUT' : 'POST'
   await fetch(url, { ...OPTS, method, body: JSON.stringify(form.value) })
-  closeModal(); load()
+  closeModal()
+  load()
 }
 
 async function remove(s) {
@@ -81,9 +108,11 @@ onMounted(load)
           <td>{{ s.views }}</td>
           <td>{{ s.likes }}</td>
           <td>{{ formatDate(s.createdAt) }}</td>
-          <td class="admin-actions">
-            <button class="btn btn-secondary btn-xs" @click="openEdit(s)">수정</button>
-            <button class="btn btn-danger btn-xs" @click="remove(s)">삭제</button>
+          <td>
+            <div class="admin-actions">
+              <button class="btn btn-secondary btn-xs" @click="openEdit(s)">수정</button>
+              <button class="btn btn-danger btn-xs" @click="remove(s)">삭제</button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -100,6 +129,16 @@ onMounted(load)
         <div class="admin-form">
           <label class="admin-label">제목 <span class="req">*</span></label>
           <input v-model="form.title" class="admin-input" placeholder="합격 스토리 제목" />
+
+          <label class="admin-label">썸네일</label>
+          <div class="thumb-upload">
+            <img v-if="form.thumbnail" :src="form.thumbnail" class="thumb-preview" />
+            <label class="thumb-btn" :class="{ uploading: thumbnailUploading }">
+              {{ thumbnailUploading ? '업로드 중...' : (form.thumbnail ? '이미지 변경' : '이미지 선택') }}
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" :disabled="thumbnailUploading" @change="handleThumbnail" />
+            </label>
+          </div>
+          <p class="thumb-hint">JPEG · PNG · GIF · WEBP 형식, 최대 5MB</p>
 
           <label class="admin-label">본문 <span class="req">*</span></label>
           <QuillEditor
@@ -135,7 +174,7 @@ onMounted(load)
 
 .admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .admin-table th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border, #e5e7eb); font-weight: 600; color: var(--ink-600); }
-.admin-table td { padding: 10px 12px; border-bottom: 1px solid var(--border, #e5e7eb); }
+.admin-table td { padding: 10px 12px; border-bottom: 1px solid var(--border, #e5e7eb); vertical-align: middle; }
 .admin-table tr:hover td { background: var(--ink-50, #f8f9fa); }
 .admin-actions { display: flex; gap: 6px; }
 .admin-muted { color: var(--ink-400, #9ca3af); }
@@ -151,10 +190,21 @@ onMounted(load)
   font-size: 14px; outline: none; box-sizing: border-box; background: #fff;
 }
 .admin-input:focus { border-color: var(--green-500, #308860); }
-.story-textarea { min-height: 280px; resize: vertical; font-family: inherit; line-height: 1.7; }
 .admin-modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
 .btn-xs { padding: 4px 10px; font-size: 12px; }
 .btn-danger { background: #ef4444; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 .btn-danger:hover { background: #dc2626; }
+
+.thumb-hint { font-size: 12px; color: var(--ink-400, #9ca3af); margin-top: 4px; }
+.thumb-upload { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.thumb-preview { width: 80px; height: 54px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border, #e5e7eb); flex-shrink: 0; }
+.thumb-btn {
+  display: inline-block; padding: 6px 14px;
+  background: #f3f4f6; border: 1px solid var(--border, #e5e7eb); border-radius: 6px;
+  font-size: 13px; font-weight: 500; color: var(--ink-700, #374151);
+  cursor: pointer; transition: background 0.15s;
+}
+.thumb-btn:hover { background: #e5e7eb; }
+.thumb-btn.uploading { opacity: 0.6; cursor: not-allowed; }
 </style>

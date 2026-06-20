@@ -27,38 +27,38 @@ async function load() {
   } finally { loading.value = false }
 }
 
-function openCreate() { editTarget.value = null; form.value = emptyForm(); showModal.value = true }
-function openEdit(n) {
-  editTarget.value = n
-  form.value = { category: n.category, title: n.title, content: n.content || '' }
+function openCreate() {
+  editTarget.value = null
+  form.value = emptyForm()
   showModal.value = true
 }
+
+async function openEdit(n) {
+  editTarget.value = n
+  const res = await fetch(`${BASE}/notices/${n.noticeId}`, OPTS)
+  const data = await res.json()
+  const full = data.data || n
+  form.value = { category: full.category, title: full.title, content: full.content || '' }
+  showModal.value = true
+}
+
 function closeModal() { showModal.value = false }
 
 async function submit() {
-  if (!form.value.title || !form.value.content) {
+  if (!form.value.title || !form.value.content || form.value.content === '<p><br></p>') {
     alert('제목과 내용은 필수입니다.'); return
   }
   const url = editTarget.value ? `${BASE}/notices/${editTarget.value.noticeId}` : `${BASE}/notices`
   const method = editTarget.value ? 'PUT' : 'POST'
   await fetch(url, { ...OPTS, method, body: JSON.stringify(form.value) })
-  closeModal(); load()
+  closeModal()
+  load()
 }
 
 async function remove(n) {
   if (!confirm(`'${n.title}' 공지사항을 삭제하시겠습니까?`)) return
   await fetch(`${BASE}/notices/${n.noticeId}`, { ...OPTS, method: 'DELETE' })
   load()
-}
-
-const BADGE = {
-  '업데이트': { cls: 'badge-green',  label: 'UPDATE' },
-  '공지':     { cls: '',             label: '공지' },
-  '이벤트':   { cls: 'badge-blue',   label: '이벤트' },
-}
-
-function badgeMeta(cat) {
-  return BADGE[cat] || { cls: '', label: cat }
 }
 
 function formatDate(d) {
@@ -89,9 +89,11 @@ onMounted(load)
           <td>{{ n.title }}</td>
           <td>{{ n.views }}</td>
           <td>{{ formatDate(n.createdAt) }}</td>
-          <td class="admin-actions">
-            <button class="btn btn-secondary btn-xs" @click="openEdit(n)">수정</button>
-            <button class="btn btn-danger btn-xs" @click="remove(n)">삭제</button>
+          <td>
+            <div class="admin-actions">
+              <button class="btn btn-secondary btn-xs" @click="openEdit(n)">수정</button>
+              <button class="btn btn-danger btn-xs" @click="remove(n)">삭제</button>
+            </div>
           </td>
         </tr>
       </tbody>

@@ -90,9 +90,11 @@ onMounted(load)
           <td><span v-if="s.employmentType" class="tbl-badge tbl-badge-green">{{ s.employmentType }}</span><span v-else class="admin-muted">-</span></td>
           <td>{{ s.startDate }}</td><td>{{ s.endDate }}</td>
           <td><a v-if="s.jobUrl" :href="s.jobUrl" target="_blank" class="admin-link">링크</a><span v-else class="admin-muted">-</span></td>
-          <td class="admin-actions">
-            <button class="btn btn-secondary btn-xs" @click="openEdit(s)">수정</button>
-            <button class="btn btn-danger btn-xs" @click="remove(s)">삭제</button>
+          <td>
+            <div class="admin-actions">
+              <button class="btn btn-secondary btn-xs" @click="openEdit(s)">수정</button>
+              <button class="btn btn-danger btn-xs" @click="remove(s)">삭제</button>
+            </div>
           </td>
         </tr>
       </tbody>

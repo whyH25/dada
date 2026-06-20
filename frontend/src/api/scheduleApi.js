@@ -1,6 +1,13 @@
 const BASE = 'http://localhost:8080/api/job-schedules'
 const OPTS = { credentials: 'include' }
 
+export async function fetchJobSchedules() {
+  const res = await fetch(BASE, OPTS)
+  if (!res.ok) return []
+  const json = await res.json()
+  return json.data ?? []
+}
+
 export async function getBookmarks() {
   const res = await fetch(`${BASE}/bookmarks`, OPTS)
   if (!res.ok) throw new Error('bookmark fetch failed')
