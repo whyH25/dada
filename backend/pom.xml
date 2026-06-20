@@ -87,6 +87,12 @@
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
+		<!-- 소셜 로그인 (Google/Kakao OAuth2) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
+
 		<!-- 이력서/포트폴리오 원본 파일 저장 (Google Cloud Storage) -->
 		<dependency>
 			<groupId>com.google.cloud</groupId>

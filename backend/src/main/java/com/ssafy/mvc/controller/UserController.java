@@ -74,7 +74,7 @@ public class UserController {
     public ResponseEntity<?> updateMe(
             @AuthenticationPrincipal CustomUserDetailsDto userDetails,
             @RequestBody UserDto updateRequest) {
-        updateRequest.setUserIdx(userDetails.getUserDto().getUserId());
+        updateRequest.setUserId(userDetails.getUserDto().getUserId());
         userService.updateUser(updateRequest);
         UserDto updated = userService.getUserByEmail(userDetails.getUsername());
         return ResponseEntity.ok(Map.of("success", true, "message", "회원정보가 수정되었습니다.", "data", updated));

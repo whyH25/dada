@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.mvc.dao.UserSocialDao">
+
+    <!-- 이미 연동된 소셜 계정인지 조회 -->
+    <select id="selectByProviderAndAccountId" resultType="com.ssafy.mvc.dto.UserSocialDto">
+        SELECT social_id, user_id, provider, provider_account_id, created_at
+        FROM users_social
+        WHERE provider = #{provider} AND provider_account_id = #{providerAccountId}
+    </select>
+
+    <!-- 소셜 계정 연동 등록 -->
+    <insert id="insertSocial" parameterType="com.ssafy.mvc.dto.UserSocialDto"
+            useGeneratedKeys="true" keyProperty="socialId">
+        INSERT INTO users_social (user_id, provider, provider_account_id)
+        VALUES (#{userId}, #{provider}, #{providerAccountId})
+    </insert>
+
+</mapper>

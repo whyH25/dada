@@ -14,17 +14,12 @@ public class UserDto implements java.io.Serializable {
     private String createdAt;
     private int ticketCount;
 
-    public Long getUserIdx() {
-        return userId;
-    }
-
-    public void setUserIdx(Long userIdx) {
-        this.userId = userIdx;
-    }
-
-    // 프론트에서 userId로 접근하는 경우 호환
     public Long getUserId() {
         return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getUserEmail() {

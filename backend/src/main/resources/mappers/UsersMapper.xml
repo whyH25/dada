@@ -33,9 +33,29 @@
         AND user_status = 'ACTIVE'
     </select>
 
-    <insert id="insertUser" parameterType="com.ssafy.mvc.dto.UserDto">
-        INSERT INTO users (user_email, user_pwd, user_name, user_phone, email_verified, ticket_count)
-        VALUES (#{userEmail}, #{userPwd}, #{userName}, #{userPhone}, #{emailVerified}, 1)
+    <!-- 소셜 로그인 시 users_social에 연결된 user_id로 재조회 -->
+    <select id="selectUserById" parameterType="long" resultType="com.ssafy.mvc.dto.UserDto">
+        SELECT
+            user_id,
+            user_email,
+            user_pwd,
+            user_name,
+            user_phone,
+            user_profile_img,
+            user_status,
+            email_verified,
+            ticket_count,
+            DATE_FORMAT(created_at, '%Y.%m.%d') AS created_at
+        FROM users
+        WHERE user_id = #{userId}
+        AND user_status = 'ACTIVE'
+    </select>
+
+    <!-- useGeneratedKeys: 소셜 로그인으로 신규 가입 시 바로 생성된 user_id가 필요해서 추가 -->
+    <insert id="insertUser" parameterType="com.ssafy.mvc.dto.UserDto"
+            useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO users (user_email, user_pwd, user_name, user_phone, user_profile_img, email_verified, ticket_count)
+        VALUES (#{userEmail}, #{userPwd}, #{userName}, #{userPhone}, #{userProfileImg}, #{emailVerified}, 1)
     </insert>
 
     <select id="existsByEmail" parameterType="string" resultType="boolean">

@@ -3,6 +3,7 @@ package com.ssafy.mvc.config;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -12,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import com.ssafy.mvc.service.CustomUserDetailsService;
+import com.ssafy.mvc.service.CustomUserOidcService;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,12 +25,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ssafy.mvc.service.AdminUserDetailsService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    // 소셜 로그인 완료(성공/실패) 후 브라우저를 돌려보낼 프론트엔드 주소
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+            CustomUserOidcService customUserOidcService) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -40,7 +50,9 @@ public class SecurityConfig {
                     "/api/email/send-code",
                     "/api/email/verify-code",
                     "/api/admin/login",
-                    "/api/admin/logout"
+                    "/api/admin/logout",
+                    "/oauth2/**",
+                    "/login/oauth2/**"
                 ).permitAll()
 
                 .requestMatchers(HttpMethod.GET, "/api/job-schedules").permitAll()
@@ -57,6 +69,19 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                // 카카오(일반 OAuth2)는 이메일 스코프 제한으로 보류 중. 재추가 시 여기에
+                // .userService(customUserOAuth2Service) 한 줄만 다시 연결하면 됨
+                .userInfoEndpoint(userInfo -> userInfo
+                    .oidcUserService(customUserOidcService) // 구글(OIDC)
+                )
+                .defaultSuccessUrl(frontendUrl, true)
+                .failureHandler((request, response, exception) -> {
+                    log.warn("소셜 로그인 실패: {}", exception.getMessage());
+                    // 프론트가 hash 라우터(createWebHashHistory)라서 쿼리스트링은 #/ 뒤에 와야 인식됨
+                    response.sendRedirect(frontendUrl + "/#/?socialLoginError=1");
+                })
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {

@@ -14,6 +14,8 @@ public interface UserDao {
 
     UserDto selectUserByEmail(@Param("userEmail") String email);
 
+    UserDto selectUserById(@Param("userId") Long userId);
+
     boolean existsByEmail(@Param("userEmail") String email);
 
     void insertUser(UserDto user);

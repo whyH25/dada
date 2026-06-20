@@ -1,12 +1,17 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 
 const emit = defineEmits(['login-success'])
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
+
+const SOCIAL_BASE = 'http://localhost:8080'
+function loginWithKakao() { window.location.href = `${SOCIAL_BASE}/oauth2/authorization/kakao` }
+function loginWithGoogle() { window.location.href = `${SOCIAL_BASE}/oauth2/authorization/google` }
 
 const REMEMBERED_EMAIL_KEY = 'rememberedEmail'
 
@@ -18,11 +23,18 @@ const errorMsg = ref('')
 const successMsg = ref('')
 
 // 저장된 아이디가 있으면 입력란에 미리 채워둠
+// 소셜 로그인 실패 후 돌아온 경우(?socialLoginError=1) 모달을 열고 에러 표시
 onMounted(() => {
   const saved = localStorage.getItem(REMEMBERED_EMAIL_KEY)
   if (saved) {
     userEmail.value = saved
     rememberId.value = true
+  }
+
+  if (route.query.socialLoginError) {
+    errorMsg.value = '소셜 로그인에 실패했습니다. 이메일 제공에 동의해주셨는지 확인해주세요.'
+    auth.openLogin()
+    router.replace({ query: { ...route.query, socialLoginError: undefined } })
   }
 })
 
@@ -116,11 +128,11 @@ async function handleLogin() {
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
 
-      <!-- <div class="auth-divider"><span>또는</span></div>
+      <div class="auth-divider"><span>또는</span></div>
       <div class="auth-social">
-        <button class="auth-social-btn kakao">카카오로 시작하기</button>
-        <button class="auth-social-btn">Google 계정으로 계속</button>
-      </div> -->
+        <!-- <button class="auth-social-btn kakao" @click="loginWithKakao">카카오로 시작하기</button> -->
+        <button class="auth-social-btn" @click="loginWithGoogle">Google 계정으로 계속</button>
+      </div>
       <div class="auth-foot">
         아직 회원이 아니신가요? <a style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/signup') }">회원가입</a>
       </div>
