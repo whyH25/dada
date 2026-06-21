@@ -9,6 +9,7 @@ public class CommentDto {
     private String content;
     private boolean anonymous;   // DB column: is_anonymous
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     // Non-DB
     private String authorName;   // '익명' or userName
 
@@ -29,6 +30,9 @@ public class CommentDto {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     public String getAuthorName() { return authorName; }
     public void setAuthorName(String authorName) { this.authorName = authorName; }

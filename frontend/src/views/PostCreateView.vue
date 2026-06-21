@@ -31,6 +31,7 @@ onMounted(async () => {
     category.value = post.category
     title.value = post.title
     content.value = post.content || ''
+    anonymous.value = post.anonymous ?? false
   }
 })
 

@@ -11,17 +11,18 @@
             c.content,
             c.is_anonymous AS anonymous,
             c.created_at,
+            c.updated_at,
             CASE WHEN c.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name
         FROM comments c
         JOIN users u ON c.user_id = u.user_id
-        WHERE c.post_id = #{postId}
+        WHERE c.post_id = #{postId} AND c.is_deleted = 0
         ORDER BY c.created_at ASC
     </select>
 
     <select id="selectById" resultType="com.ssafy.mvc.dto.CommentDto">
-        SELECT comment_id, post_id, user_id, content, is_anonymous AS anonymous, created_at
+        SELECT comment_id, post_id, user_id, content, is_anonymous AS anonymous, created_at, updated_at
         FROM comments
-        WHERE comment_id = #{commentId}
+        WHERE comment_id = #{commentId} AND is_deleted = 0
     </select>
 
     <insert id="insert" parameterType="com.ssafy.mvc.dto.CommentDto" useGeneratedKeys="true" keyProperty="commentId">
@@ -30,11 +31,11 @@
     </insert>
 
     <update id="update" parameterType="com.ssafy.mvc.dto.CommentDto">
-        UPDATE comments SET content = #{content}, is_anonymous = #{anonymous} WHERE comment_id = #{commentId}
+        UPDATE comments SET content = #{content}, is_anonymous = #{anonymous}, updated_at = NOW() WHERE comment_id = #{commentId}
     </update>
 
-    <delete id="delete">
-        DELETE FROM comments WHERE comment_id = #{commentId}
-    </delete>
+    <update id="delete">
+        UPDATE comments SET is_deleted = 1 WHERE comment_id = #{commentId}
+    </update>
 
 </mapper>

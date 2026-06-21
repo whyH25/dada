@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { fetchPost, deletePost, togglePostLike, fetchComments, addComment, updateComment, deleteComment } from '../api/postsApi.js'
@@ -107,6 +107,10 @@ function formatDateShort(d) {
 }
 
 const isOwner = () => auth.user && post.value && auth.user.userId === post.value.userId
+const isEdited = computed(() => {
+  if (!post.value?.updatedAt) return false
+  return post.value.updatedAt.slice(0, 16) !== post.value.createdAt.slice(0, 16)
+})
 
 onMounted(load)
 </script>
@@ -144,6 +148,7 @@ onMounted(load)
               <span>{{ post.authorName }}</span>
               <span class="dot-sep"></span>
               <span>{{ formatDate(post.createdAt) }}</span>
+              <span v-if="isEdited" class="edited-mark">(수정됨)</span>
               <span class="dot-sep"></span>
               <span>조회 {{ post.views }}</span>
               <span class="dot-sep"></span>
@@ -185,6 +190,7 @@ onMounted(load)
               <div class="cr-name">
                 {{ c.authorName }}
                 <span class="cr-time">{{ formatDate(c.createdAt) }}</span>
+                <span v-if="c.updatedAt && c.updatedAt.slice(0,16) !== c.createdAt.slice(0,16)" class="edited-mark">(수정됨)</span>
               </div>
               <!-- 수정 중인 댓글 -->
               <template v-if="editingCommentId === c.commentId">
@@ -268,6 +274,7 @@ onMounted(load)
 .pd-title { font-size: 22px; font-weight: 800; color: var(--ink-900); line-height: 1.4; margin-bottom: 12px; }
 .pd-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .pd-meta { font-size: 13px; color: var(--ink-400); display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.edited-mark { font-size: 11px; color: var(--ink-400); font-weight: 400; }
 .pd-owner-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .pd-action-btn {
   padding: 4px 10px; font-size: 12px; border-radius: 6px;

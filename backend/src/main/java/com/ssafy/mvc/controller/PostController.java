@@ -63,6 +63,7 @@ public class PostController {
 
     @GetMapping("/api/posts/mine")
     public ResponseEntity<?> listMyPosts(@AuthenticationPrincipal CustomUserDetailsDto userDetails) {
+        if (userDetails == null) return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다."));
         Long userId = userDetails.getUserDto().getUserId();
         List<PostDto> posts = postDao.selectByUserId(userId);
         return ResponseEntity.ok(Map.of("success", true, "data", posts, "total", posts.size()));

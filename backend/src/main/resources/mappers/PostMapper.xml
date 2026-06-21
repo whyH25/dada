@@ -18,8 +18,9 @@
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
         <where>
+            p.is_deleted = 0
             <if test="category != null and category != ''">
-                p.category = #{category}
+                AND p.category = #{category}
             </if>
             <if test="keyword != null and keyword != ''">
                 AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.content LIKE CONCAT('%', #{keyword}, '%'))
@@ -37,8 +38,9 @@
         SELECT COUNT(*)
         FROM posts p
         <where>
+            p.is_deleted = 0
             <if test="category != null and category != ''">
-                p.category = #{category}
+                AND p.category = #{category}
             </if>
             <if test="keyword != null and keyword != ''">
                 AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.content LIKE CONCAT('%', #{keyword}, '%'))
@@ -59,7 +61,7 @@
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
-        WHERE p.category = #{category} AND p.post_id != #{postId}
+        WHERE p.is_deleted = 0 AND p.category = #{category} AND p.post_id != #{postId}
         ORDER BY p.created_at DESC
         LIMIT 3
     </select>
@@ -79,8 +81,9 @@
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
         <where>
+            p.is_deleted = 0
             <if test="category != null and category != ''">
-                p.category = #{category}
+                AND p.category = #{category}
             </if>
         </where>
         ORDER BY p.created_at DESC
@@ -102,7 +105,7 @@
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
-        WHERE p.post_id = #{postId}
+        WHERE p.post_id = #{postId} AND p.is_deleted = 0
     </select>
 
     <insert id="insert" parameterType="com.ssafy.mvc.dto.PostDto" useGeneratedKeys="true" keyProperty="postId">
@@ -112,13 +115,13 @@
 
     <update id="update" parameterType="com.ssafy.mvc.dto.PostDto">
         UPDATE posts
-        SET category = #{category}, title = #{title}, content = #{content}, is_anonymous = #{anonymous}
+        SET category = #{category}, title = #{title}, content = #{content}, is_anonymous = #{anonymous}, updated_at = NOW()
         WHERE post_id = #{postId}
     </update>
 
-    <delete id="delete">
-        DELETE FROM posts WHERE post_id = #{postId}
-    </delete>
+    <update id="delete">
+        UPDATE posts SET is_deleted = 1 WHERE post_id = #{postId}
+    </update>
 
     <update id="incrementViews">
         UPDATE posts SET views = views + 1 WHERE post_id = #{postId}
@@ -156,7 +159,7 @@
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
         JOIN users u ON p.user_id = u.user_id
-        WHERE p.user_id = #{userId}
+        WHERE p.user_id = #{userId} AND p.is_deleted = 0
         ORDER BY p.created_at DESC
     </select>
 
