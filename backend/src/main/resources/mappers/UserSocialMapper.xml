@@ -17,4 +17,9 @@
         VALUES (#{userId}, #{provider}, #{providerAccountId})
     </insert>
 
+    <!-- 회원탈퇴 시 해당 유저의 소셜 연동 기록을 전부 삭제 -->
+    <delete id="deleteByUserId" parameterType="long">
+        DELETE FROM users_social WHERE user_id = #{userId}
+    </delete>
+
 </mapper>

@@ -12,4 +12,7 @@ public interface UserSocialDao {
                                                 @Param("providerAccountId") String providerAccountId);
 
     void insertSocial(UserSocialDto dto);
+
+    // 회원탈퇴 시 해당 유저의 소셜 연동 기록을 전부 삭제
+    void deleteByUserId(@Param("userId") Long userId);
 }

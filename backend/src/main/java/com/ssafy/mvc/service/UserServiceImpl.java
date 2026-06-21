@@ -95,9 +95,10 @@ public class UserServiceImpl implements UserService {
         userDao.updateUser(user);
     }
 
-    // 회원탈퇴: user_resume/user_portfolio는 실제 삭제(GCS 원본 포함),
+    // 회원탈퇴: user_resume/user_portfolio/users_social은 실제 삭제(GCS 원본 포함),
     // 면접 관련 7개 테이블(interview_room과 그 자식들)은 deleted_at만 채워 비활성화,
     // 마지막으로 users.user_status를 DELETED로 전환
+    // (구글 쪽 토큰 해지는 세션 정보가 필요해 UserController에서 처리)
     @Override
     @Transactional
     public void deleteUser(Long userId) {
@@ -121,6 +122,8 @@ public class UserServiceImpl implements UserService {
             gcsStorageService.delete(portfolio.getFileUrl());
         }
         userPortfolioDao.deleteByUserId(userId);
+
+        userSocialDao.deleteByUserId(userId);
 
         userDao.deleteUser(userId);
     }

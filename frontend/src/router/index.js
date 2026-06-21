@@ -66,9 +66,12 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
   const adminAuth = useAdminAuthStore()
+
+  // 새로고침 등 첫 진입 시 세션 복원이 끝나야 로그인 여부를 정확히 판단할 수 있음
+  await Promise.all([auth.restoreSession(), adminAuth.restoreSession()])
 
   if (to.name === 'admin-login') {
     // 이미 관리자 로그인 상태면 대시보드로 redirect

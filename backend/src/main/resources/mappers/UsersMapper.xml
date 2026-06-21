@@ -71,9 +71,12 @@
         WHERE user_id = #{userId}
     </update>
 
+    <!-- user_email은 UNIQUE라서 그대로 두면 같은 이메일(소셜 계정 포함)로 재가입이 막힘.
+         탈퇴 시 이메일도 변형해서 원래 이메일을 재사용 가능하게 풀어준다 -->
     <update id="deleteUser">
         UPDATE users
-        SET user_status = 'DELETED'
+        SET user_status = 'DELETED',
+            user_email = CONCAT('deleted_', user_id, '_', user_email)
         WHERE user_id = #{userId}
     </update>
 

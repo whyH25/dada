@@ -42,6 +42,8 @@ import com.ssafy.mvc.dto.CustomUserDetailsDto;
 
 import com.ssafy.mvc.dto.UserDto;
 
+import com.ssafy.mvc.service.GoogleTokenService;
+
 import com.ssafy.mvc.service.UserService;
 
 
@@ -64,13 +66,18 @@ public class UserController {
 
     private final AuthenticationManager authenticationManager;
 
+    private final GoogleTokenService googleTokenService;
 
 
-    public UserController(UserService userService, AuthenticationManager authenticationManager) {
+
+    public UserController(UserService userService, AuthenticationManager authenticationManager,
+                           GoogleTokenService googleTokenService) {
 
         this.userService = userService;
 
         this.authenticationManager = authenticationManager;
+
+        this.googleTokenService = googleTokenService;
 
     }
 
@@ -189,6 +196,8 @@ public class UserController {
             @AuthenticationPrincipal CustomUserDetailsDto userDetails,
 
             HttpSession session, HttpServletResponse response) {
+
+        googleTokenService.revokeIfLinked(userDetails.getName());
 
         userService.deleteUser(userDetails.getUserDto().getUserId());
 

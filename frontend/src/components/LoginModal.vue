@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { toast } from '../utils/toast.js'
 
 const emit = defineEmits(['login-success'])
 
@@ -33,6 +34,7 @@ onMounted(() => {
 
   if (route.query.socialLoginError) {
     errorMsg.value = '소셜 로그인에 실패했습니다. 이메일 제공에 동의해주셨는지 확인해주세요.'
+    toast(errorMsg.value)
     auth.openLogin()
     router.replace({ query: { ...route.query, socialLoginError: undefined } })
   }

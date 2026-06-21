@@ -363,6 +363,7 @@ async function withdrawUser() {
   try {
     await deleteUserApi()
     authStore.user = null
+    authStore.isLoggedIn = false
     showWithdrawConfirm.value = false
     router.push('/')
   } catch (e) {
