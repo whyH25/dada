@@ -19,4 +19,7 @@ public interface InterviewScenarioDao {
     void updateAnswer(@Param("scenarioId") Long scenarioId,
                        @Param("answerText") String answerText,
                        @Param("answerSec") Integer answerSec);
+
+    // 회원탈퇴 시 해당 유저의 면접방에 속한 시나리오를 일괄 비활성화
+    void deactivateByRoomIds(@Param("roomIds") List<Long> roomIds);
 }

@@ -4,13 +4,26 @@ import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.ssafy.mvc.dao.InterviewPromptDao;
+import com.ssafy.mvc.dao.InterviewRoomDao;
+import com.ssafy.mvc.dao.InterviewRoomPersonaDao;
+import com.ssafy.mvc.dao.InterviewScenarioDao;
+import com.ssafy.mvc.dao.ReportDao;
 import com.ssafy.mvc.dao.UserDao;
+import com.ssafy.mvc.dao.UserPortfolioDao;
+import com.ssafy.mvc.dao.UserResumeDao;
 import com.ssafy.mvc.dao.UserSocialDao;
 import com.ssafy.mvc.dto.UserDto;
+import com.ssafy.mvc.dto.UserPortfolioDto;
+import com.ssafy.mvc.dto.UserResumeDto;
 import com.ssafy.mvc.dto.UserSocialDto;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
@@ -18,13 +31,15 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder encoder;
     private final EmailService emailService;
 
-    public UserServiceImpl(UserDao userDao, UserSocialDao userSocialDao,
-                            PasswordEncoder encoder, EmailService emailService) {
-        this.userDao = userDao;
-        this.userSocialDao = userSocialDao;
-        this.encoder = encoder;
-        this.emailService = emailService;
-    }
+    // 회원탈퇴 시 연관 데이터 정리용
+    private final InterviewRoomDao interviewRoomDao;
+    private final InterviewScenarioDao interviewScenarioDao;
+    private final InterviewRoomPersonaDao interviewRoomPersonaDao;
+    private final InterviewPromptDao interviewPromptDao;
+    private final ReportDao reportDao;
+    private final UserResumeDao userResumeDao;
+    private final UserPortfolioDao userPortfolioDao;
+    private final GcsStorageService gcsStorageService;
 
     @Override
     public List<UserDto> getAllUsers() {
@@ -80,8 +95,33 @@ public class UserServiceImpl implements UserService {
         userDao.updateUser(user);
     }
 
+    // 회원탈퇴: user_resume/user_portfolio는 실제 삭제(GCS 원본 포함),
+    // 면접 관련 7개 테이블(interview_room과 그 자식들)은 deleted_at만 채워 비활성화,
+    // 마지막으로 users.user_status를 DELETED로 전환
     @Override
+    @Transactional
     public void deleteUser(Long userId) {
+        List<Long> roomIds = interviewRoomDao.selectRoomIdsByUserId(userId);
+        if (!roomIds.isEmpty()) {
+            interviewRoomDao.deactivateByUserId(userId);
+            interviewScenarioDao.deactivateByRoomIds(roomIds);
+            interviewRoomPersonaDao.deactivateByRoomIds(roomIds);
+            interviewPromptDao.deactivateByRoomIds(roomIds);
+            reportDao.deactivateReportsByRoomIds(roomIds);
+            reportDao.deactivateReportApplicantsByRoomIds(roomIds);
+            reportDao.deactivateReportQuestionsByRoomIds(roomIds);
+        }
+
+        for (UserResumeDto resume : userResumeDao.selectByUserId(userId)) {
+            gcsStorageService.delete(resume.getFileUrl());
+        }
+        userResumeDao.deleteByUserId(userId);
+
+        for (UserPortfolioDto portfolio : userPortfolioDao.selectByUserId(userId)) {
+            gcsStorageService.delete(portfolio.getFileUrl());
+        }
+        userPortfolioDao.deleteByUserId(userId);
+
         userDao.deleteUser(userId);
     }
 

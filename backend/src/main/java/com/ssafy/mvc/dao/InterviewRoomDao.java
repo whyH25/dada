@@ -17,4 +17,10 @@ public interface InterviewRoomDao {
     List<InterviewRoomDto> selectByUserId(Long userId);
 
     void updateStatus(@Param("roomId") Long roomId, @Param("status") String status);
+
+    // 회원탈퇴 시 자식 테이블 일괄 비활성화에 쓸 room_id 목록
+    List<Long> selectRoomIdsByUserId(Long userId);
+
+    // 회원탈퇴 시 해당 유저의 면접방을 비활성화
+    void deactivateByUserId(Long userId);
 }

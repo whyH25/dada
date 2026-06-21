@@ -31,4 +31,9 @@
         WHERE portfolio_id = #{portfolioId} AND user_id = #{userId}
     </delete>
 
+    <!-- 회원탈퇴 시 해당 유저의 포트폴리오를 전부 삭제 -->
+    <delete id="deleteByUserId" parameterType="long">
+        DELETE FROM user_portfolio WHERE user_id = #{userId}
+    </delete>
+
 </mapper>

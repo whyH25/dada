@@ -31,4 +31,9 @@
         WHERE resume_id = #{resumeId} AND user_id = #{userId}
     </delete>
 
+    <!-- 회원탈퇴 시 해당 유저의 이력서를 전부 삭제 -->
+    <delete id="deleteByUserId" parameterType="long">
+        DELETE FROM user_resume WHERE user_id = #{userId}
+    </delete>
+
 </mapper>

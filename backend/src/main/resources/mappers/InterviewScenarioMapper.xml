@@ -46,4 +46,13 @@
         WHERE s.scenario_id = #{scenarioId}
     </select>
 
+    <!-- 회원탈퇴 시 해당 유저의 면접방에 속한 시나리오를 일괄 비활성화 -->
+    <update id="deactivateByRoomIds">
+        UPDATE interview_scenario SET deleted_at = NOW()
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+    </update>
+
 </mapper>

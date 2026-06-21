@@ -92,4 +92,31 @@
         UPDATE interview_report SET notified_at = NOW() WHERE report_id = #{reportId}
     </update>
 
+    <!-- 회원탈퇴 시 해당 유저의 면접방에 속한 리포트 마스터를 일괄 비활성화 -->
+    <update id="deactivateReportsByRoomIds">
+        UPDATE interview_report SET deleted_at = NOW()
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+    </update>
+
+    <!-- 회원탈퇴 시 해당 유저의 면접방에 속한 지원자별 평가를 일괄 비활성화 -->
+    <update id="deactivateReportApplicantsByRoomIds">
+        UPDATE report_applicant SET deleted_at = NOW()
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+    </update>
+
+    <!-- 회원탈퇴 시 해당 유저의 면접방에 속한 질문별 상세를 일괄 비활성화 -->
+    <update id="deactivateReportQuestionsByRoomIds">
+        UPDATE report_question SET deleted_at = NOW()
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+    </update>
+
 </mapper>

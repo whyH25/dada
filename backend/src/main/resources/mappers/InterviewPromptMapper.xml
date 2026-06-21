@@ -9,4 +9,13 @@
         VALUES (#{roomId}, #{promptType}, #{promptText}, #{responseText})
     </insert>
 
+    <!-- 회원탈퇴 시 해당 유저의 면접방에 속한 프롬프트 기록을 일괄 비활성화 -->
+    <update id="deactivateByRoomIds">
+        UPDATE interview_prompt SET deleted_at = NOW()
+        WHERE room_id IN
+        <foreach collection="roomIds" item="roomId" open="(" separator="," close=")">
+            #{roomId}
+        </foreach>
+    </update>
+
 </mapper>

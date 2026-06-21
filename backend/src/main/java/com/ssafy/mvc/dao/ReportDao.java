@@ -23,4 +23,9 @@ public interface ReportDao {
 
     // 알림 메일 발송 시각 기록 (중복 발송 방지)
     void markNotified(@Param("reportId") Long reportId);
+
+    // 회원탈퇴 시 해당 유저의 면접방에 속한 interview_report/report_applicant/report_question을 일괄 비활성화
+    void deactivateReportsByRoomIds(@Param("roomIds") List<Long> roomIds);
+    void deactivateReportApplicantsByRoomIds(@Param("roomIds") List<Long> roomIds);
+    void deactivateReportQuestionsByRoomIds(@Param("roomIds") List<Long> roomIds);
 }
