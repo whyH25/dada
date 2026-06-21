@@ -102,10 +102,12 @@ onMounted(load)
     <!-- 등록/수정 모달 -->
     <div v-if="showModal" class="auth-overlay open" @click.self="closeModal">
       <div class="auth-modal notice-modal" role="dialog" aria-modal="true">
-        <button class="auth-close" @click="closeModal">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-        <h3 class="admin-modal-title">{{ editTarget ? '공지사항 수정' : '공지사항 등록' }}</h3>
+        <div class="admin-modal-header">
+          <button class="auth-close" @click="closeModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+          <h3 class="admin-modal-title">{{ editTarget ? '공지사항 수정' : '공지사항 등록' }}</h3>
+        </div>
 
         <div class="admin-form">
           <label class="admin-label">카테고리</label>
@@ -122,21 +124,22 @@ onMounted(load)
           <input v-model="form.title" class="admin-input" placeholder="공지사항 제목" />
 
           <label class="admin-label">내용 <span class="req">*</span></label>
-          <QuillEditor
-            v-model:content="form.content"
-            content-type="html"
-            theme="snow"
-            :toolbar="[
-              [{ header: [1, 2, 3, false] }],
-              ['bold', 'italic', 'underline', 'strike'],
-              [{ color: [] }, { background: [] }],
-              [{ list: 'ordered' }, { list: 'bullet' }],
-              ['blockquote', 'code-block'],
-              ['link', 'image'],
-              ['clean']
-            ]"
-            class="notice-editor"
-          />
+          <div class="editor-wrap">
+            <QuillEditor
+              v-model:content="form.content"
+              content-type="html"
+              theme="snow"
+              :toolbar="[
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ color: [] }, { background: [] }],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'image'],
+                ['clean']
+              ]"
+            />
+          </div>
         </div>
 
         <div class="admin-modal-footer">
@@ -164,9 +167,19 @@ onMounted(load)
 .tbl-badge-blue  { background: #eff6ff; color: #1d4ed8; }
 .tbl-badge-gray  { background: #f3f4f6; color: #374151; }
 
-.notice-modal { width: 580px; max-width: 95vw; padding: 28px; }
+.notice-modal {
+  width: 800px; max-width: 95vw; padding: 0;
+  max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.admin-modal-header {
+  padding: 20px 28px 0;
+  flex-shrink: 0;
+}
 .admin-modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--ink-900); }
-.admin-form { display: flex; flex-direction: column; gap: 4px; }
+.admin-form {
+  display: flex; flex-direction: column; gap: 4px;
+  flex: 1; overflow: hidden; padding: 0 28px 4px; min-height: 0;
+}
 .admin-label { font-size: 13px; font-weight: 500; color: var(--ink-600); margin-top: 10px; }
 .req { color: #ef4444; }
 .admin-input {
@@ -175,8 +188,36 @@ onMounted(load)
   font-size: 14px; outline: none; box-sizing: border-box; background: #fff;
 }
 .admin-input:focus { border-color: var(--green-500, #308860); }
-.notice-editor { min-height: 220px; }
-.admin-modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.editor-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.editor-wrap :deep(.ql-toolbar.ql-snow) {
+  border: none !important;
+  border-bottom: 1px solid var(--border, #e5e7eb) !important;
+  flex-shrink: 0;
+}
+.editor-wrap :deep(.ql-container.ql-snow) {
+  border: none !important;
+  flex: 1;
+  min-height: 0;
+  height: auto !important;
+  overflow-y: auto;
+}
+.editor-wrap :deep(.ql-editor) {
+  min-height: 200px;
+}
+.admin-modal-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 16px 28px 20px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  flex-shrink: 0;
+}
 
 .cat-btns { display: flex; gap: 8px; margin-top: 4px; }
 .cat-btn {
