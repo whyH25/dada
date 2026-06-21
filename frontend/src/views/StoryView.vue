@@ -52,7 +52,7 @@ watch(() => route.params.id, load)
   <main class="page active" id="page-story">
     <div class="container container-narrow">
 
-      <div class="page-header" style="border-bottom:none;padding-bottom:8px;margin-bottom:8px;">
+      <div class="page-header sv-page-header">
         <div class="breadcrumb">
           홈 <span class="sep">›</span>
           <a @click="router.push('/stories')" style="cursor:pointer;">합격 스토리</a>
@@ -133,6 +133,7 @@ watch(() => route.params.id, load)
 </template>
 
 <style scoped>
+.sv-page-header { border-bottom: none !important; padding-bottom: 8px; margin-bottom: 8px; }
 .sv-loading { text-align: center; padding: 80px 0; color: var(--ink-400); }
 
 .sv-not-found {
@@ -171,16 +172,15 @@ watch(() => route.params.id, load)
 
 .sd-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 10px;
   margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border, #e5e7eb);
 }
 
 /* 더보기 */
 .sv-more {
-  margin-top: 48px;
-  padding-top: 32px;
+  margin-top: 12px;
+  padding-top: 48px;
   border-top: 1px solid var(--border, #e5e7eb);
 }
 .sv-more-header {

@@ -168,6 +168,18 @@ public class UserController {
 
     }
 
+    // 회원정보 수정 전 본인 확인 (현재 비밀번호 일치 여부만 검증, 수정은 별도 PATCH에서 처리)
+        @PostMapping("/api/users/me/verify-password")
+        public ResponseEntity<?> verifyPassword(
+                @AuthenticationPrincipal CustomUserDetailsDto userDetails,
+                @RequestBody Map<String, String> body) {
+            boolean matches = userService.verifyPassword(userDetails.getUserDto(), body.get("password"));
+            if (!matches) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("success", false, "message", "비밀번호가 일치하지 않습니다."));
+            }
+            return ResponseEntity.ok(Map.of("success", true));
+        }
 
 
     @DeleteMapping("/api/users/me")

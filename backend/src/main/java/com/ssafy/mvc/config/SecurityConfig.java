@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    // 소셜 로그인 완료(성공/실패) 후 브라우저를 돌려보낼 프론트엔드 주소
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
@@ -70,12 +71,15 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
+                // 카카오(일반 OAuth2)는 이메일 스코프 제한으로 보류 중. 재추가 시 여기에
+                // .userService(customUserOAuth2Service) 한 줄만 다시 연결하면 됨
                 .userInfoEndpoint(userInfo -> userInfo
-                    .oidcUserService(customUserOidcService)
+                    .oidcUserService(customUserOidcService) // 구글(OIDC)
                 )
                 .defaultSuccessUrl(frontendUrl, true)
                 .failureHandler((request, response, exception) -> {
                     log.warn("소셜 로그인 실패: {}", exception.getMessage());
+                    // 프론트가 hash 라우터(createWebHashHistory)라서 쿼리스트링은 #/ 뒤에 와야 인식됨
                     response.sendRedirect(frontendUrl + "/#/?socialLoginError=1");
                 })
             )

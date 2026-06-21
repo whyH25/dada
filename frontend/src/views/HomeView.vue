@@ -207,7 +207,7 @@ onMounted(async () => {
             >
               <div class="list-item-text">
                 <div class="list-item-title">{{ p.title }}</div>
-                <div class="list-item-sub">{{ p.category || '자유' }} · 댓글 {{ p.commentCount ?? 0 }}</div>
+                <div class="list-item-sub">{{ p.category || '기타' }} · 댓글 {{ p.commentCount ?? 0 }}</div>
               </div>
               <span class="list-item-meta">{{ formatDate(p.createdAt) }}</span>
             </div>

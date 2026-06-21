@@ -7,8 +7,8 @@ import { fetchPosts } from '../api/postsApi.js'
 const router = useRouter()
 const auth = useAuthStore()
 
-const CATS = ['전체', '면접 후기', '질문', '스터디 모집', '자유']
-const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '자유': '' }
+const CATS = ['전체', '면접 후기', '질문', '스터디 모집', '기타']
+const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '기타': '' }
 const SORTS = [
   { key: 'latest', label: '최신순' },
   { key: 'views',  label: '조회순' },
@@ -45,7 +45,7 @@ function search() {
 }
 
 function goWrite() {
-  const cat = activeCat.value === '전체' ? '자유' : activeCat.value
+  const cat = activeCat.value === '전체' ? '기타' : activeCat.value
   if (!auth.isLoggedIn) {
     auth.openLogin(() => router.push({ path: '/community/board/new', query: { category: cat } }))
     return

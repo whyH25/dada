@@ -8,7 +8,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '자유': '' }
+const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '기타': '' }
 
 const post = ref(null)
 const related = ref([])
@@ -156,8 +156,6 @@ onMounted(load)
           </div>
         </div>
 
-        <hr class="pd-divider" />
-
         <!-- 본문 -->
         <div class="pd-body ql-content" v-html="post.content"></div>
 
@@ -172,8 +170,6 @@ onMounted(load)
             좋아요 {{ post.likes }}
           </button>
         </div>
-
-        <hr class="pd-divider" />
 
         <!-- 댓글 -->
         <div class="pd-comments">
@@ -205,7 +201,7 @@ onMounted(load)
               <div v-else class="cr-text">{{ c.content }}</div>
             </div>
             <div v-if="auth.user && auth.user.userId === c.userId" class="cr-owner-btns">
-              <button class="cr-del" @click="startEditComment(c)">수정</button>
+              <button class="cr-edit-action" @click="startEditComment(c)">수정</button>
               <button class="cr-del" @click="handleDeleteComment(c.commentId)">삭제</button>
             </div>
           </div>
@@ -353,10 +349,15 @@ onMounted(load)
 }
 .cr-edit-btn.cancel { background: #fff; color: var(--ink-500); }
 
-.cr-owner-btns { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.cr-owner-btns { display: flex; flex-direction: row; gap: 4px; flex-shrink: 0; align-items: center; }
+.cr-edit-action {
+  font-size: 12px; color: var(--ink-400); background: none;
+  border: none; cursor: pointer; padding: 2px 6px;
+}
+.cr-edit-action:hover { color: var(--ink-700); }
 .cr-del {
   font-size: 12px; color: var(--ink-400); background: none;
-  border: none; cursor: pointer; padding: 2px 6px; text-align: right;
+  border: none; cursor: pointer; padding: 2px 6px;
 }
 .cr-del:hover { color: #ef4444; }
 
