@@ -115,9 +115,8 @@ watch(() => route.params.id, load)
               class="sv-more-card"
               @click="router.push('/story/' + s.storyId)"
             >
-              <div class="sv-card-thumb" :style="s.thumbnail ? {} : { background: accent(s.storyId) }">
-                <img v-if="s.thumbnail" :src="s.thumbnail" :alt="s.title" class="sv-card-thumb-img" />
-                <span v-else class="sv-card-thumb-label">합격 스토리</span>
+              <div class="sv-card-thumb">
+                <img :src="s.thumbnail || '/thumbnail.png'" :alt="s.title" class="sv-card-thumb-img" />
               </div>
               <div class="sv-card-body">
                 <div class="sv-card-cat">합격 스토리</div>

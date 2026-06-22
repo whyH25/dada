@@ -55,7 +55,6 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
       </div>
 
       <div class="nav-menu">
-        <div class="nav-item" :class="{ active: $route.name === 'home' }" @click="go('/')">홈</div>
         <div class="nav-item" :class="{ active: $route.name === 'schedule' }" @click="go('/schedule')">채용 일정</div>
         <div class="nav-item" :class="{ active: ['create', 'interview-intro'].includes($route.name) }" @click="go('/interview-intro')">면접</div>
         <div class="nav-item" :class="{ active: $route.name === 'stories' }" @click="go('/stories')">합격스토리</div>

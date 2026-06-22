@@ -86,7 +86,7 @@ onMounted(load)
           @click="router.push('/story/' + s.storyId)"
         >
           <div class="sc-thumb">
-            <img :src="s.thumbnail || '/default-thumbnail.svg'" :alt="s.title" />
+            <img :src="s.thumbnail || '/thumbnail.png'" :alt="s.title" />
           </div>
           <div class="sc-body">
             <div class="sc-top">
