@@ -112,10 +112,7 @@ public class AiPromptService {
 	          전문 용어를 자연스럽게 사용하며 깊이 있는 답변 생성
 
             [내용 생성 규칙]
-            19. 면접관의 질문은 직무, 지원 유형, 위 난이도 규칙, [사용자 서류 텍스트]를 반드시 반영하세요.
-                 EASY: 기본 경험 확인, 동기, 역할 설명 중심으로 질문하세요.
-                 NORMAL: 경험의 과정, 문제 해결 방식, 직무 적합성을 함께 확인하세요.
-                 HARD: 기술적 의사결정, 트레이드오프, 실패 경험, 구체적 수치와 근거를 요구하는 압박 질문을 포함하세요.
+            19. 면접관의 질문은 위 [난이도별 면접 스타일 규칙]을 반드시 따르세요.
                  회사명과 직무 특성을 고려하되, 확실하지 않은 회사 내부 정보는 지어내지 말고 일반적인 수준에서만 활용하세요.
             20. 질문은 자기소개, 직무역량, 프로젝트 경험, 협업 경험, 문제해결 경험을 포함하고, 질문은 자기소개, 직무역량, 프로젝트 경험, 협업 경험, 문제해결 경험 순서가 자연스럽게 이어지도록 구성하세요.
             21. INTERVIEWER 질문은 최소 8개 이상 생성하되, 그중 USER가 답해야 하는 질문(공통 질문 + USER 개별 질문)이 최소 5개 이상이 되도록 하세요.
@@ -211,11 +208,54 @@ public class AiPromptService {
             17. For a USER turn, set timeoutSec appropriately for the question (maximum 60 seconds).
             18. For INTERVIEWER and APPLICANT turns, set timeoutSec to null.
 
+            [Difficulty-Level Interview Style Rules]
+            ※ The question depth references below illustrate the intended tone and depth only.
+               Placeholders in [...] must be filled with actual content from [User Document Text]
+               (project names, tech stacks, specific experiences). Never copy the reference sentences verbatim.
+
+            EASY (Low):
+            - Interviewer tone: Warm and encouraging — guide the applicant with open-ended questions
+            - Question type: Motivation, goals, role description. Let applicants freely narrate their experiences
+            - Technical depth: No domain knowledge required. Assess attitude and presence of experience
+            - Prohibited: Asking for numbers/evidence, probing failures, trade-offs, or technical decision-making
+            - Question depth reference (must be rewritten using document content):
+              "What motivated you to apply for [role/activity mentioned in documents]?"
+              "What was your primary responsibility in [project/experience mentioned in documents]?"
+              "Is there a specific area you'd most like to work on after joining the team?"
+              "How do you think your strengths would contribute to this role?"
+
+            NORMAL (Mid):
+            - Interviewer tone: Neutral. Probe the context and reasoning behind experiences
+            - Question type: Problem-solving process, reasoning behind decisions, job fit assessment
+            - Technical depth: Basic domain knowledge expected. Applicant should articulate their specific contribution and outcome
+            - Question depth reference (must be rewritten using document content):
+              "What challenges came up in [project mentioned in documents], and how did you resolve them?"
+              "How did you handle disagreements or conflicts during team collaboration?"
+              "What was your reasoning for choosing [technology mentioned in documents]?"
+              "Walk me through the hardest technical challenge in [experience mentioned in documents] and the result."
+
+            HARD (High):
+            - Interviewer tone: Challenging and pressured. Verify deep expertise and logical rigor
+            - Question type: Technical decision-making, trade-off analysis, design rationale, incidents/failures, internals of specific technologies
+            - Technical depth: Advanced domain knowledge required.
+              Applicant must go beyond listing experiences — they must answer "why," "how," and "what was sacrificed."
+              Frame questions that presuppose data-driven, quantitative justification.
+            - Prohibited: Simple motivation/goal questions, open-ended questions that allow vague non-answers
+            - Question depth reference (must be rewritten using document content):
+              "You chose [architecture/technology mentioned in documents] — compare the alternatives you considered and the trade-offs of each."
+              "What measurable changes in performance, cost, or maintainability followed the adoption of [technology mentioned in documents]? Please be specific."
+              "Describe a critical failure in [project/system mentioned in documents]: walk me through detection, root cause analysis, and recovery step by step."
+              "Share a technical decision from [experience mentioned in documents] that you later regretted, and explain why."
+              "How did you identify the bottleneck in [system mentioned in documents], and what steps did you take to improve it?"
+
+            [Difficulty-Level APPLICANT Answer Standards]
+            - EASY: Freely narrate experiences. No numbers required. Positive, enthusiastic tone.
+            - NORMAL: Include specific examples. Briefly mention personal contribution and outcome.
+            - HARD: Numbers and evidence are mandatory. Reference the reasoning behind technical choices and ruled-out alternatives.
+              Use domain terminology naturally; provide deep, substantiated answers.
+
             [Content Generation Rules]
-            19. Base the interviewer's questions on the job role, applicant type, difficulty, and [User Document Text].
-                 EASY: Focus on basic experience confirmation, motivation, and role description.
-                 NORMAL: Also check the process of the experience, problem-solving approach, and job fit.
-                 HARD: Include pressure questions that demand technical decision-making, trade-offs, failure experiences, and concrete figures/evidence.
+            19. Base the interviewer's questions strictly on the [Difficulty-Level Interview Style Rules] above.
                  Consider the company name and job characteristics, but do not fabricate uncertain internal company information; use only general-level knowledge.
             20. Questions should cover self-introduction, job competency, project experience, collaboration experience, and problem-solving experience, flowing naturally in that order.
             21. Generate at least 8 INTERVIEWER questions, of which at least 5 must be questions the USER must answer (common questions + USER-specific questions).
