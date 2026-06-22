@@ -36,6 +36,7 @@ const routes = [
   { path: '/mypage', name: 'mypage', component: () => import('../views/MypageView.vue') },
   { path: '/payment/success', name: 'payment-success', component: () => import('../views/PaymentSuccessView.vue') },
   { path: '/payment/fail',    name: 'payment-fail',    component: () => import('../views/PaymentFailView.vue') },
+  { path: '/faq', name: 'faq', component: () => import('../views/FaqView.vue') },
   { path: '/signup', name: 'signup', component: () => import('../views/SignupView.vue') },
   { path: '/find-password', name: 'find-password', component: () => import('../views/FindPasswordView.vue') },
   { path: '/notices/:id', name: 'notice', component: () => import('../views/NoticeView.vue') },
