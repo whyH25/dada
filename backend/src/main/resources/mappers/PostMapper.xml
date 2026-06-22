@@ -12,11 +12,11 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
+            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
-        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN users u ON p.user_id = u.user_id
         <where>
             p.is_deleted = 0
             <if test="category != null and category != ''">
@@ -56,11 +56,11 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
+            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
-        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN users u ON p.user_id = u.user_id
         WHERE p.is_deleted = 0 AND p.category = #{category} AND p.post_id != #{postId}
         ORDER BY p.created_at DESC
         LIMIT 3
@@ -75,11 +75,11 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
+            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
-        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN users u ON p.user_id = u.user_id
         <where>
             p.is_deleted = 0
             <if test="category != null and category != ''">
@@ -100,11 +100,11 @@
             p.created_at,
             p.updated_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
+            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
-        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN users u ON p.user_id = u.user_id
         WHERE p.post_id = #{postId} AND p.is_deleted = 0
     </select>
 
@@ -154,11 +154,11 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            u.user_name AS author_name,
+            CASE WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
-        JOIN users u ON p.user_id = u.user_id
+        LEFT JOIN users u ON p.user_id = u.user_id
         WHERE p.user_id = #{userId} AND p.is_deleted = 0
         ORDER BY p.created_at DESC
     </select>
