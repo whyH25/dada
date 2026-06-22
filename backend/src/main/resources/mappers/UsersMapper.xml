@@ -68,6 +68,7 @@
         UPDATE users
         SET user_name = #{userName}
             <if test="userPwd != null">, user_pwd = #{userPwd}</if>
+            <if test="userPhone != null">, user_phone = #{userPhone}</if>
         WHERE user_id = #{userId}
     </update>
 

@@ -292,6 +292,7 @@ async function deleteDoc(type, i) {
 // ---- 회원정보 수정 ----
 const isEditing = ref(false)
 const editName = ref('')
+const editPhone = ref('')
 const editPwd = ref('')
 const editPwdConfirm = ref('')
 const editError = ref('')
@@ -304,6 +305,16 @@ const verifyError = ref('')
 const verifyLoading = ref(false)
 
 function startEdit() {
+  // 소셜 가입만으로 만들어진 계정은 비밀번호가 없어 본인확인 절차를 건너뜀
+  if (!user.value?.hasPassword) {
+    editName.value = user.value?.userName || ''
+    editPhone.value = user.value?.userPhone || ''
+    editPwd.value = ''
+    editPwdConfirm.value = ''
+    editError.value = ''
+    isEditing.value = true
+    return
+  }
   verifyPwd.value = ''
   verifyError.value = ''
   isVerifying.value = true
@@ -323,6 +334,7 @@ async function confirmPassword() {
     await verifyPasswordApi(verifyPwd.value)
     isVerifying.value = false
     editName.value = user.value?.userName || ''
+    editPhone.value = user.value?.userPhone || ''
     editPwd.value = ''
     editPwdConfirm.value = ''
     editError.value = ''
@@ -341,7 +353,7 @@ async function submitEdit() {
   if (editPwd.value && editPwd.value !== editPwdConfirm.value) { editError.value = '비밀번호가 일치하지 않습니다.'; return }
   editLoading.value = true
   try {
-    const payload = { userName: editName.value.trim() }
+    const payload = { userName: editName.value.trim(), userPhone: editPhone.value.trim() }
     if (editPwd.value) payload.userPwd = editPwd.value
     const res = await updateUserApi(payload)
     authStore.user = res.data
@@ -657,6 +669,13 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="info-row">
+                  <div class="info-label">휴대폰 번호</div>
+                  <div class="info-val">
+                    <input v-if="isEditing" class="input input-inline" v-model="editPhone" placeholder="휴대폰 번호 (예: 010-1234-5678)" />
+                    <span v-else>{{ user?.userPhone || '-' }}</span>
+                  </div>
+                </div>
+                <div v-if="user?.hasPassword" class="info-row">
                   <div class="info-label">비밀번호</div>
                   <div class="info-val">
                     <template v-if="isEditing">
@@ -668,6 +687,10 @@ onMounted(() => {
                     </template>
                     <span v-else>••••••••</span>
                   </div>
+                </div>
+                <div v-else class="info-row">
+                  <div class="info-label">로그인 방식</div>
+                  <div class="info-val"><span class="text-muted">소셜 로그인 계정 (비밀번호 없음)</span></div>
                 </div>
                 <div class="info-row"><div class="info-label">가입일</div><div class="info-val">{{ user?.createdAt || '-' }}</div></div>
               </div>

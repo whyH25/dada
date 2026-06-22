@@ -107,6 +107,8 @@ public class UserController {
 
             UserDto user = userDetails.getUserDto();
 
+            // 비밀번호로 인증에 성공했으므로 이 계정은 항상 비밀번호를 보유함
+            user.setHasPassword(true);
             user.setUserPwd(null);
 
 

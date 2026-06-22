@@ -70,6 +70,7 @@ public class UserServiceImpl implements UserService {
         if (!encoder.matches(password, user.getUserPwd())) {
             return null;
         }
+        user.setHasPassword(true);
         user.setUserPwd(null);
         return user;
     }
@@ -77,7 +78,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getUserByEmail(String email) {
         UserDto user = userDao.selectUserByEmail(email);
-        if (user != null) user.setUserPwd(null);
+        if (user != null) {
+            // 소셜 가입만으로 생성된 계정은 user_pwd가 비어있음 - 프론트에서 비밀번호 확인/변경 UI 노출 여부 판단용
+            user.setHasPassword(user.getUserPwd() != null && !user.getUserPwd().isBlank());
+            user.setUserPwd(null);
+        }
         return user;
     }
 
@@ -135,7 +140,9 @@ public class UserServiceImpl implements UserService {
     public boolean verifyPassword(UserDto user, String rawPassword) {
         if (rawPassword == null) return false;
         UserDto fresh = userDao.selectUserByEmail(user.getUserEmail());
-        return fresh != null && encoder.matches(rawPassword, fresh.getUserPwd());
+        // 소셜 가입만으로 생성된 계정은 user_pwd가 없어 encoder.matches에 null을 넘기면 예외가 남
+        if (fresh == null || fresh.getUserPwd() == null) return false;
+        return encoder.matches(rawPassword, fresh.getUserPwd());
     }
 
     // 임시 비밀번호용 글자 집합 (0/O, 1/l/I 등 헷갈리는 문자는 제외)

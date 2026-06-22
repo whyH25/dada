@@ -13,6 +13,7 @@ public class UserDto implements java.io.Serializable {
     private Integer emailVerified;
     private String createdAt;
     private int ticketCount;
+    private boolean hasPassword;
 
     public Long getUserId() {
         return userId;
@@ -92,6 +93,14 @@ public class UserDto implements java.io.Serializable {
 
     public void setTicketCount(int ticketCount) {
         this.ticketCount = ticketCount;
+    }
+
+    public boolean isHasPassword() {
+        return hasPassword;
+    }
+
+    public void setHasPassword(boolean hasPassword) {
+        this.hasPassword = hasPassword;
     }
 
     private boolean newUser;
