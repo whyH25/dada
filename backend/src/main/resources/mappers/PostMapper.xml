@@ -12,7 +12,7 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
+            CASE WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
@@ -56,7 +56,7 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
+            CASE WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
@@ -75,7 +75,7 @@
             p.views,
             p.created_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
+            CASE WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
@@ -100,7 +100,7 @@
             p.created_at,
             p.updated_at,
             p.is_anonymous AS anonymous,
-            CASE WHEN p.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name,
+            CASE WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' WHEN p.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name,
             (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.post_id) AS comment_count,
             (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.post_id) AS likes
         FROM posts p
