@@ -135,6 +135,13 @@ public class UserController {
 
     }
 
+    // 아이디/비밀번호 찾기: 가입된 이메일이면 임시 비밀번호 발급 + 메일 발송
+    @PostMapping("/api/users/find-password")
+    public ResponseEntity<?> findPassword(@RequestBody Map<String, String> body) {
+        userService.resetPasswordByEmail(body.get("email"));
+        return ResponseEntity.ok(Map.of("success", true, "message", "임시 비밀번호를 이메일로 보내드렸습니다."));
+    }
+
 
 
     @GetMapping("/api/users/me")

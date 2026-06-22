@@ -54,6 +54,16 @@ public class EmailService {
         store.remove(email);
     }
 
+    // 아이디/비밀번호 찾기에서 발급한 임시 비밀번호 안내 메일
+    public void sendTempPasswordMail(String email, String tempPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(email);
+        message.setSubject("[다대다] 임시 비밀번호 안내");
+        message.setText("임시 비밀번호: " + tempPassword + "\n\n로그인 후 마이페이지에서 비밀번호를 변경해주세요.");
+        mailSender.send(message);
+    }
+
     // 면접 종료 1일 후 리포트 열람이 가능해졌을 때 보내는 안내 메일
     public void sendReportReadyMail(String email, String userName, String companyName) {
         SimpleMailMessage message = new SimpleMailMessage();

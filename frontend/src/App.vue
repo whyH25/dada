@@ -91,7 +91,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
   </router-view>
 
   <!-- 푸터 -->
-  <footer class="footer" v-if="$route.name !== 'signup' && !$route.path.startsWith('/admin') && !NO_CHROME_ROUTES.includes($route.name)">
+  <footer class="footer" v-if="!['signup', 'find-password'].includes($route.name) && !$route.path.startsWith('/admin') && !NO_CHROME_ROUTES.includes($route.name)">
     <div class="footer-inner">
       <div>© 2026 다대다. All rights reserved.</div>
     </div>

@@ -78,6 +78,17 @@ export async function updateUserApi(updateData) {
   return data
 }
 
+export async function findPasswordApi(email) {
+  const response = await fetch('http://localhost:8080/api/users/find-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.message || '가입되지 않은 회원입니다.')
+  return data
+}
+
 export async function sendVerificationCodeApi(email) {
   const response = await fetch('http://localhost:8080/api/email/send-code', {
     method: 'POST',
