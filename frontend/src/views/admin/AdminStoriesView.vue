@@ -59,10 +59,13 @@ async function handleThumbnail(e) {
   }
 }
 
+const DEFAULT_THUMBNAIL = '/thumbnail.png'
+
 async function submit() {
   if (!form.value.title || !form.value.content || form.value.content === '<p><br></p>') {
     alert('제목과 본문은 필수입니다.'); return
   }
+  if (!form.value.thumbnail) form.value.thumbnail = DEFAULT_THUMBNAIL
   const url = editTarget.value ? `${BASE}/stories/${editTarget.value.storyId}` : `${BASE}/stories`
   const method = editTarget.value ? 'PUT' : 'POST'
   await fetch(url, { ...OPTS, method, body: JSON.stringify(form.value) })

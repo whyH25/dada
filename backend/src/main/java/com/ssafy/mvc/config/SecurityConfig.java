@@ -23,6 +23,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.ssafy.mvc.dto.CustomUserDetailsDto;
 import com.ssafy.mvc.service.AdminUserDetailsService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +78,14 @@ public class SecurityConfig {
                 .userInfoEndpoint(userInfo -> userInfo
                     .oidcUserService(customUserOidcService) // 구글(OIDC)
                 )
-                .defaultSuccessUrl(frontendUrl, true)
+                .successHandler((request, response, authentication) -> {
+                    String redirectUrl = frontendUrl + "/#/";
+                    if (authentication.getPrincipal() instanceof CustomUserDetailsDto principal
+                            && principal.getUserDto().isNewUser()) {
+                        redirectUrl = frontendUrl + "/#/?newSocialUser=1";
+                    }
+                    response.sendRedirect(redirectUrl);
+                })
                 .failureHandler((request, response, exception) -> {
                     log.warn("소셜 로그인 실패: {}", exception.getMessage());
                     // 프론트가 hash 라우터(createWebHashHistory)라서 쿼리스트링은 #/ 뒤에 와야 인식됨

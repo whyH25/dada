@@ -53,7 +53,7 @@ onUnmounted(() => stopDeviceCheck())
 
 <template>
   <main class="page active" id="page-room-intro">
-    <div class="container" style="max-width:840px;">
+    <div class="container">
 
       <!-- ── 면접방 소개 ── -->
       <template v-if="!showEnvCheck">

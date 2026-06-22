@@ -266,7 +266,7 @@ async function handleSignup() {
         무료 이용권 <strong>1장</strong>이 지급되었어요.
       </p>
       <p class="signup-modal-sub">지금 바로 AI 모의 면접을 체험해보세요.</p>
-      <button class="btn btn-primary btn-block" @click="router.push('/')">무료 면접 시작하기</button>
+      <button class="btn btn-primary btn-block" @click="router.push('/')">확인</button>
     </div>
   </div>
 </template>

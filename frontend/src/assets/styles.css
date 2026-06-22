@@ -302,6 +302,7 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
   margin: 0 auto;
   padding: 0 28px;
 }
+@media (max-width: 600px) { .container { padding: 0 16px; } }
 
 .page-header {
   padding: 28px 0 20px;

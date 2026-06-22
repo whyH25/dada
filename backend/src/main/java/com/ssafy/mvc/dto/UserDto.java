@@ -93,4 +93,9 @@ public class UserDto implements java.io.Serializable {
     public void setTicketCount(int ticketCount) {
         this.ticketCount = ticketCount;
     }
+
+    private boolean newUser;
+
+    public boolean isNewUser() { return newUser; }
+    public void setNewUser(boolean newUser) { this.newUser = newUser; }
 }

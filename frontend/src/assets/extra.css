@@ -300,7 +300,7 @@
 /* =========================
    Notifications page
    ========================= */
-.container-narrow { max-width: 820px; }
+.container-narrow { max-width: 1360px; }
 .notif-item {
   display: flex;
   align-items: center;

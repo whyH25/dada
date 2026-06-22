@@ -187,6 +187,7 @@ public class UserServiceImpl implements UserService {
             user.setUserProfileImg(profileImageUrl);
             user.setEmailVerified(1);
             userDao.insertUser(user);
+            user.setNewUser(true);
         }
 
         UserSocialDto newSocial = new UserSocialDto();

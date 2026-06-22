@@ -9,7 +9,6 @@ import { fetchJobSchedules } from '../api/scheduleApi.js'
 const router = useRouter()
 const auth = useAuthStore()
 
-const ACCENTS = ['#308860', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4']
 
 const stories = ref([])
 const posts = ref([])
@@ -142,23 +141,13 @@ onMounted(async () => {
         </div>
         <div class="story-grid">
           <div
-            v-for="(s, i) in stories"
+            v-for="s in stories"
             :key="s.storyId"
             class="story-card"
             @click="go('/story/' + s.storyId)"
           >
-            <div v-if="s.thumbnail" class="story-thumb">
-              <img :src="s.thumbnail" :alt="s.title" />
-            </div>
-            <div v-if="!s.thumbnail" class="story-card-top">
-              <div
-                class="company-logo"
-                :style="{ background: ACCENTS[i % ACCENTS.length], color: '#fff' }"
-              >{{ s.title.charAt(0) }}</div>
-              <div>
-                <div class="story-meta-name">합격 스토리</div>
-                <div class="story-meta-sub">{{ formatDate(s.createdAt) }}</div>
-              </div>
+            <div class="story-thumb">
+              <img :src="s.thumbnail || '/thumbnail.png'" :alt="s.title" />
             </div>
             <div class="story-kicker">
               <span class="story-kicker-tag">합격자 인터뷰</span>

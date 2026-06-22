@@ -85,10 +85,9 @@ onMounted(load)
           :style="{ '--accent': ACCENTS[i % ACCENTS.length] }"
           @click="router.push('/story/' + s.storyId)"
         >
-          <div v-if="s.thumbnail" class="sc-thumb">
-            <img :src="s.thumbnail" :alt="s.title" />
+          <div class="sc-thumb">
+            <img :src="s.thumbnail || '/default-thumbnail.svg'" :alt="s.title" />
           </div>
-          <div v-else class="sc-accent-bar" />
           <div class="sc-body">
             <div class="sc-top">
               <span class="sc-tag">합격 스토리</span>
