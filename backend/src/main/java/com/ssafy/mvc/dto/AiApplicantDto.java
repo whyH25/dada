@@ -9,6 +9,7 @@ public class AiApplicantDto {
     private String profileImageUrl; // 추후 사용
     private String applicantPrompt;
     private String voiceType;
+    private String language; // KO, EN
 
     public Long getApplicantId() { return applicantId; }
     public void setApplicantId(Long applicantId) { this.applicantId = applicantId; }
@@ -30,6 +31,9 @@ public class AiApplicantDto {
 
     public String getVoiceType() { return voiceType; }
     public void setVoiceType(String voiceType) { this.voiceType = voiceType; }
+
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language; }
 
     @Override
     public String toString() {

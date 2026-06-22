@@ -50,9 +50,16 @@ public class GoogleTtsService {
         ObjectNode root = objectMapper.createObjectNode();
         root.putObject("input").put("text", text);
         root.putObject("voice")
-                .put("languageCode", "ko-KR")
+                .put("languageCode", extractLanguageCode(voiceType))
                 .put("name", voiceType);
         root.putObject("audioConfig").put("audioEncoding", "MP3");
         return objectMapper.writeValueAsString(root);
+    }
+
+    // 구글 voice 이름은 "languageCode-종류-변형" 형태(예: ko-KR-Standard-A, en-US-Wavenet-D)라서
+    // 앞 두 토큰을 합치면 그 목소리의 언어 코드가 됨. 영어 페르소나도 voice_type만 잘 채우면 별도 처리 없이 동작
+    private String extractLanguageCode(String voiceType) {
+        String[] parts = voiceType.split("-");
+        return parts.length >= 2 ? parts[0] + "-" + parts[1] : "ko-KR";
     }
 }

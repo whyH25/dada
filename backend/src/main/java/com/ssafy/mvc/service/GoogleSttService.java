@@ -25,10 +25,10 @@ public class GoogleSttService {
         this.googleSttRestClient = googleSttRestClient;
     }
 
-    // 오디오 바이트(WebM/Opus) → 텍스트 변환
-    public String transcribe(byte[] audioBytes) {
+    // 오디오 바이트(WebM/Opus) → 텍스트 변환 (languageCode 예: ko-KR, en-US)
+    public String transcribe(byte[] audioBytes, String languageCode) {
         try {
-            String requestBody = buildRequest(audioBytes);
+            String requestBody = buildRequest(audioBytes, languageCode);
 
             String responseBody = googleSttRestClient.post()
                     .uri("/v1/speech:recognize?key=" + apiKey)
@@ -44,14 +44,14 @@ public class GoogleSttService {
         }
     }
 
-    private String buildRequest(byte[] audioBytes) throws Exception {
+    private String buildRequest(byte[] audioBytes, String languageCode) throws Exception {
         String base64Audio = Base64.getEncoder().encodeToString(audioBytes);
 
         ObjectNode root = objectMapper.createObjectNode();
         ObjectNode config = root.putObject("config");
         config.put("encoding", "WEBM_OPUS");
         // WEBM_OPUS는 컨테이너 헤더에서 샘플레이트 자동 감지 - 하드코딩하면 기기마다 불일치 발생
-        config.put("languageCode", "ko-KR");
+        config.put("languageCode", languageCode);
         config.put("enableAutomaticPunctuation", true);
         root.putObject("audio").put("content", base64Audio);
 

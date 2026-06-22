@@ -10,9 +10,10 @@ import java.util.List;
 @Mapper
 public interface AiPersonaDao {
 
-    List<AiInterviewerDto> selectRandomInterviewers(@Param("count") int count);
+    List<AiInterviewerDto> selectRandomInterviewers(@Param("count") int count, @Param("language") String language);
 
-    List<AiApplicantDto> selectRandomApplicants(@Param("count") int count, @Param("applicantType") String applicantType);
+    List<AiApplicantDto> selectRandomApplicants(@Param("count") int count, @Param("applicantType") String applicantType,
+                                                 @Param("language") String language);
 
     // 리포트 생성 시 면접에 참여한 지원자 이름 조회용
     List<AiApplicantDto> selectApplicantsByIds(@Param("ids") List<Long> ids);

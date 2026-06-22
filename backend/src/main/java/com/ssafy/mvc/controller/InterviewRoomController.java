@@ -47,7 +47,8 @@ public class InterviewRoomController {
             @RequestParam(required = false) Integer aiInterviewerCnt,
             @RequestParam Integer aiApplicantCnt,
             @RequestParam(required = false) Long resumeId,
-            @RequestParam(required = false) Long portfolioId
+            @RequestParam(required = false) Long portfolioId,
+            @RequestParam(required = false) String language
     ) {
 
         InterviewRoomDto dto = new InterviewRoomDto();
@@ -60,6 +61,7 @@ public class InterviewRoomController {
         dto.setAiApplicantCnt(aiApplicantCnt);
         dto.setResumeId(resumeId);
         dto.setPortfolioId(portfolioId);
+        dto.setLanguage(language != null ? language : "KO");
 
         InterviewRoomDto result = interviewRoomService.createRoom(dto);
         return ResponseEntity.ok(result);

@@ -45,16 +45,19 @@ public class GoogleSpeechController {
 
     // 음성 → 텍스트 변환 + answer_text/answer_sec DB 저장
     // audioFile은 마이크 스트림이 없는 등의 사유로 없을 수 있어 필수로 받지 않음
+    // language: 면접방 언어("KO"/"EN") - 프론트가 안 보내면 한국어로 처리
     @PostMapping(value = "/stt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> stt(
             @RequestParam(required = false) MultipartFile audioFile,
             @RequestParam(required = false) Long scenarioId,
-            @RequestParam(required = false) Integer answerSec
+            @RequestParam(required = false) Integer answerSec,
+            @RequestParam(required = false) String language
     ) throws IOException {
+        String languageCode = "EN".equals(language) ? "en-US" : "ko-KR";
         String transcript = "";
         try {
             if (audioFile != null && !audioFile.isEmpty()) {
-                transcript = googleSttService.transcribe(audioFile.getBytes());
+                transcript = googleSttService.transcribe(audioFile.getBytes(), languageCode);
             }
         } catch (Exception e) {
             log.error("Google STT 실패 (scenarioId={}): {}", scenarioId, e.getMessage());

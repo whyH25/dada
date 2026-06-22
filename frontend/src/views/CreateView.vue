@@ -40,6 +40,7 @@ const sel = reactive({
   diff: '중 | 실제 면접 수준',
   interviewers: '1명',
   applicants: '1명',
+  lang: 'KO',
 })
 
 // 마이페이지에 등록된 서류 목록 (직접 업로드 대신 선택만 가능)
@@ -56,6 +57,7 @@ const typeOpts = ['신입', '경력', '인턴']
 const diffOpts = ['하 | 편안한 분위기', '중 | 실제 면접 수준', '상 | 압박 면접']
 const countOpts = ['1명', '2명', '3명']
 const applicantOpts = ['0명', '1명', '2명']
+const langOpts = ['KO', 'EN']
 
 const difficultyMap = {
   '하 | 편안한 분위기': 'EASY',
@@ -141,8 +143,10 @@ async function startInterview() {
       aiApplicantCount: applicantCount.value,
       resumeId: selectedResumeId.value,
       portfolioId: selectedPortfolioId.value,
+      language: sel.lang,
     })
     flow.roomId = roomResult.roomId
+    flow.language = sel.lang
 
     // 기존 mock 데이터에도 추가 (PrepView 등 호환용)
     const logoMap = { 카카오: 'kakao', 삼성전자: 'samsung', 네이버: 'naver', 토스: 'toss' }
@@ -254,6 +258,12 @@ async function startInterview() {
                     </div>
                   </div>
                 </div>
+                <div class="field">
+                  <label class="field-label">면접 진행 언어</label>
+                  <div class="chip-group">
+                    <div v-for="o in langOpts" :key="o" class="chip" :class="{ active: sel.lang === o }" @click="sel.lang = o">{{ o === 'KO' ? '한국어' : '영어' }}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -302,6 +312,7 @@ async function startInterview() {
               <div class="preview-row"><div class="preview-row-label">난이도</div><div class="preview-row-val">{{ sel.diff }}</div></div>
               <div class="preview-row"><div class="preview-row-label">면접관 수</div><div class="preview-row-val">{{ sel.interviewers }}</div></div>
               <div class="preview-row"><div class="preview-row-label">AI 경쟁 지원자</div><div class="preview-row-val">{{ sel.applicants }}</div></div>
+              <div class="preview-row"><div class="preview-row-label">진행 언어</div><div class="preview-row-val">{{ sel.lang === 'KO' ? '한국어' : '영어' }}</div></div>
               <div class="preview-row">
                 <div class="preview-row-label">제출 서류</div>
                 <div class="preview-row-val">
@@ -438,6 +449,7 @@ async function startInterview() {
               <div class="preview-row"><div class="preview-row-label">난이도</div><div class="preview-row-val">{{ sel.diff }}</div></div>
               <div class="preview-row"><div class="preview-row-label">면접관 수</div><div class="preview-row-val">{{ sel.interviewers }}</div></div>
               <div class="preview-row"><div class="preview-row-label">AI 경쟁 지원자</div><div class="preview-row-val">{{ sel.applicants }}</div></div>
+              <div class="preview-row"><div class="preview-row-label">진행 언어</div><div class="preview-row-val">{{ sel.lang === 'KO' ? '한국어' : '영어' }}</div></div>
               <div class="preview-row"><div class="preview-row-label">제출 서류</div><div class="preview-row-val">{{ submittedDocCount === 0 ? '없음' : submittedDocCount + '건' }}</div></div>
               <div class="preview-row"><div class="preview-row-label">예상 소요 시간</div><div class="preview-row-val">{{ estimatedTime }}</div></div>
             </div>

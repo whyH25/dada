@@ -172,6 +172,7 @@ async function sendStt(chunks, scenarioId, answerSec) {
     if (chunks.length > 0) form.append('audioFile', new Blob(chunks, { type: 'audio/webm' }), 'answer.webm')
     form.append('scenarioId', String(scenarioId))
     form.append('answerSec', String(answerSec))
+    form.append('language', flow.language)
     await fetch('http://localhost:8080/api/speech/stt', {
       method: 'POST',
       credentials: 'include',

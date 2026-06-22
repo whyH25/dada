@@ -62,12 +62,12 @@ public class InterviewRoomService {
         return dto;
     }
 
-    public List<AiInterviewerDto> getRandomInterviewers(int count) {
-        return aiPersonaDao.selectRandomInterviewers(count);
+    public List<AiInterviewerDto> getRandomInterviewers(int count, String language) {
+        return aiPersonaDao.selectRandomInterviewers(count, language);
     }
 
-    public List<AiApplicantDto> getRandomApplicants(int count, String applicantType) {
-        return aiPersonaDao.selectRandomApplicants(count, applicantType);
+    public List<AiApplicantDto> getRandomApplicants(int count, String applicantType, String language) {
+        return aiPersonaDao.selectRandomApplicants(count, applicantType, language);
     }
 
     // 페르소나 선정 → DB 저장 → AI 대본 생성 → 시나리오 저장 → 상태 전환
@@ -82,10 +82,10 @@ public class InterviewRoomService {
 
         userDao.useTicket(userId);
 
-        List<AiInterviewerDto> interviewers = aiPersonaDao.selectRandomInterviewers(room.getAiInterviewerCnt());
+        List<AiInterviewerDto> interviewers = aiPersonaDao.selectRandomInterviewers(room.getAiInterviewerCnt(), room.getLanguage());
         // aiApplicantCnt가 0이면 조회 생략
         List<AiApplicantDto> applicants = room.getAiApplicantCnt() > 0
-                ? aiPersonaDao.selectRandomApplicants(room.getAiApplicantCnt(), room.getApplicantType())
+                ? aiPersonaDao.selectRandomApplicants(room.getAiApplicantCnt(), room.getApplicantType(), room.getLanguage())
                 : new ArrayList<>();
 
         saveRoomPersonas(roomId, interviewers, applicants);

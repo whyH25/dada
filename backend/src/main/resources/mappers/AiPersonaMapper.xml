@@ -4,16 +4,18 @@
 <mapper namespace="com.ssafy.mvc.dao.AiPersonaDao">
 
     <select id="selectRandomInterviewers" resultType="com.ssafy.mvc.dto.AiInterviewerDto">
-        SELECT interviewer_id, interviewer_name, interviewer_gender, profile_image_url, interviewer_prompt, voice_type
+        SELECT interviewer_id, interviewer_name, interviewer_gender, profile_image_url, interviewer_prompt, voice_type, language
         FROM ai_interviewer
+        WHERE language = #{language}
         ORDER BY RAND()
         LIMIT #{count}
     </select>
 
     <select id="selectRandomApplicants" resultType="com.ssafy.mvc.dto.AiApplicantDto">
-        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, applicant_prompt, voice_type
+        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, applicant_prompt, voice_type, language
         FROM ai_applicant
         WHERE applicant_type = #{applicantType}
+          AND language = #{language}
         ORDER BY RAND()
         LIMIT #{count}
     </select>

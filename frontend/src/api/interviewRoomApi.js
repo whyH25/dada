@@ -49,7 +49,7 @@ export async function fetchJobCategories() {
   }
 }
 
-export async function createInterviewRoom({ companyName, jobId, difficulty, employmentType, interviewerCount, aiApplicantCount, resumeId, portfolioId }) {
+export async function createInterviewRoom({ companyName, jobId, difficulty, employmentType, interviewerCount, aiApplicantCount, resumeId, portfolioId, language }) {
   // 파일 업로드 대신 마이페이지에 등록된 이력서/포트폴리오의 id만 전달
   const params = new URLSearchParams()
   params.append('companyName', companyName)
@@ -60,6 +60,8 @@ export async function createInterviewRoom({ companyName, jobId, difficulty, empl
   params.append('aiApplicantCnt', aiApplicantCount)
   if (resumeId != null) params.append('resumeId', resumeId)
   if (portfolioId != null) params.append('portfolioId', portfolioId)
+  // 언어 미지정 시 백엔드가 기본값 "KO"로 처리
+  if (language != null) params.append('language', language)
 
   const res = await fetch(`${BASE}/interview-rooms`, {
     method: 'POST',

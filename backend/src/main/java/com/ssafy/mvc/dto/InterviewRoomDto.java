@@ -18,6 +18,7 @@ public class InterviewRoomDto {
     private String companyName;
     private Integer jobId;
     private String difficulty;
+    private String language; // KO, EN - 면접 진행 언어
 
     private Integer aiInterviewerCnt;
     private Integer aiApplicantCnt;
@@ -76,6 +77,12 @@ public class InterviewRoomDto {
 	}
 	public void setDifficulty(String difficulty) {
 		this.difficulty = difficulty;
+	}
+	public String getLanguage() {
+		return language;
+	}
+	public void setLanguage(String language) {
+		this.language = language;
 	}
 	public Integer getAiInterviewerCnt() {
 		return aiInterviewerCnt;

@@ -29,7 +29,7 @@ public class AiPromptService {
     @Value("${openai.chat-path:/v1/chat/completions}")
     private String chatPath;
 
-    private static final String PROMPT_TEMPLATE = """
+    private static final String PROMPT_TEMPLATE_KO = """
             당신은 모의면접 대본을 생성하는 AI입니다.
             아래 입력 데이터를 바탕으로 실제 면접처럼 진행되는 대본 스크립트를 JSON 형식으로 생성하세요.
 
@@ -129,6 +129,108 @@ public class AiPromptService {
             }
             """;
 
+    private static final String PROMPT_TEMPLATE_EN = """
+            You are an AI that generates a mock interview script.
+            Based on the input data below, generate an interview script as if it were a real interview, in JSON format.
+
+            [Output Format Rules]
+            1. Respond with JSON only. Do not output any character outside JSON (no explanations, no markdown, no code blocks).
+            2. The response must be valid JSON.
+            3. Do not use trailing commas.
+
+            [Turn Writing Rules]
+            4. Write every line of dialogue inside the scenario array.
+            5. turnOrder must start at 1 and increase by 1 each turn.
+            6. For an interviewer's line, set turnRole to "INTERVIEWER".
+            7. For a competing applicant's line, set turnRole to "APPLICANT".
+            8. For a turn where the real user must answer, set turnRole to "USER".
+            9. Assign questionSeq exactly according to the following rule.
+               - Every INTERVIEWER question turn that is followed by a USER or APPLICANT answer: assign sequentially starting from 1 (including self-introduction)
+               - The USER/APPLICANT turn that answers that question: same number as the INTERVIEWER turn
+               - Pure greeting/closing remarks with no answer (e.g. "Hello", "Thank you for your time") only: set to 0
+               - Every question that is followed by an answer (self-introduction, job-related questions, etc.) must be assigned a number of 1 or higher.
+
+            [ID and Hallucination Prevention Rules]
+            9. For INTERVIEWER, turnRefId must be one of the provided interviewer personas' interviewer_id values only.
+            10. For APPLICANT, turnRefId must be one of the provided applicant personas' applicant_id values only.
+            11. For USER, turnRefId must always be null.
+            12. Never invent IDs, names, or people that were not provided.
+            13. Use only the provided personas. Do not add interviewers or applicants not in the persona list.
+            14. Do not arbitrarily add experience or skills not present in the submitted documents.
+
+            [speechText / timeoutSec Rules]
+            15. For INTERVIEWER and APPLICANT, speechText must always be a non-null string.
+            16. For USER, speechText must always be null. (Never generate the content of the USER's answer. A USER turn only marks the point where the user must answer.)
+            17. For a USER turn, set timeoutSec appropriately for the question (maximum 60 seconds).
+            18. For INTERVIEWER and APPLICANT turns, set timeoutSec to null.
+
+            [Content Generation Rules]
+            19. Base the interviewer's questions on the job role, applicant type, difficulty, and [User Document Text].
+                 EASY: Focus on basic experience confirmation, motivation, and role description.
+                 NORMAL: Also check the process of the experience, problem-solving approach, and job fit.
+                 HARD: Include pressure questions that demand technical decision-making, trade-offs, failure experiences, and concrete figures/evidence.
+                 Consider the company name and job characteristics, but do not fabricate uncertain internal company information; use only general-level knowledge.
+            20. Questions should cover self-introduction, job competency, project experience, collaboration experience, and problem-solving experience, flowing naturally in that order.
+            21. Generate at least 8 INTERVIEWER questions, of which at least 5 must be questions the USER must answer (common questions + USER-specific questions).
+            22. APPLICANT should answer the interviewer's questions in a way that reflects their persona.
+            23. Every provided interviewer must speak at least once.
+            24. Every provided competing applicant must speak at least once.
+            25. Generate the entire scenario with 15 to 30 turns total.
+            26. Mix the following three turn types appropriately throughout the interview flow.
+                - Common questions: INTERVIEWER asks a question, then APPLICANT and USER answer in turn. The order is random (e.g. self-introduction, job competency)
+                - USER-specific questions: INTERVIEWER asks the USER a question based on the USER's documents, and only the USER answers.
+                - APPLICANT-specific questions: INTERVIEWER asks a specific APPLICANT a question, and only that APPLICANT answers.
+                  (The answer to an APPLICANT-specific question must not contradict that applicant's persona, and must stay consistent with their own earlier answers.)
+
+            [Applicant Type Description]
+            - NEW: New graduate hiring. An applicant with no experience aiming for a full-time position.
+            - INTERN: Internship hiring. An applicant for an internship position prior to full-time employment.
+            - EXPERIENCED: Experienced hiring. An applicant who holds relevant job experience.
+
+            [Input Data]
+            Room ID: {roomId}
+            Company name: {companyName}
+            Job role: {jobRole}
+            Applicant type: {applicantType}
+            Difficulty: {difficulty}
+            Number of AI interviewers: {interviewerCount}
+            Number of AI competing applicants: {applicantCount}
+
+            [User Document Text]
+            Resume:
+            {resumeText}
+            Portfolio:
+            {portfolioText}
+
+            [AI Interviewer Personas]
+            {interviewerPersonas}
+
+            [AI Competing Applicant Personas]
+            {applicantPersonas}
+
+            [Output JSON Format]
+            {
+              "roomId": number,
+              "interviewTitle": string,
+              "companyName": string,
+              "jobRole": string,
+              "applicantType": string,
+              "difficulty": string,
+              "scenario": [
+                {
+                  "questionSeq": number,
+                  "turnOrder": number,
+                  "turnRole": "INTERVIEWER" | "APPLICANT" | "USER",
+                  "turnRefId": number | null,
+                  "speechText": string | null,
+                  "timeoutSec": number | null
+                }
+              ]
+            }
+
+            All speechText values must be written in English.
+            """;
+
     private static final String ANALYSIS_PROMPT_TEMPLATE = """
             당신은 면접 평가 전문가입니다.
             아래 면접 정보와 질문/답변 내용을 바탕으로 지원자를 종합적으로 평가하세요.
@@ -205,11 +307,12 @@ public class AiPromptService {
     public InterviewStartResultDto generateScript(InterviewRoomDto room,
                                              List<AiInterviewerDto> interviewers,
                                              List<AiApplicantDto> applicants) {
-        String prompt = buildPrompt(room, interviewers, applicants);
+        boolean isEnglish = "EN".equals(room.getLanguage());
+        String prompt = buildPrompt(room, interviewers, applicants, isEnglish);
         String responseBody = callOpenAi(prompt,
                 "당신은 모의면접 대본을 생성하는 AI입니다. 반드시 JSON 형식으로만 응답하세요.", 0.7);
 
-        savePromptRecord(room.getRoomId(), "SCRIPT_KR", prompt, responseBody);
+        savePromptRecord(room.getRoomId(), isEnglish ? "SCRIPT_EN" : "SCRIPT_KR", prompt, responseBody);
 
         InterviewStartResultDto script = parseScript(responseBody);
         // AI가 반환한 roomId 대신 실제 roomId로 덮어씀 (환각 방지)
@@ -287,8 +390,12 @@ public class AiPromptService {
 
     private String buildPrompt(InterviewRoomDto room,
                                List<AiInterviewerDto> interviewers,
-                               List<AiApplicantDto> applicants) {
-        return PROMPT_TEMPLATE
+                               List<AiApplicantDto> applicants,
+                               boolean isEnglish) {
+        // 면접 언어별로 프롬프트 템플릿 자체를 분리 (KO/EN 각각 완전한 규칙 세트 보유)
+        String template = isEnglish ? PROMPT_TEMPLATE_EN : PROMPT_TEMPLATE_KO;
+
+        return template
                 .replace("{roomId}",             String.valueOf(room.getRoomId()))
                 .replace("{companyName}",         nvl(room.getCompanyName(), "미정"))
                 .replace("{jobRole}",             nvl(room.getJobName(), "미정"))
