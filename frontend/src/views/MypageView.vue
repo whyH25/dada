@@ -705,7 +705,7 @@ onMounted(() => {
           <template v-else-if="section === 'my-posts'">
             <div class="breadcrumb">마이페이지 <span class="sep">›</span> 계정 <span class="sep">›</span> 내가 쓴 글</div>
             <div class="flex-between" style="margin:4px 0 20px;">
-              <div><h2 class="mp-h1">내가 쓴 글</h2><p class="mp-sub">자유게시판에 작성한 게시글입니다. 총 {{ myPosts.length }}건</p></div>
+              <div><h2 class="mp-h1">내가 쓴 글</h2><p class="mp-sub">커뮤니티에 작성한 게시글입니다. 총 {{ myPosts.length }}건</p></div>
             </div>
             <div class="card" style="padding:0; overflow:hidden;">
               <div v-if="myPostsLoading" style="padding:48px; text-align:center; color:var(--ink-400);">불러오는 중...</div>

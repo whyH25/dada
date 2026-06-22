@@ -6,19 +6,20 @@
     <select id="selectAll" resultType="com.ssafy.mvc.dto.NoticeDto">
         SELECT notice_id, category, title, views, created_at
         FROM notices
+        WHERE is_deleted = 0
         ORDER BY created_at DESC
     </select>
 
     <select id="selectById" resultType="com.ssafy.mvc.dto.NoticeDto">
         SELECT notice_id, category, title, content, views, created_at, updated_at
         FROM notices
-        WHERE notice_id = #{noticeId}
+        WHERE notice_id = #{noticeId} AND is_deleted = 0
     </select>
 
     <select id="selectLatestByCategory" resultType="com.ssafy.mvc.dto.NoticeDto">
         SELECT notice_id, category, title, content, views, created_at
         FROM notices
-        WHERE category = #{category}
+        WHERE category = #{category} AND is_deleted = 0
         ORDER BY created_at ASC
         LIMIT 1
     </select>
@@ -34,9 +35,9 @@
         WHERE notice_id = #{noticeId}
     </update>
 
-    <delete id="delete">
-        DELETE FROM notices WHERE notice_id = #{noticeId}
-    </delete>
+    <update id="delete">
+        UPDATE notices SET is_deleted = 1 WHERE notice_id = #{noticeId}
+    </update>
 
     <update id="incrementViews">
         UPDATE notices SET views = views + 1 WHERE notice_id = #{noticeId}

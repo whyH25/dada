@@ -20,13 +20,13 @@ const routes = [
   { path: '/community/board/new',       name: 'post-create', component: () => import('../views/PostCreateView.vue') },
   { path: '/community/board/:id/edit',  name: 'post-edit',   component: () => import('../views/PostCreateView.vue') },
   { path: '/community/board/:id',       name: 'post-detail', component: () => import('../views/PostDetailView.vue') },
+  { path: '/openchat', name: 'openchat', component: () => import('../views/OpenChatView.vue') },
   {
     path: '/community',
     component: () => import('../views/CommunityView.vue'),
     children: [
-      { path: '', redirect: '/community/openchat' },
-      { path: 'openchat', name: 'openchat', component: () => import('../views/OpenChatView.vue') },
-      { path: 'board',    name: 'board',    component: () => import('../views/PostsView.vue') },
+      { path: '', redirect: '/community/board' },
+      { path: 'board', name: 'board', component: () => import('../views/PostsView.vue') },
     ],
   },
   { path: '/study/:id', name: 'study-detail', component: () => import('../views/StudyDetailView.vue') },

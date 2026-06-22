@@ -122,8 +122,7 @@ onMounted(load)
       <div class="page-header" style="border-bottom:none;padding-bottom:8px;margin-bottom:8px;">
         <div class="breadcrumb">
           홈 <span class="sep">›</span>
-          커뮤니티 <span class="sep">›</span>
-          <a @click="router.push('/community/board')" style="cursor:pointer;">자유게시판</a>
+          <a @click="router.push('/community/board')" style="cursor:pointer;">커뮤니티</a>
           <span class="sep">›</span> {{ post?.category ?? '게시글' }}
         </div>
       </div>

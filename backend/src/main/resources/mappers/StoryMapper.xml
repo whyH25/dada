@@ -6,13 +6,14 @@
     <select id="selectAll" resultType="com.ssafy.mvc.dto.StoryDto">
         SELECT story_id, title, thumbnail, views, likes, created_at
         FROM stories
+        WHERE is_deleted = 0
         ORDER BY created_at DESC
     </select>
 
     <select id="selectById" resultType="com.ssafy.mvc.dto.StoryDto">
         SELECT story_id, title, thumbnail, content, views, likes, created_at, updated_at
         FROM stories
-        WHERE story_id = #{storyId}
+        WHERE story_id = #{storyId} AND is_deleted = 0
     </select>
 
     <insert id="insert" parameterType="com.ssafy.mvc.dto.StoryDto" useGeneratedKeys="true" keyProperty="storyId">
@@ -26,9 +27,9 @@
         WHERE story_id = #{storyId}
     </update>
 
-    <delete id="delete">
-        DELETE FROM stories WHERE story_id = #{storyId}
-    </delete>
+    <update id="delete">
+        UPDATE stories SET is_deleted = 1 WHERE story_id = #{storyId}
+    </update>
 
     <update id="incrementViews">
         UPDATE stories SET views = views + 1 WHERE story_id = #{storyId}

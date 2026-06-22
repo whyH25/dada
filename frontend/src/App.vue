@@ -50,7 +50,7 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
     <div class="nav-inner">
       <div class="brand" @click="go('/')">
         <div class="brand-logo"><span class="d"></span><span class="d"></span><span class="d"></span></div>
-        <div class="brand-name">다대다</div>
+        <div class="brand-name">다다</div>
       </div>
 
       <div class="nav-menu">
@@ -58,14 +58,8 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
         <div class="nav-item" :class="{ active: $route.name === 'schedule' }" @click="go('/schedule')">채용 일정</div>
         <div class="nav-item" :class="{ active: ['create', 'interview-intro'].includes($route.name) }" @click="go('/interview-intro')">면접</div>
         <div class="nav-item" :class="{ active: $route.name === 'stories' }" @click="go('/stories')">합격스토리</div>
-        <div class="nav-item has-dropdown" :class="{ active: ['openchat', 'board', 'post-create', 'post-edit', 'post-detail'].includes($route.name) }">
-          커뮤니티
-          <span class="caret"></span>
-          <div class="nav-dropdown">
-            <div class="nav-dropdown-item" @click="go('/community/openchat')">기업별 오픈톡</div>
-            <div class="nav-dropdown-item" @click="go('/community/board')">자유게시판</div>
-          </div>
-        </div>
+        <div class="nav-item" :class="{ active: ['board', 'post-create', 'post-edit', 'post-detail'].includes($route.name) }" @click="go('/community/board')">커뮤니티</div>
+        <div class="nav-item" :class="{ active: $route.name === 'openchat' }" @click="go('/openchat')">기업별 오픈톡</div>
         <div class="nav-item" :class="{ active: $route.name === 'notices' }" @click="go('/notices')">공지사항</div>
       </div>
 

@@ -197,7 +197,7 @@ onMounted(async () => {
         </div>
 
         <div class="card list-card">
-          <div class="card-header"><h3 class="card-title">자유게시판</h3><a class="card-link" @click="go('/community/board')">더보기 ›</a></div>
+          <div class="card-header"><h3 class="card-title">커뮤니티</h3><a class="card-link" @click="go('/community/board')">더보기 ›</a></div>
           <template v-if="posts.length > 0">
             <div
               v-for="p in posts"
