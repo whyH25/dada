@@ -1,5 +1,6 @@
 package com.ssafy.mvc.service;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -135,6 +136,30 @@ public class UserServiceImpl implements UserService {
         if (rawPassword == null) return false;
         UserDto fresh = userDao.selectUserByEmail(user.getUserEmail());
         return fresh != null && encoder.matches(rawPassword, fresh.getUserPwd());
+    }
+
+    // 임시 비밀번호용 글자 집합 (0/O, 1/l/I 등 헷갈리는 문자는 제외)
+    private static final String TEMP_PWD_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    private final SecureRandom random = new SecureRandom();
+
+    // 아이디/비밀번호 찾기: 이메일로 가입 여부를 확인하고, 가입돼 있으면 임시 비밀번호를 발급해 DB에 반영 후 메일 발송
+    @Override
+    public void resetPasswordByEmail(String email) {
+        UserDto user = userDao.selectUserByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("가입되지 않은 회원입니다.");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10; i++) {
+            sb.append(TEMP_PWD_CHARS.charAt(random.nextInt(TEMP_PWD_CHARS.length())));
+        }
+        String tempPassword = sb.toString();
+
+        user.setUserPwd(encoder.encode(tempPassword));
+        userDao.updateUser(user);
+
+        emailService.sendTempPasswordMail(email, tempPassword);
     }
 
     // 소셜 로그인: 1) 이미 연동된 계정이면 그 계정 그대로 로그인

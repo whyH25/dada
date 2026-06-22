@@ -120,7 +120,7 @@ async function handleLogin() {
       </div>
       <div class="auth-row">
         <label class="auth-remember"><input type="checkbox" v-model="rememberId" /> 아이디 저장</label>
-        <a class="auth-forgot">아이디/비밀번호 찾기</a>
+        <a class="auth-forgot" style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/find-password') }">아이디/비밀번호 찾기</a>
       </div>
 
       <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
