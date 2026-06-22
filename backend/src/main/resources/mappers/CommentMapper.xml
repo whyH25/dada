@@ -12,9 +12,9 @@
             c.is_anonymous AS anonymous,
             c.created_at,
             c.updated_at,
-            CASE WHEN c.is_anonymous = 1 THEN '익명' ELSE u.user_name END AS author_name
+            CASE WHEN c.is_anonymous = 1 THEN '익명' WHEN u.user_id IS NULL OR u.user_status = 'DELETED' THEN '탈퇴한 회원' ELSE u.user_name END AS author_name
         FROM comments c
-        JOIN users u ON c.user_id = u.user_id
+        LEFT JOIN users u ON c.user_id = u.user_id
         WHERE c.post_id = #{postId} AND c.is_deleted = 0
         ORDER BY c.created_at ASC
     </select>
