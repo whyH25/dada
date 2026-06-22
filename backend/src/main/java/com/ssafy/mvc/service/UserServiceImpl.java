@@ -205,4 +205,16 @@ public class UserServiceImpl implements UserService {
 
         return user;
     }
+
+    // 구글은 최초 동의(consent) 시점에만 refresh token을 내려주므로, null이 아닐 때만 갱신
+    @Override
+    public void saveGoogleRefreshToken(Long userId, String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) return;
+        userSocialDao.updateRefreshToken(userId, "GOOGLE", refreshToken);
+    }
+
+    @Override
+    public String getGoogleRefreshToken(Long userId) {
+        return userSocialDao.selectRefreshTokenByUserId(userId, "GOOGLE");
+    }
 }

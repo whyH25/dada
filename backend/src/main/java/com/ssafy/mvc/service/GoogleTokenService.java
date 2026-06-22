@@ -21,7 +21,16 @@ public class GoogleTokenService {
         OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient("google", principalName);
         if (client == null) return;
 
-        String token = client.getAccessToken().getTokenValue();
+        revoke(client.getAccessToken().getTokenValue());
+    }
+
+    // DB에 저장해둔 refresh token으로 직접 해지 - 탈퇴 시점의 로그인 세션이 구글이 아니어도 동작
+    public void revokeByRefreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) return;
+        revoke(refreshToken);
+    }
+
+    private void revoke(String token) {
         try {
             restClient.post()
                     .uri("https://oauth2.googleapis.com/revoke?token={token}", token)

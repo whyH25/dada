@@ -225,12 +225,12 @@ async function handleSignup() {
 
       <div class="auth-field">
         <label class="auth-label">비밀번호 <span class="required">*</span></label>
-        <input class="input" type="password" v-model="userPwd" placeholder="8자 이상" ref="pwdRef" />
+        <input class="input" type="password" v-model="userPwd" placeholder="8자 이상" ref="pwdRef" autocomplete="new-password" />
       </div>
 
       <div class="auth-field">
         <label class="auth-label">비밀번호 확인 <span class="required">*</span></label>
-        <input class="input" type="password" v-model="userPwdConfirm" placeholder="비밀번호 재입력" ref="pwdConfirmRef" @keyup.enter="handleSignup" />
+        <input class="input" type="password" v-model="userPwdConfirm" placeholder="비밀번호 재입력" ref="pwdConfirmRef" @keyup.enter="handleSignup" autocomplete="new-password" />
       </div>
 
       <div class="auth-field">

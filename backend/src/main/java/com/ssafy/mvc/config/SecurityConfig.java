@@ -18,6 +18,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -25,6 +31,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ssafy.mvc.dto.CustomUserDetailsDto;
 import com.ssafy.mvc.service.AdminUserDetailsService;
+import com.ssafy.mvc.service.UserService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,7 +46,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
-            CustomUserOidcService customUserOidcService) throws Exception {
+            CustomUserOidcService customUserOidcService,
+            OAuth2AuthorizedClientService authorizedClientService,
+            ClientRegistrationRepository clientRegistrationRepository,
+            UserService userService) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
@@ -73,12 +83,28 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
+                // access_type=offline을 안 붙이면 구글이 최초 동의 때조차 refresh token을 안 내려줌
+                // (회원탈퇴 시 토큰 해지에 필요해서 명시적으로 요청)
+                .authorizationEndpoint(endpoint -> endpoint
+                    .authorizationRequestResolver(authorizationRequestResolver(clientRegistrationRepository)))
                 // 카카오(일반 OAuth2)는 이메일 스코프 제한으로 보류 중. 재추가 시 여기에
                 // .userService(customUserOAuth2Service) 한 줄만 다시 연결하면 됨
                 .userInfoEndpoint(userInfo -> userInfo
                     .oidcUserService(customUserOidcService) // 구글(OIDC)
                 )
                 .successHandler((request, response, authentication) -> {
+                    if (authentication.getPrincipal() instanceof CustomUserDetailsDto principal
+                            && authentication instanceof OAuth2AuthenticationToken oauthToken) {
+                        // 구글은 최초 동의 시점에만 refresh token을 내려주므로, 받았을 때만 회원탈퇴용으로 저장
+                        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+                                oauthToken.getAuthorizedClientRegistrationId(), oauthToken.getName());
+                        if (client != null && client.getRefreshToken() != null) {
+                            userService.saveGoogleRefreshToken(
+                                    principal.getUserDto().getUserId(),
+                                    client.getRefreshToken().getTokenValue());
+                        }
+                    }
+
                     String redirectUrl = frontendUrl + "/#/";
                     if (authentication.getPrincipal() instanceof CustomUserDetailsDto principal
                             && principal.getUserDto().isNewUser()) {
@@ -101,6 +127,16 @@ public class SecurityConfig {
             );
 
         return http.build();
+    }
+
+    // 구글 인증 요청에 access_type=offline을 추가해 refresh token을 받기 위한 리졸버
+    private OAuth2AuthorizationRequestResolver authorizationRequestResolver(
+            ClientRegistrationRepository clientRegistrationRepository) {
+        DefaultOAuth2AuthorizationRequestResolver resolver =
+                new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
+        resolver.setAuthorizationRequestCustomizer(customizer ->
+                customizer.additionalParameters(params -> params.put("access_type", "offline")));
+        return resolver;
     }
 
     @Bean

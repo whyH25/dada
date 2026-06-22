@@ -206,9 +206,17 @@ public class UserController {
 
             HttpSession session, HttpServletResponse response) {
 
-        googleTokenService.revokeIfLinked(userDetails.getName());
+        Long userId = userDetails.getUserDto().getUserId();
+        // DB에 저장된 refresh token이 있으면 그걸로 해지(로그인 세션 종류 무관),
+        // 없으면(과거 연동 계정 등) 현재 세션이 구글 로그인일 때만 가능한 기존 방식으로 폴백
+        String storedRefreshToken = userService.getGoogleRefreshToken(userId);
+        if (storedRefreshToken != null) {
+            googleTokenService.revokeByRefreshToken(storedRefreshToken);
+        } else {
+            googleTokenService.revokeIfLinked(userDetails.getName());
+        }
 
-        userService.deleteUser(userDetails.getUserDto().getUserId());
+        userService.deleteUser(userId);
 
         SecurityContextHolder.clearContext();
 

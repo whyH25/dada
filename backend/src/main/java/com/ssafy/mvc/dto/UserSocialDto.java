@@ -6,6 +6,7 @@ public class UserSocialDto {
     private Long userId;
     private String provider;          // GOOGLE, KAKAO, NAVER
     private String providerAccountId;
+    private String refreshToken;      // 회원탈퇴 시 구글 토큰 해지용 (로그인 세션 종류와 무관하게 사용)
     private String createdAt;
 
     public Long getSocialId() { return socialId; }
@@ -19,6 +20,9 @@ public class UserSocialDto {
 
     public String getProviderAccountId() { return providerAccountId; }
     public void setProviderAccountId(String providerAccountId) { this.providerAccountId = providerAccountId; }
+
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

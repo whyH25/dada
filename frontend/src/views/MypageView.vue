@@ -652,7 +652,7 @@ onMounted(() => {
               <div v-if="isVerifying" style="margin:0 20px 16px; padding:14px 16px; background:var(--ink-50); border-radius:8px;">
                 <p style="font-size:13px; color:var(--ink-600); margin-bottom:8px;">정보를 수정하려면 현재 비밀번호를 입력해주세요.</p>
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <input class="input input-inline" type="password" v-model="verifyPwd" placeholder="현재 비밀번호" style="flex:1;" @keyup.enter="confirmPassword" />
+                  <input class="input input-inline" type="password" v-model="verifyPwd" placeholder="현재 비밀번호" style="flex:1;" @keyup.enter="confirmPassword" autocomplete="current-password" />
                   <button class="btn btn-sm btn-primary" :disabled="verifyLoading" @click="confirmPassword">{{ verifyLoading ? '확인 중...' : '확인' }}</button>
                   <button class="btn btn-sm btn-ghost" @click="cancelVerify">취소</button>
                 </div>
@@ -679,9 +679,9 @@ onMounted(() => {
                   <div class="info-label">비밀번호</div>
                   <div class="info-val">
                     <template v-if="isEditing">
-                      <input class="input input-inline" type="password" v-model="editPwd" placeholder="새 비밀번호 (변경 시 입력)" style="margin-bottom:6px;" />
+                      <input class="input input-inline" type="password" v-model="editPwd" placeholder="새 비밀번호 (변경 시 입력)" style="margin-bottom:6px;" autocomplete="new-password" />
                       <div style="display:flex; align-items:center; gap:8px;">
-                        <input class="input input-inline" type="password" v-model="editPwdConfirm" placeholder="비밀번호 확인" />
+                        <input class="input input-inline" type="password" v-model="editPwdConfirm" placeholder="비밀번호 확인" autocomplete="new-password" />
                         <span v-if="editPwd && editPwdConfirm && editPwd !== editPwdConfirm" style="color:#e53e3e; font-size:12px; white-space:nowrap;">비밀번호가 일치하지 않습니다.</span>
                       </div>
                     </template>

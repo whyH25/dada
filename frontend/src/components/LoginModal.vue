@@ -116,7 +116,7 @@ async function handleLogin() {
       </div>
       <div class="auth-field">
         <label class="auth-label">비밀번호</label>
-        <input class="input" type="password" v-model="userPwd" placeholder="비밀번호" @keyup.enter="handleLogin" ref="pwdRef" />
+        <input class="input" type="password" v-model="userPwd" placeholder="비밀번호" @keyup.enter="handleLogin" ref="pwdRef" autocomplete="current-password" />
       </div>
       <div class="auth-row">
         <label class="auth-remember"><input type="checkbox" v-model="rememberId" /> 아이디 저장</label>

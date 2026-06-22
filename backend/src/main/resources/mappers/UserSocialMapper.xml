@@ -17,6 +17,20 @@
         VALUES (#{userId}, #{provider}, #{providerAccountId})
     </insert>
 
+    <!-- 구글 로그인 성공 핸들러에서 OAuth2AuthorizedClient의 refresh token을 받았을 때 저장 -->
+    <update id="updateRefreshToken">
+        UPDATE users_social
+        SET refresh_token = #{refreshToken}
+        WHERE user_id = #{userId} AND provider = #{provider}
+    </update>
+
+    <!-- 회원탈퇴 시 토큰 해지용으로 저장된 refresh token 조회 -->
+    <select id="selectRefreshTokenByUserId" resultType="string">
+        SELECT refresh_token
+        FROM users_social
+        WHERE user_id = #{userId} AND provider = #{provider}
+    </select>
+
     <!-- 회원탈퇴 시 해당 유저의 소셜 연동 기록을 전부 삭제 -->
     <delete id="deleteByUserId" parameterType="long">
         DELETE FROM users_social WHERE user_id = #{userId}
