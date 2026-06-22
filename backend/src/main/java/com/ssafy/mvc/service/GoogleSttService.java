@@ -53,7 +53,6 @@ public class GoogleSttService {
         // WEBM_OPUS는 컨테이너 헤더에서 샘플레이트 자동 감지 - 하드코딩하면 기기마다 불일치 발생
         config.put("languageCode", languageCode);
         config.put("enableAutomaticPunctuation", true);
-        config.put("disfluencies", true);
         root.putObject("audio").put("content", base64Audio);
 
         return objectMapper.writeValueAsString(root);
