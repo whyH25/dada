@@ -23,4 +23,7 @@ public interface InterviewRoomDao {
 
     // 회원탈퇴 시 해당 유저의 면접방을 비활성화
     void deactivateByUserId(Long userId);
+
+    // 마이페이지에서 면접 기록 1건 삭제 시 비활성화
+    void deactivateByRoomId(@Param("roomId") Long roomId);
 }

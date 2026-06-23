@@ -50,6 +50,7 @@
         FROM interview_room ir
         LEFT JOIN category_job cj ON ir.job_id = cj.job_id
         WHERE ir.room_id = #{roomId}
+          AND ir.deleted_at IS NULL
     </select>
 
     <select id="selectByUserId" parameterType="long" resultType="com.ssafy.mvc.dto.InterviewRoomDto">
@@ -60,6 +61,7 @@
         FROM interview_room ir
         LEFT JOIN category_job cj ON ir.job_id = cj.job_id
         WHERE ir.user_id = #{userId}
+          AND ir.deleted_at IS NULL
         ORDER BY ir.started_at DESC
     </select>
 
@@ -78,6 +80,11 @@
     <!-- 회원탈퇴 시 해당 유저의 면접방을 비활성화 -->
     <update id="deactivateByUserId" parameterType="long">
         UPDATE interview_room SET deleted_at = NOW() WHERE user_id = #{userId}
+    </update>
+
+    <!-- 마이페이지에서 면접 기록 1건 삭제 시 비활성화 -->
+    <update id="deactivateByRoomId">
+        UPDATE interview_room SET deleted_at = NOW() WHERE room_id = #{roomId}
     </update>
 
 </mapper>

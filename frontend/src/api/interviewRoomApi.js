@@ -98,3 +98,16 @@ export function updateRoomStatusApi(roomId, status) {
     keepalive: true,
   })
 }
+
+export async function deleteInterviewRoomApi(roomId) {
+  const res = await fetch(`${BASE}/interview-rooms/${roomId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  if (!res.ok) {
+    let msg = '면접 기록 삭제에 실패했습니다.'
+    try { const data = await res.json(); if (data.message) msg = data.message } catch { /* ignore */ }
+    throw new Error(msg)
+  }
+  return res.json()
+}

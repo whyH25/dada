@@ -87,4 +87,13 @@ public class InterviewRoomController {
         interviewRoomService.updateStatus(roomId, body.get("status"));
         return ResponseEntity.ok(Map.of("success", true));
     }
+
+    // 마이페이지 면접 기록 삭제 (DB는 deleted_at으로 비활성화)
+    @DeleteMapping("/{roomId}")
+    public ResponseEntity<?> deleteRoom(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetailsDto userDetails) {
+        interviewRoomService.deleteRoom(roomId, userDetails.getUserDto().getUserId());
+        return ResponseEntity.ok(Map.of("success", true));
+    }
 }

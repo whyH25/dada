@@ -1,9 +1,11 @@
 package com.ssafy.mvc.service;
 
 import com.ssafy.mvc.dao.AiPersonaDao;
+import com.ssafy.mvc.dao.InterviewPromptDao;
 import com.ssafy.mvc.dao.InterviewRoomDao;
 import com.ssafy.mvc.dao.InterviewRoomPersonaDao;
 import com.ssafy.mvc.dao.InterviewScenarioDao;
+import com.ssafy.mvc.dao.ReportDao;
 import com.ssafy.mvc.dao.UserDao;
 import com.ssafy.mvc.dao.UserPortfolioDao;
 import com.ssafy.mvc.dao.UserResumeDao;
@@ -17,6 +19,7 @@ import com.ssafy.mvc.dto.UserPortfolioDto;
 import com.ssafy.mvc.dto.UserResumeDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,6 +34,8 @@ public class InterviewRoomService {
     private final AiPersonaDao aiPersonaDao;
     private final InterviewRoomPersonaDao interviewRoomPersonaDao;
     private final InterviewScenarioDao interviewScenarioDao;
+    private final InterviewPromptDao interviewPromptDao;
+    private final ReportDao reportDao;
     private final AiPromptService aiPromptService;
     private final UserResumeDao userResumeDao;
     private final UserPortfolioDao userPortfolioDao;
@@ -119,6 +124,24 @@ public class InterviewRoomService {
 
     public void updateStatus(Long roomId, String status) {
         interviewRoomDao.updateStatus(roomId, status);
+    }
+
+    // 마이페이지 면접 기록 삭제: interview_room과 그 자식 6개 테이블을 deleted_at만 채워 비활성화 (회원탈퇴 cascade와 동일 패턴)
+    @Transactional
+    public void deleteRoom(Long roomId, Long userId) {
+        InterviewRoomDto room = interviewRoomDao.selectByRoomId(roomId);
+        if (room == null || !room.getUserId().equals(userId)) {
+            throw new IllegalStateException("접근 권한이 없습니다.");
+        }
+
+        List<Long> roomIds = List.of(roomId);
+        interviewRoomDao.deactivateByRoomId(roomId);
+        interviewScenarioDao.deactivateByRoomIds(roomIds);
+        interviewRoomPersonaDao.deactivateByRoomIds(roomIds);
+        interviewPromptDao.deactivateByRoomIds(roomIds);
+        reportDao.deactivateReportsByRoomIds(roomIds);
+        reportDao.deactivateReportApplicantsByRoomIds(roomIds);
+        reportDao.deactivateReportQuestionsByRoomIds(roomIds);
     }
 
     private Map<Long, String> buildPersonaNames(List<AiInterviewerDto> interviewers, List<AiApplicantDto> applicants) {

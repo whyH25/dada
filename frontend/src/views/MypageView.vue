@@ -7,6 +7,7 @@ import { toast } from '../utils/toast.js'
 import { useAuthStore } from '../stores/auth.js'
 import { updateUserApi, deleteUserApi, verifyPasswordApi } from '../api/authApi.js'
 import { fetchMyInterviewRooms, fetchRoomScenarios, fetchRoomReport } from '../api/mypageApi.js'
+import { deleteInterviewRoomApi } from '../api/interviewRoomApi.js'
 import { fetchMyFiles, uploadFile, deleteFile } from '../api/userFileApi.js'
 import { fetchMyPosts } from '../api/postsApi.js'
 import { reportPanel } from '../utils/mypageReport.js'
@@ -41,6 +42,18 @@ async function loadMyRooms() {
     toast(e.message)
   } finally {
     roomsLoading.value = false
+  }
+}
+
+// DB는 deleted_at으로 비활성화 처리 (실삭제 아님) - 목록에서만 즉시 제거
+async function deleteRoom(room) {
+  if (!window.confirm('이 면접 기록과 리포트를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.')) return
+  try {
+    await deleteInterviewRoomApi(room.roomId)
+    myRooms.value = myRooms.value.filter(r => r.roomId !== room.roomId)
+    toast('면접 기록이 삭제되었습니다.')
+  } catch (e) {
+    toast(e.message)
   }
 }
 
@@ -529,7 +542,7 @@ onMounted(() => {
             <div class="mp-stat-row">
               <div class="mp-stat"><div class="mp-stat-label">총 면접</div><div class="mp-stat-val">{{ myRooms.length }}<span>회</span></div></div>
               <div class="mp-stat"><div class="mp-stat-label">완료</div><div class="mp-stat-val" style="color:var(--green-500);">{{ myRooms.filter(r => r.status === 'COMPLETED').length }}<span>회</span></div></div>
-              <div class="mp-stat"><div class="mp-stat-label">진행 중</div><div class="mp-stat-val" style="color:var(--accent-blue,#1f6fe5);">{{ myRooms.filter(r => r.status === 'IN_PROGRESS').length }}<span>회</span></div></div>
+              <div class="mp-stat"><div class="mp-stat-label">취소</div><div class="mp-stat-val" style="color:var(--ink-400);">{{ myRooms.filter(r => r.status === 'CANCELLED').length }}<span>회</span></div></div>
             </div>
             <div class="card" style="padding:0; overflow:hidden;">
               <div class="card-header" style="padding:18px 20px 14px; border-bottom:1px solid var(--ink-150); margin-bottom:0;">
@@ -538,7 +551,7 @@ onMounted(() => {
               <div v-if="roomsLoading" style="padding:48px; text-align:center; color:var(--ink-400);">불러오는 중...</div>
               <div v-else-if="!myRooms.length" style="padding:48px; text-align:center; color:var(--ink-400);">면접 기록이 없습니다.</div>
               <table v-else class="history-table report-table">
-                <thead><tr><th>기업 / 직무</th><th>지원유형</th><th>일시</th><th>난이도</th><th>상태</th><th></th></tr></thead>
+                <thead><tr><th>기업 / 직무</th><th>지원유형</th><th>일시</th><th>난이도</th><th>상태</th><th></th><th></th></tr></thead>
                 <tbody>
                   <tr v-for="room in myRooms" :key="room.roomId" :style="{ cursor: isReportOpen(room) ? 'pointer' : 'default' }" @click="isReportOpen(room) && openRoom(room)">
                     <td>
@@ -558,6 +571,7 @@ onMounted(() => {
                         <template v-if="reportOpenAtLabel(room)"><br />{{ reportOpenAtLabel(room) }} 공개</template>
                       </span>
                     </td>
+                    <td><button class="btn btn-sm btn-ghost doc-del" @click.stop="deleteRoom(room)">삭제</button></td>
                   </tr>
                 </tbody>
               </table>

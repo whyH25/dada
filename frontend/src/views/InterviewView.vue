@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useFlowStore } from '../stores/flow.js'
 import { useDataStore } from '../stores/data.js'
 import { useAuthStore } from '../stores/auth.js'
 import { updateRoomStatusApi } from '../api/interviewRoomApi.js'
+import { toast } from '../utils/toast.js'
 
 const router = useRouter()
 const flow = useFlowStore()
@@ -75,10 +76,20 @@ const userInitial = computed(() => userName.value.charAt(0))
 const interviewStarted = ref(false)
 const interviewEnded   = ref(false)
 const statusFinalized  = ref(false)  // COMPLETED/CANCELLED 중복 호출 방지
+const showEndConfirm   = ref(false)  // 수동 종료 확인 모달
 
 function startInterview() {
   interviewStarted.value = true
   playTurn(0)
+}
+
+function cancelEndConfirm() {
+  showEndConfirm.value = false
+}
+
+function confirmEndInterview() {
+  showEndConfirm.value = false
+  endInterview()
 }
 
 async function finalizeStatus(status) {
@@ -107,7 +118,14 @@ function tileIdForTurn(turn) {
   return 'me'
 }
 
-// ── USER 턴 녹음 + 카운트다운 ──────────────────────────
+// ── USER 턴: 생각할 시간 → 녹음 + 카운트다운 ──────────────
+const THINK_SECONDS = 30
+
+const thinkingActive = ref(false)
+const thinkingTimeLeft = ref(0)
+let thinkingTimer = null
+let pendingUserTurn = null  // 생각할 시간 중 "답변하기"로 건너뛸 때 필요한 현재 턴
+
 const userTurnActive = ref(false)
 const userTurnTimeLeft = ref(0)
 const userTimerText = computed(() => {
@@ -121,11 +139,38 @@ let audioChunks = []
 let userTurnStartedAt = 0
 
 function startUserTurn(turn) {
+  pendingUserTurn = turn
+  thinkingActive.value = true
+  thinkingTimeLeft.value = THINK_SECONDS
+
+  thinkingTimer = setInterval(() => {
+    thinkingTimeLeft.value--
+    if (thinkingTimeLeft.value <= 0) {
+      clearInterval(thinkingTimer)
+      thinkingActive.value = false
+      beginRecording(pendingUserTurn)
+    }
+  }, 1000)
+}
+
+// "답변하기" 버튼 - 생각할 시간을 건너뛰고 바로 녹음 시작
+function startAnswering() {
+  if (!thinkingActive.value) return
+  clearInterval(thinkingTimer)
+  thinkingActive.value = false
+  beginRecording(pendingUserTurn)
+}
+
+function beginRecording(turn) {
   userTurnActive.value = true
-  userTurnTimeLeft.value = Math.min(turn.timeoutSec ?? 55, 55)
+  const cappedSec = Math.min(turn.timeoutSec ?? 55, 55)
+  userTurnTimeLeft.value = cappedSec
   audioChunks = []
-  // 시스템 시계 변경에 영향받지 않는 단조 증가 타이머로 시작 시점을 기록
+  // 시스템 시계 변경에 영향받지 않는 단조 증가 타이머로 시작 시점을 기록 (생각할 시간은 제외하고 측정)
   userTurnStartedAt = performance.now()
+  // 절대 마감 시각 기준 - 탭이 백그라운드/과부하로 setInterval 틱이 지연돼도
+  // 드리프트가 누적되지 않고 실제 경과 시간 기준으로 정확히 끊김 (구글 STT 1분 제한 초과 방지)
+  const deadline = userTurnStartedAt + cappedSec * 1000
 
   // 마이크 스트림으로 녹음 시작
   if (myStream.value) {
@@ -135,10 +180,10 @@ function startUserTurn(turn) {
     mediaRecorder.start(500) // 500ms마다 청크 수집 - 짧은 발화도 누락 없이 캡처
   }
 
-  // 카운트다운 → 0이 되면 자동으로 다음 턴
+  // 카운트다운 → 마감 시각이 지나면 자동으로 다음 턴
   userCountdownTimer = setInterval(() => {
-    userTurnTimeLeft.value--
-    if (userTurnTimeLeft.value <= 0) finishUserTurn()
+    userTurnTimeLeft.value = Math.max(Math.ceil((deadline - performance.now()) / 1000), 0)
+    if (performance.now() >= deadline) finishUserTurn()
   }, 1000)
 }
 
@@ -173,6 +218,9 @@ async function sendStt(chunks, scenarioId, answerSec) {
     form.append('scenarioId', String(scenarioId))
     form.append('answerSec', String(answerSec))
     form.append('language', flow.language)
+    // 회사명/면접관·지원자 이름처럼 다른 언어 고유명사가 섞여도 인식이 안 끊기도록 힌트로 전달
+    const phraseHints = [r.value?.co, ...Object.values(flow.personaNames)].filter(Boolean).join(',')
+    if (phraseHints) form.append('phraseHints', phraseHints)
     await fetch('http://localhost:8080/api/speech/stt', {
       method: 'POST',
       credentials: 'include',
@@ -187,6 +235,8 @@ async function playTurn(index) {
   if (index >= flow.scenarios.length) {
     await finalizeStatus('COMPLETED')
     interviewEnded.value = true
+    // 자연 종료 시점에도 수동 종료와 동일하게 카메라/마이크/타이머/오디오를 즉시 정지
+    stopMediaAndTimers()
     return
   }
 
@@ -475,13 +525,26 @@ function openCustomBgPicker() {
   customBgInputEl.value?.click()
 }
 
-async function endInterview() {
-  if (!interviewEnded.value) await finalizeStatus('CANCELLED')
+// 면접 종료(자연 종료/수동 종료/언마운트) 시 공통으로 정리할 카메라·마이크·오디오·타이머
+function stopMediaAndTimers() {
+  clearInterval(clockTimer)
+  // 재생 중인 면접관/지원자 TTS 음성이 있으면 즉시 정지 (안 끄면 화면 전환 후에도 계속 들림)
+  currentAudio?.pause()
+  currentAudio = null
+  clearInterval(thinkingTimer)
+  clearInterval(userCountdownTimer)
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop()
   stopAudioDetection()
   stopBgLoop()
   if (customBgUrl.value) { URL.revokeObjectURL(customBgUrl.value); customBgUrl.value = null }
   myStream.value?.getTracks().forEach(t => t.stop())
   screenStream.value?.getTracks().forEach(t => t.stop())
+}
+
+async function endInterview() {
+  // 카메라/마이크 정지는 로컬 작업이라 네트워크 응답을 기다릴 필요 없이 먼저 처리 (즉각적인 반응)
+  stopMediaAndTimers()
+  if (!interviewEnded.value) await finalizeStatus('CANCELLED')
   router.push('/saving')
 }
 
@@ -510,16 +573,15 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  clearInterval(clockTimer)
-  stopAudioDetection()
-  stopBgLoop()
-  if (customBgUrl.value) URL.revokeObjectURL(customBgUrl.value)
-  myStream.value?.getTracks().forEach(t => t.stop())
-  screenStream.value?.getTracks().forEach(t => t.stop())
-  currentAudio?.pause()
-  currentAudio = null
-  clearInterval(userCountdownTimer)
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop()
+  stopMediaAndTimers()
+})
+
+// "면접 종료" 버튼(endInterview)을 거치지 않은 이탈(뒤로가기, 사이드 메뉴 클릭 등)은 막는다.
+// endInterview()는 라우터 이동 전에 finalizeStatus를 먼저 끝내므로, 이 시점엔 이미 statusFinalized가 true.
+onBeforeRouteLeave(() => {
+  if (statusFinalized.value) return true
+  toast('면접 종료 버튼을 눌러야 나갈 수 있습니다.')
+  return false
 })
 </script>
 
@@ -651,6 +713,13 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- USER 턴 생각할 시간 바 -->
+    <div v-if="thinkingActive" class="iv-think-bar">
+      <span class="iv-think-label">생각할 시간</span>
+      <span class="iv-think-timer">{{ thinkingTimeLeft }}초</span>
+      <button class="iv-extend-think-btn" @click="startAnswering">답변하기</button>
+    </div>
+
     <!-- USER 턴 답변 바 -->
     <div v-if="userTurnActive" class="iv-user-turn-bar">
       <div class="iv-user-turn-left">
@@ -765,12 +834,32 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <button class="iv-end-btn" @click="endInterview">
+      <button class="iv-end-btn" @click="showEndConfirm = true">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
         </svg>
         면접 종료
       </button>
+    </div>
+
+    <!-- 수동 종료 확인 모달 -->
+    <div v-if="showEndConfirm" class="iv-end-confirm-overlay" @click.self="cancelEndConfirm">
+      <div class="iv-end-confirm-modal">
+        <h3 class="iv-end-confirm-title">면접을 종료하시겠습니까?</h3>
+        <p class="iv-end-confirm-desc">
+          <template v-if="userTurnActive">
+            지금 답변 중입니다. <strong>답변 완료</strong> 버튼을 눌러야 답변이 저장되고,<br>
+            이대로 종료하면 답변은 저장되지 않고 사라집니다.
+          </template>
+          <template v-else>
+            지금 종료하면 면접이 중단되며<br>다시 이어서 진행할 수 없습니다.
+          </template>
+        </p>
+        <div class="iv-end-confirm-actions">
+          <button class="iv-end-confirm-cancel" @click="cancelEndConfirm">취소</button>
+          <button class="iv-end-confirm-end" @click="confirmEndInterview">종료</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -1271,6 +1360,42 @@ onUnmounted(() => {
 }
 .iv-end-overlay-btn:hover { background: var(--green-650, #286930); transform: scale(1.03); }
 
+/* ── USER 턴 생각할 시간 바 ── */
+.iv-think-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.iv-think-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+.iv-think-timer {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.iv-extend-think-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.iv-extend-think-btn:hover { background: rgba(255, 255, 255, 0.16); }
+
 /* ── USER 턴 답변 바 ── */
 .iv-user-turn-bar {
   display: flex;
@@ -1310,6 +1435,65 @@ onUnmounted(() => {
   transition: background 0.15s;
 }
 .iv-finish-answer-btn:hover { background: #b8e600; }
+
+/* ── 수동 종료 확인 모달 ── */
+.iv-end-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.iv-end-confirm-modal {
+  background: #1a2130;
+  border-radius: 16px;
+  padding: 32px 36px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.iv-end-confirm-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+}
+.iv-end-confirm-desc {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+.iv-end-confirm-desc strong {
+  color: #ccff00;
+}
+.iv-end-confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+.iv-end-confirm-cancel, .iv-end-confirm-end {
+  flex: 1;
+  padding: 11px 0;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.iv-end-confirm-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.iv-end-confirm-cancel:hover { background: rgba(255, 255, 255, 0.16); }
+.iv-end-confirm-end {
+  background: #dc2626;
+  color: #fff;
+}
+.iv-end-confirm-end:hover { background: #b91c1c; }
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
