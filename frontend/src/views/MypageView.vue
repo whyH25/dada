@@ -241,7 +241,8 @@ function formatDateTime(dateStr) {
   return `${formatDate(dateStr)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
 // 리포트는 생성되어도 면접 종료 시점(ended_at) + 1일이 지나야 열람 가능
-const REPORT_DELAY_MS = 24 * 60 * 60 * 1000
+const REPORT_DELAY_MS = 60 * 1000
+// const REPORT_DELAY_MS = 24 * 60 * 60 * 1000
 function reportOpenAt(room) {
   if (!room.endedAt) return null
   return new Date(new Date(room.endedAt).getTime() + REPORT_DELAY_MS)
