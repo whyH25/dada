@@ -12,9 +12,11 @@ import com.ssafy.mvc.dao.UserResumeDao;
 import com.ssafy.mvc.dto.AiApplicantDto;
 import com.ssafy.mvc.dto.AiInterviewerDto;
 import com.ssafy.mvc.dto.InterviewRoomDto;
+import com.ssafy.mvc.dto.UserDto;
 import com.ssafy.mvc.dto.InterviewRoomPersonaDto;
 import com.ssafy.mvc.dto.InterviewScenarioDto;
 import com.ssafy.mvc.dto.InterviewStartResultDto;
+import com.ssafy.mvc.dto.UserDto;
 import com.ssafy.mvc.dto.UserPortfolioDto;
 import com.ssafy.mvc.dto.UserResumeDto;
 import lombok.RequiredArgsConstructor;
@@ -79,8 +81,13 @@ public class InterviewRoomService {
     public InterviewStartResultDto startInterview(Long roomId, Long userId) {
         InterviewRoomDto room = interviewRoomDao.selectByRoomId(roomId);
 
+
         if (!room.getUserId().equals(userId))
-            throw new IllegalStateException("접근 권한이 없습니다.");
+                    throw new IllegalStateException("접근 권한이 없습니다.");
+
+        UserDto user = userDao.selectUserById(userId);
+        room.setUserName(user != null && user.getUserName() != null ? user.getUserName() : "지원자");
+
 
         if (userDao.getTicketCount(userId) <= 0)
             throw new IllegalStateException("티켓이 부족합니다. 충전 후 이용해주세요.");
@@ -102,7 +109,11 @@ public class InterviewRoomService {
         script.setScenario(interviewScenarioDao.selectByRoomId(roomId));
         script.setInterviewerPersonaIds(interviewers.stream().map(AiInterviewerDto::getInterviewerId).toList());
         script.setApplicantPersonaIds(applicants.stream().map(AiApplicantDto::getApplicantId).toList());
-        script.setPersonaNames(buildPersonaNames(interviewers, applicants));
+        script.setPersonaNames(buildPersonaNames(applicants));
+        script.setInterviewerStopVideos(buildInterviewerStopVideos(interviewers));
+        script.setInterviewerMoveVideos(buildInterviewerMoveVideos(interviewers));
+        script.setApplicantStopVideos(buildApplicantStopVideos(applicants));
+        script.setApplicantMoveVideos(buildApplicantMoveVideos(applicants));
 
         interviewRoomDao.updateStatus(roomId, "IN_PROGRESS");
         return script;
@@ -144,10 +155,33 @@ public class InterviewRoomService {
         reportDao.deactivateReportQuestionsByRoomIds(roomIds);
     }
 
-    private Map<Long, String> buildPersonaNames(List<AiInterviewerDto> interviewers, List<AiApplicantDto> applicants) {
+    private Map<Long, String> buildPersonaNames(List<AiApplicantDto> applicants) {
         Map<Long, String> map = new LinkedHashMap<>();
-        for (AiInterviewerDto i : interviewers) map.put(i.getInterviewerId(), i.getInterviewerName());
-        for (AiApplicantDto a : applicants)     map.put(a.getApplicantId(),   a.getApplicantName());
+        for (AiApplicantDto a : applicants) map.put(a.getApplicantId(), a.getApplicantName());
+        return map;
+    }
+
+    private Map<Long, String> buildInterviewerStopVideos(List<AiInterviewerDto> interviewers) {
+        Map<Long, String> map = new LinkedHashMap<>();
+        for (AiInterviewerDto i : interviewers) map.put(i.getInterviewerId(), i.getProfileImageUrl());
+        return map;
+    }
+
+    private Map<Long, String> buildInterviewerMoveVideos(List<AiInterviewerDto> interviewers) {
+        Map<Long, String> map = new LinkedHashMap<>();
+        for (AiInterviewerDto i : interviewers) map.put(i.getInterviewerId(), i.getMoveVideoUrl());
+        return map;
+    }
+
+    private Map<Long, String> buildApplicantStopVideos(List<AiApplicantDto> applicants) {
+        Map<Long, String> map = new LinkedHashMap<>();
+        for (AiApplicantDto a : applicants) map.put(a.getApplicantId(), a.getProfileImageUrl());
+        return map;
+    }
+
+    private Map<Long, String> buildApplicantMoveVideos(List<AiApplicantDto> applicants) {
+        Map<Long, String> map = new LinkedHashMap<>();
+        for (AiApplicantDto a : applicants) map.put(a.getApplicantId(), a.getMoveVideoUrl());
         return map;
     }
 

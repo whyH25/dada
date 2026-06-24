@@ -21,39 +21,15 @@ const roomTitle = computed(() =>
 const interviewerCount = computed(() => flow.interviewerPersonaIds.length || r.value?.interviewerCount || 2)
 const aiApplicantCount = computed(() => flow.applicantPersonaIds.length   || (r.value?.aiApplicantCount ?? 1))
 
-const interviewerVideos = ref([])
-const applicantVideos = ref([])
-
-function pickRandom(count, total, pathFn) {
-  const indices = Array.from({ length: total }, (_, i) => i + 1)
-  for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]]
-  }
-  return indices.slice(0, Math.min(count, total)).map(pathFn)
-}
-
-function pickRandomVideos(count) {
-  return pickRandom(count, 10, n => `/interviewers/interviewer_${String(n).padStart(2, '0')}.mp4`)
-}
-
-function pickRandomApplicants(count) {
-  return pickRandom(count, 10, n => ({
-    stop: `/applicants/applicant_${String(n).padStart(2, '0')}.mp4`,
-    move: `/applicants/applicant_move_${String(n).padStart(2, '0')}.mp4`,
-  }))
-}
 
 const interviewers = computed(() =>
-  flow.interviewerPersonaIds.map((personaId, i) => {
-    const name = flow.personaNames[personaId] ?? `면접관 ${i + 1}`
-    return {
-      id: `i${i + 1}`,
-      name,
-      letter: name.charAt(0),
-      video: interviewerVideos.value[i] ?? null,
-    }
-  })
+  flow.interviewerPersonaIds.map((personaId, i) => ({
+    id: `i${i + 1}`,
+    name: '면접관',
+    letter: '면',
+    stopVideo: flow.interviewerStopVideos[personaId] ?? null,
+    moveVideo: flow.interviewerMoveVideos[personaId] ?? null,
+  }))
 )
 
 const aiApplicants = computed(() =>
@@ -63,8 +39,8 @@ const aiApplicants = computed(() =>
       id: `a${i + 1}`,
       name,
       letter: name.charAt(0),
-      stopVideo: applicantVideos.value[i]?.stop ?? null,
-      moveVideo: applicantVideos.value[i]?.move ?? null,
+      stopVideo: flow.applicantStopVideos[personaId] ?? null,
+      moveVideo: flow.applicantMoveVideos[personaId] ?? null,
     }
   })
 )
@@ -565,8 +541,6 @@ function handleBeforeUnload() {
 }
 
 onMounted(async () => {
-  interviewerVideos.value = pickRandomVideos(interviewerCount.value)
-  applicantVideos.value = pickRandomApplicants(aiApplicantCount.value)
   clockTimer = setInterval(() => { elapsed.value++ }, 1000)
   await startMyMedia()
   window.addEventListener('beforeunload', handleBeforeUnload)
@@ -617,8 +591,14 @@ onBeforeRouteLeave(() => {
         <div class="iv-thumb-strip">
           <div v-for="(iv, idx) in interviewers" :key="iv.id"
                class="iv-thumb" :class="{ speaking: isSpeaking(iv.id) }">
-            <video v-if="iv.video" :src="iv.video" autoplay loop muted playsinline
-                   class="iv-thumb-video iv-thumb-interviewer"></video>
+            <template v-if="iv.stopVideo">
+              <video :src="iv.stopVideo" autoplay loop muted playsinline
+                     :style="{ opacity: isSpeaking(iv.id) ? 0 : 1 }"
+                     class="iv-thumb-video iv-thumb-interviewer"></video>
+              <video :src="iv.moveVideo ?? iv.stopVideo" autoplay loop muted playsinline
+                     :style="{ opacity: isSpeaking(iv.id) ? 1 : 0 }"
+                     class="iv-thumb-video iv-thumb-interviewer"></video>
+            </template>
             <div v-else class="iv-thumb-av" :class="`av-i${idx + 1}`">{{ iv.letter }}</div>
             <div class="iv-thumb-name">{{ iv.name }}</div>
           </div>
@@ -649,11 +629,17 @@ onBeforeRouteLeave(() => {
         <div class="iv-row-label">면접관</div>
         <div class="iv-row">
           <div v-for="(iv, idx) in interviewers" :key="iv.id"
-               class="iv-tile" :class="{ speaking: isSpeaking(iv.id), 'has-video': iv.video }">
-            <video v-if="iv.video" :src="iv.video" autoplay loop muted playsinline
-                   class="iv-interviewer-video"></video>
+               class="iv-tile" :class="{ speaking: isSpeaking(iv.id), 'has-video': iv.stopVideo }">
+            <template v-if="iv.stopVideo">
+              <video :src="iv.stopVideo" autoplay loop muted playsinline
+                     :style="{ opacity: isSpeaking(iv.id) ? 0 : 1 }"
+                     class="iv-interviewer-video"></video>
+              <video :src="iv.moveVideo ?? iv.stopVideo" autoplay loop muted playsinline
+                     :style="{ opacity: isSpeaking(iv.id) ? 1 : 0 }"
+                     class="iv-interviewer-video"></video>
+            </template>
             <div v-else class="iv-avatar" :class="`av-i${idx + 1}`">{{ iv.letter }}</div>
-            <div class="iv-tile-name" :class="{ 'name-overlay': iv.video }">{{ iv.name }}</div>
+            <div class="iv-tile-name" :class="{ 'name-overlay': iv.stopVideo }">{{ iv.name }}</div>
           </div>
         </div>
 
@@ -664,9 +650,11 @@ onBeforeRouteLeave(() => {
                class="iv-tile" :class="{ speaking: isSpeaking(ap.id), 'has-video': ap.stopVideo }">
             <template v-if="ap.stopVideo">
               <video :src="ap.stopVideo" autoplay loop muted playsinline
-                     v-show="!isSpeaking(ap.id)" class="iv-applicant-video"></video>
-              <video :src="ap.moveVideo" autoplay loop muted playsinline
-                     v-show="isSpeaking(ap.id)" class="iv-applicant-video"></video>
+                     :style="{ opacity: isSpeaking(ap.id) ? 0 : 1 }"
+                     class="iv-applicant-video"></video>
+              <video :src="ap.moveVideo ?? ap.stopVideo" autoplay loop muted playsinline
+                     :style="{ opacity: isSpeaking(ap.id) ? 1 : 0 }"
+                     class="iv-applicant-video"></video>
             </template>
             <div v-else class="iv-avatar av-appli">{{ ap.letter }}</div>
             <div class="iv-tile-name" :class="{ 'name-overlay': ap.stopVideo }">{{ ap.name }}</div>
@@ -1028,6 +1016,7 @@ onBeforeRouteLeave(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 0.15s;
 }
 .iv-tile-name.name-overlay {
   position: absolute;
@@ -1048,6 +1037,7 @@ onBeforeRouteLeave(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: opacity 0.15s;
 }
 
 /* ── 내 카메라: 타일 전체 채움 ── */
@@ -1171,6 +1161,7 @@ onBeforeRouteLeave(() => {
   border-radius: 50%;
   object-fit: cover;
   transform: scaleX(-1);
+  transition: opacity 0.15s;
 }
 .iv-thumb-name {
   font-size: 10px;

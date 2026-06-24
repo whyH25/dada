@@ -32,7 +32,11 @@ onMounted(() => {
       flow.scenarios             = result.scenario              || []
       flow.interviewerPersonaIds = result.interviewerPersonaIds || []
       flow.applicantPersonaIds   = result.applicantPersonaIds   || []
-      flow.personaNames          = result.personaNames          || {}
+      flow.personaNames            = result.personaNames            || {}
+      flow.interviewerStopVideos   = result.interviewerStopVideos   || {}
+      flow.interviewerMoveVideos   = result.interviewerMoveVideos   || {}
+      flow.applicantStopVideos     = result.applicantStopVideos     || {}
+      flow.applicantMoveVideos     = result.applicantMoveVideos     || {}
     })
     .catch(err => {
       errorMsg.value = err.message || 'AI 대본 생성에 실패했습니다.'

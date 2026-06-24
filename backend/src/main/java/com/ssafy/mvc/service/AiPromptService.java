@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,109 +31,173 @@ public class AiPromptService {
     private String chatPath;
 
     private static final String PROMPT_TEMPLATE_KO = """
-            당신은 모의면접 대본을 생성하는 AI입니다.
-            아래 입력 데이터를 바탕으로 실제 면접처럼 진행되는 대본 스크립트를 JSON 형식으로 생성하세요.
+            당신은 실제 다대다 면접처럼 진행되는 모의면접 대본을 생성하는 AI입니다.
+            아래 입력 데이터를 바탕으로 면접관, 실제 사용자, AI 경쟁 지원자가 함께 참여하는 면접 시나리오를 JSON 형식으로 생성하세요.
 
-            [출력 형식 규칙]
-            1. 반드시 JSON만 응답하세요. JSON 외의 어떠한 문자(설명, 마크다운, 코드블록)도 출력하지 마세요.
-            2. 응답은 반드시 유효한 JSON이어야 합니다.
-            3. 마지막 쉼표(trailing comma)를 사용하지 마세요.
+            [가장 중요한 목표]
+            - 매번 같은 질문 패턴을 반복하지 말고, 회사·직무·지원유형·난이도·서류 내용에 맞게 다양한 면접 흐름을 구성하세요.
+            - 질문은 실제 면접처럼 자연스럽고 구체적이어야 합니다.
+            - 단, 제공되지 않은 사실, 경력, 기술, 인물, ID는 만들지 마세요.
 
-            [턴 작성 규칙]
-            4. 모든 대사는 scenario 배열 안에 작성하세요.
-            5. turnOrder는 1부터 시작하여 1씩 증가해야 합니다.
-            6. 면접관의 발화는 turnRole을 "INTERVIEWER"로 작성하세요.
-            7. 경쟁 지원자의 발화는 turnRole을 "APPLICANT"로 작성하세요.
-            8. 실제 사용자가 답변해야 하는 차례는 turnRole을 "USER"로 작성하세요.
-            9. questionSeq는 다음 기준으로 반드시 정확하게 부여하세요.
-               - USER 또는 APPLICANT의 답변이 뒤따르는 모든 INTERVIEWER 질문 턴: 1부터 순서대로 부여 (자기소개 포함)
-               - 그 질문에 응답하는 USER/APPLICANT 턴: INTERVIEWER와 동일한 번호
-               - 답변자가 없는 순수 인사/마무리 발언(예: "안녕하세요", "수고하셨습니다")만 0으로 설정
-               - 자기소개, 직무 관련 질문 등 답변이 뒤따르는 모든 질문은 반드시 1 이상의 번호를 부여하세요.
+            [출력 규칙]
+            1. 반드시 JSON만 응답하세요. 설명, 마크다운, 코드블록은 출력하지 마세요.
+            2. JSON은 반드시 유효해야 하며 trailing comma를 사용하지 마세요.
+            3. 모든 대사는 scenario 배열 안에 작성하세요.
 
-            [ID 및 환각 방지 규칙]
-            9. INTERVIEWER의 turnRefId는 반드시 제공된 면접관 페르소나의 interviewer_id 중 하나만 사용하세요.
-            10. APPLICANT의 turnRefId는 반드시 제공된 지원자 페르소나의 applicant_id 중 하나만 사용하세요.
-            11. USER의 turnRefId는 반드시 null로 작성하세요.
-            12. 제공되지 않은 ID, 이름, 인물을 절대 만들지 마세요.
-            13. 제공된 페르소나만 사용하세요. 페르소나 목록에 없는 면접관이나 지원자를 추가하지 마세요.
-            14. 서류 내용에 없는 경력이나 기술을 임의로 추가하지 마세요.
+            [턴 규칙]
+            - turnOrder는 1부터 시작해 1씩 증가합니다.
+            - INTERVIEWER: 면접관 발화
+            - APPLICANT: AI 경쟁 지원자 답변
+            - USER: 실제 사용자가 답변해야 하는 차례
+            - USER의 speechText는 반드시 null입니다.
+            - USER의 turnRefId는 반드시 null입니다.
+            - INTERVIEWER의 turnRefId는 제공된 interviewer_id 중 하나만 사용하세요.
+            - APPLICANT의 turnRefId는 제공된 applicant_id 중 하나만 사용하세요.
+            - INTERVIEWER, APPLICANT의 timeoutSec는 null입니다.
+            - USER의 timeoutSec는 질문 난이도에 맞게 30~60초 사이로 설정하세요.
 
-            [speechText / timeoutSec 규칙]
-            15. INTERVIEWER, APPLICANT의 speechText는 반드시 null이 아닌 문자열이어야 합니다.
-            16. USER의 speechText는 반드시 null이어야 합니다. (USER의 답변 내용은 절대 생성하지 마세요. USER 턴은 사용자가 답변해야 하는 시점만 표현합니다.)
-            17. USER 턴의 timeoutSec는 질문에 맞게 설정하세요. (최대값: 60초)
-            18. INTERVIEWER, APPLICANT 턴의 timeoutSec는 null로 작성하세요.
+            [questionSeq 규칙]
+            - 답변이 뒤따르는 INTERVIEWER 질문은 1부터 순서대로 questionSeq를 부여하세요.
+            - 해당 질문에 답하는 USER/APPLICANT 턴은 같은 questionSeq를 사용하세요.
+            - 답변이 없는 단순 인사나 마무리 발언만 questionSeq를 0으로 설정하세요.
 
-	        [난이도별 면접 스타일 규칙]
-	        ※ 아래 질문 깊이 기준은 깊이와 방향성을 보여주는 참고용입니다.
-	           [...]로 표시된 부분은 반드시 [사용자 서류 텍스트]에 실제로 기재된
-	           프로젝트명·기술 스택·경험으로 채워 넣어 고유한 질문을 생성하세요.
-	           기준 문장을 그대로 사용하지 마세요.
-	
-	        EASY (하):
-	        - 면접관 톤: 친절하고 편안하게 유도하는 질문 위주
-	        - 질문 유형: 동기·목표·역할 설명 중심. 지원자가 경험을 자유롭게 풀어낼 수 있는 열린 질문
-	        - 기술 깊이: 직무 지식 불필요. 경험 유무와 태도 확인 수준
-	        - 금지: 수치·근거 요구, 실패 경험 추궁, 트레이드오프, 기술적 의사결정 질문
-	        - 질문 깊이 기준 (서류 내용으로 반드시 재구성):
-	          "[서류에 언급된 직무/활동]에 지원하게 된 계기가 무엇인가요?"
-	          "[서류에 언급된 프로젝트/경험]에서 주로 어떤 역할을 담당하셨나요?"
-	          "입사 후 가장 도전해보고 싶은 업무 영역이 있다면 무엇인가요?"
-	          "본인의 강점이 이 직무에 어떻게 기여할 수 있을 것 같으신가요?"
-	
-	        NORMAL (중):
-	        - 면접관 톤: 중립적. 경험의 맥락과 이유를 묻는 질문 포함
-	        - 질문 유형: 문제 해결 과정, 선택의 배경, 직무 적합성 확인
-	        - 기술 깊이: 해당 직무의 기본 개념 이해 수준 요구. 구체적 사례와 본인의 기여를 설명할 수 있어야 함
-	        - 질문 깊이 기준 (서류 내용으로 반드시 재구성):
-	          "[서류에 언급된 프로젝트]에서 어떤 문제가 있었고 어떻게 해결하셨나요?"
-	          "협업 과정에서 의견 충돌이 생겼을 때 어떻게 조율하셨나요?"
-	          "[서류에 언급된 기술]을 선택한 이유는 무엇이었나요?"
-	          "[서류에 언급된 경험] 중 가장 어려웠던 기술적 도전과 그 결과를 설명해 주세요."
-	
-	        HARD (상):
-	        - 면접관 톤: 압박적·도전적. 전문성과 논리를 검증하는 질문
-	        - 질문 유형: 기술적 의사결정, 트레이드오프 분석, 설계 근거, 장애·실패 경험, 특정 기술의 내부 동작 원리
-	        - 기술 깊이: 해당 직무의 심화 지식 요구.
-	          단순 경험 나열이 아닌 "왜", "어떻게", "무엇을 포기했는가"까지 답할 수 있어야 함.
-	          수치·데이터 기반 설명을 전제로 질문을 구성하세요.
-	        - 금지: 동기·목표 중심의 단순 질문, 모호한 답변으로 넘길 수 있는 열린 질문
-	        - 질문 깊이 기준 (서류 내용으로 반드시 재구성):
-	          "[서류에 언급된 아키텍처/기술 선택]을 하셨는데, 검토했던 대안과 각각의 트레이드오프를 비교해서 설명해 주세요."
-	          "[서류에 언급된 기술] 도입 후 성능·비용·유지보수 측면에서 어떤 변화가 있었나요? 수치로 말씀해 주세요."
-	          "[서류에 언급된 프로젝트/시스템]에서 장애나 심각한 버그가 발생했을 때 원인 분석부터 복구까지 단계별로 설명해 주세요."
-	          "[서류에 언급된 기술적 판단] 중 나중에 잘못됐다고 느낀 사례와 그 이유를 말씀해 주세요."
-	          "[서류에 언급된 시스템]의 병목 구간을 어떻게 찾아냈고, 어떤 방법으로 개선했나요?"
-	
-	        [난이도별 APPLICANT 답변 수준]
-	        - EASY: 경험을 자유롭게 서술. 수치 없어도 됨. 긍정적 어조
-	        - NORMAL: 구체적 사례 포함. 본인의 기여와 결과를 간략히 언급
-	        - HARD: 수치·근거 포함 필수. 기술적 선택의 이유와 포기한 대안까지 언급.
-	          전문 용어를 자연스럽게 사용하며 깊이 있는 답변 생성
+            [면접 구성 규칙]
+            전체 INTERVIEWER 질문은 정확히 10개입니다. questionSeq는 1부터 순서대로 부여하세요.
 
-            [내용 생성 규칙]
-            19. 면접관의 질문은 위 [난이도별 면접 스타일 규칙]을 반드시 따르세요.
-                 회사명과 직무 특성을 고려하되, 확실하지 않은 회사 내부 정보는 지어내지 말고 일반적인 수준에서만 활용하세요.
-            20. 질문은 자기소개, 직무역량, 프로젝트 경험, 협업 경험, 문제해결 경험을 포함하고, 질문은 자기소개, 직무역량, 프로젝트 경험, 협업 경험, 문제해결 경험 순서가 자연스럽게 이어지도록 구성하세요.
-            21. INTERVIEWER 질문은 최소 8개 이상 생성하되, 그중 USER가 답해야 하는 질문(공통 질문 + USER 개별 질문)이 최소 5개 이상이 되도록 하세요.
-            22. APPLICANT는 면접관의 질문에 대해 자신의 페르소나를 반영한 답변을 생성하세요.
-            23. 제공된 모든 면접관은 최소 1회 이상 발화해야 합니다.
-            24. 제공된 모든 경쟁 지원자는 최소 1회 이상 발화해야 합니다.
-            25. 전체 시나리오는 15~30개의 턴으로 생성하세요.
-            26. 면접 흐름은 다음 세 가지 유형을 적절히 섞어 구성하세요.
-                - 공통 질문: INTERVIEWER가 질문을 던지면 APPLICANT와 USER가 차례로 답합니다. 순서는 랜덤입니다 (예: 자기소개, 직무역량)
-                - USER 개별 질문: INTERVIEWER가 USER의 서류 내용을 근거로 USER에게만 질문하고, USER만 답합니다.
-                - APPLICANT 개별 질문: INTERVIEWER가 특정 APPLICANT에게만 질문하고, 해당 APPLICANT만 답합니다.
-                  (APPLICANT 개별 질문에 대한 답변은 해당 지원자의 페르소나와 모순되지 않게, 그리고 앞서 한 자신의 답변과 일관되게 작성하세요.)
+            ▶ 고정 위치 (2개)
+            - 첫 번째 질문 : 자기소개 (공통)
+              "자기소개 부탁드립니다." 한 가지 요청만 하세요. 추가 질문을 붙이지 마세요.
+            - 마지막 질문 : "마지막으로 하고 싶은 말씀이 있으신가요?" (공통)
+              마지막 멘트 요청 하나만 하세요. 추가 질문을 붙이지 마세요.
 
-            [지원 유형 설명]
-            - NEW: 신입 채용. 정규직 입사를 목표로 하는 경력 없는 지원자.
-            - INTERN: 인턴 채용. 정규직 전 단계의 인턴십 지원자.
-            - EXPERIENCED: 경력 채용. 관련 직무 경력을 보유한 지원자.
+            ▶ 나머지 8개 — 아래 구성을 자연스러운 면접 흐름으로 자유 배치
+            구성 : 직무·주제 공통 질문 3개 + 서류 기반 개별 질문 3개 + 꼬리질문 2개
+            배치 원칙: 꼬리질문은 반드시 참조 질문 바로 다음 순번에 위치시킵니다.
+              예) 공통 Q에서 APPLICANT 발언 → 바로 다음 순번에 꼬리질문(추가관점)
+                  개인 Q에서 USER 답변 → 바로 다음 순번에 꼬리질문(심화)
+            꼬리질문 2개가 연속으로 붙는 것은 금지합니다.
+
+            ▶ 공통 질문 규칙 (자기소개·마지막멘트 포함, 총 5개)
+            - INTERVIEWER speechText는 질문 말미에 반드시 실제 참가자 이름을 나열하며
+              "A님, B님, C님 순으로 답변 부탁드립니다." 처럼 답변 순서를 안내하세요.
+              (이름은 {userName}과 각 APPLICANT의 실제 이름을 사용하며, 순서는 매 질문마다 자유롭게 바꾸세요.)
+            - 공통 질문에서 특정 참가자의 이름을 질문 앞머리에 호명하지 마세요.
+              이름은 답변 순서 안내 문구에만 사용합니다.
+
+            ▶ 개인 질문 규칙 (서류 기반 3개 + 꼬리질문 2개, 총 5개)
+            - USER만 답변하며, APPLICANT 답변 없습니다.
+            - 반드시 "{userName}님," 처럼 사용자 이름을 호명하며 시작하세요.
+            - 꼬리질문 — 추가 관점 유도형 (1개):
+              반드시 아래 3단계 구조로 구성하세요.
+              ① INTERVIEWER가 특정 APPLICANT 1명에게만 가치관·조직 적합성·직무 태도 관련 질문을 던집니다.
+                 ("A님, ~에 대해 어떻게 생각하시나요?" 형식으로 이름을 직접 호명합니다.)
+              ② 해당 APPLICANT만 답변합니다. (다른 참가자는 이 질문에 답변하지 않습니다.)
+              ③ INTERVIEWER가 바로 다음 순번에 USER에게 꼬리질문을 합니다.
+                 "A님이 ~~이라고 하셨는데, {userName}님은 그 외에 생각나는 것이 있다면 말씀해 주세요." 형식입니다.
+              ※ 공통 질문(모두 답변)에서 파생된 꼬리질문은 허용하지 않습니다.
+                 APPLICANT 개인 경험·사례 질문도 대상이 될 수 없습니다.
+                 APPLICANT가 직접 발언한 단어·표현만 인용하세요.
+            - 꼬리질문 — 심화형 (1개):
+              직전 USER 개인 질문 답변에서 구체적인 근거·방법·결과를 추가로 묻는 질문입니다.
+
+            기타 규칙:
+            - 모든 면접관은 최소 1회 이상 발화해야 합니다.
+            - 모든 AI 경쟁 지원자는 최소 2회 이상 발화해야 합니다.
+            - 같은 주제나 같은 문장 구조를 반복하지 마세요.
+
+            [질문 생성 방향]
+            - 질문은 다음 요소를 종합해 만드세요.
+              1. 회사명
+              2. 직무
+              3. 지원 유형
+              4. 난이도
+              5. 사용자 이력서/포트폴리오
+              6. 면접관 페르소나
+              7. AI 경쟁 지원자 페르소나
+
+            - 서류가 제출된 경우, 서류에 실제로 있는 프로젝트·경험·기술·활동을 바탕으로 질문하세요.
+            - 서류가 미제출이면 직무와 지원 유형에 맞는 일반 면접 질문으로 대체하세요.
+            - 질문 유형은 AI가 상황에 맞게 선택하되, 아래 유형을 적절히 섞으세요.
+              · 경험 기반 질문
+              · 직무 역량 질문
+              · 문제 해결 질문
+              · 협업/갈등 질문
+              · 상황형 질문 (반드시 현실적 맥락 서론 1~2문장 후 가정 상황 제시, "만약 ~이라면?"으로 바로 시작 금지)
+              · 가치관/조직 적합성 질문
+              · HARD인 경우 전문성 검증 질문
+
+            [난이도 기준]
+            EASY:
+            - 친절하고 편안한 질문을 중심으로 구성하세요.
+            - 지원자의 경험, 역할 이해, 직무 관심도를 확인하세요.
+            - 지나치게 전문적인 지식이나 수치 검증은 피하세요.
+
+            NORMAL:
+            - 경험의 배경, 선택 이유, 문제 해결 과정, 협업 방식을 확인하세요.
+            - 지원자가 자신의 기여와 결과를 구체적으로 설명하게 만드세요.
+
+            HARD:
+            - 날카롭고 간결하며 압박적인 톤. 칭찬·공감 표현 일절 금지.
+            - "~설명해 보세요.", "~말씀해 보시죠." 형태를 선호하고, "~해 주시겠어요?"는 지양합니다.
+            - 직무 전문 용어, 방법론, 프레임워크 이름을 질문에 직접 사용하세요.
+            - NEW/INTERN 지원자에게 시니어급 실무 권한이나 의사결정을 전제하지 마세요.
+
+            [지원 유형 기준]
+            NEW:
+            - 학교 프로젝트, 대외활동, 공모전, 인턴, 팀 경험을 직무와 연결해 질문하세요.
+            - 실무 경력보다 학습력, 잠재력, 문제 해결 태도를 확인하세요.
+
+            INTERN:
+            - 기본 이해도, 태도, 커뮤니케이션, 성장 가능성을 확인하세요.
+            - 완성된 실무자 수준을 요구하지 마세요.
+
+            EXPERIENCED:
+            - 실무 성과, 의사결정 근거, 문제 해결 과정, 조직 기여도를 확인하세요.
+            - 성과 지표, 실패 경험, 대안 비교 질문을 포함할 수 있습니다.
+
+            [회사명 활용 규칙]
+            - 잘 알려진 회사명이라면 공개적으로 알려진 사업/서비스 맥락을 자연스럽게 반영하세요.
+            - 확실하지 않은 회사명이라면 내부 정보, 수치, 전략을 단정하지 말고 직무 중심으로 질문하세요.
+
+            [면접관 페르소나 반영]
+            - 각 면접관의 성격과 관점을 질문 톤에 반영하세요.
+            - 실무형 면접관은 성과·문제 해결·근거를 중점적으로 질문하세요.
+            - 인성형 면접관은 협업·가치관·태도를 중점적으로 질문하세요.
+            - 압박형 면접관은 간결하고 날카롭게 질문하세요.
+            - 친절형 면접관은 부드럽고 안내하는 말투를 사용하세요.
+
+            [AI 경쟁 지원자 답변 규칙]
+            - AI 경쟁 지원자는 자신의 페르소나에 맞는 구체적인 경험을 바탕으로 답변하세요.
+            - 답변은 최소 120자 이상으로 작성하세요.
+            - 추상적인 의견만 말하지 말고, 상황·행동·결과가 드러나게 작성하세요.
+            - 같은 AI 지원자가 앞에서 말한 경험과 뒤에서 말한 경험은 일관되어야 합니다.
+
+            [꼬리질문 규칙]
+            - 꼬리질문은 총 2개이며 자연스러운 흐름 안에 배치합니다.
+            - 꼬리질문 대상은 반드시 USER입니다. APPLICANT는 꼬리질문에 답변하지 않습니다.
+            - 꼬리질문 2개가 연속으로 붙는 것은 금지합니다.
+            - 추가 관점 유도형:
+              공통 질문(모든 참가자 답변)에서 파생하지 않습니다.
+              대신 다음 3단계 구조를 엄격히 따르세요:
+              ① INTERVIEWER → 특정 APPLICANT에게만 가치관·직무 태도 관련 질문 (해당 이름 호명)
+              ② 해당 APPLICANT만 답변 (다른 참가자 답변 없음)
+              ③ INTERVIEWER → USER에게 꼬리질문 (바로 다음 questionSeq)
+                 "A님이 ~~이라고 하셨는데, {userName}님은 그 외에 생각나는 것이 있다면 말씀해 주세요."
+              APPLICANT가 직접 발언한 표현만 인용하고, 답변을 평가하거나 의견을 묻지 마세요.
+            - 심화형:
+              USER 개인 질문 바로 다음 순번에 배치하세요.
+              USER의 직전 답변에서 근거·방법·결과를 추가로 묻는 질문입니다.
+            - 꼬리질문도 새로운 questionSeq를 부여하세요.
+
+            [다양성 규칙]
+            - 같은 입력으로 여러 번 생성하더라도 질문 순서, 질문 관점, 면접관 배정, APPLICANT 답변 사례가 달라지도록 하세요.
+            - 흔한 질문 문장만 반복하지 마세요.
+            - 예: "어떤 역할을 담당했나요?", "어려웠던 점은 무엇인가요?", "어떻게 해결했나요?" 같은 표현은 필요할 때만 사용하고, 가능한 한 구체적인 맥락으로 바꾸세요.
+            - 이번 생성에서는 하나의 자연스러운 면접 흐름을 자유롭게 설계하세요.
 
             [입력 데이터]
             방 ID: {roomId}
+            사용자 이름: {userName}
             회사명: {companyName}
             직무: {jobRole}
             지원 유형: {applicantType}
@@ -143,6 +208,7 @@ public class AiPromptService {
             [사용자 서류 텍스트]
             이력서:
             {resumeText}
+
             포트폴리오:
             {portfolioText}
 
@@ -174,108 +240,169 @@ public class AiPromptService {
             """;
 
     private static final String PROMPT_TEMPLATE_EN = """
-            You are an AI that generates a mock interview script.
-            Based on the input data below, generate an interview script as if it were a real interview, in JSON format.
+            You are an AI that generates a mock interview script for a multi-participant interview.
+            Based on the input data below, generate an interview scenario in JSON format where interviewers, the real user, and AI competing applicants all participate.
 
-            [Output Format Rules]
-            1. Respond with JSON only. Do not output any character outside JSON (no explanations, no markdown, no code blocks).
-            2. The response must be valid JSON.
-            3. Do not use trailing commas.
+            [Primary Goal]
+            - Never repeat the same question patterns — design a varied interview flow tailored to the company, job role, applicant type, difficulty, and document content.
+            - Questions must be natural and specific, as in a real interview.
+            - Do not invent facts, experience, skills, people, or IDs that are not provided.
 
-            [Turn Writing Rules]
-            4. Write every line of dialogue inside the scenario array.
-            5. turnOrder must start at 1 and increase by 1 each turn.
-            6. For an interviewer's line, set turnRole to "INTERVIEWER".
-            7. For a competing applicant's line, set turnRole to "APPLICANT".
-            8. For a turn where the real user must answer, set turnRole to "USER".
-            9. Assign questionSeq exactly according to the following rule.
-               - Every INTERVIEWER question turn that is followed by a USER or APPLICANT answer: assign sequentially starting from 1 (including self-introduction)
-               - The USER/APPLICANT turn that answers that question: same number as the INTERVIEWER turn
-               - Pure greeting/closing remarks with no answer (e.g. "Hello", "Thank you for your time") only: set to 0
-               - Every question that is followed by an answer (self-introduction, job-related questions, etc.) must be assigned a number of 1 or higher.
+            [Output Rules]
+            1. Respond with JSON only. Do not include explanations, markdown, or code blocks.
+            2. JSON must be valid — no trailing commas.
+            3. Write all dialogue inside the scenario array.
 
-            [ID and Hallucination Prevention Rules]
-            9. For INTERVIEWER, turnRefId must be one of the provided interviewer personas' interviewer_id values only.
-            10. For APPLICANT, turnRefId must be one of the provided applicant personas' applicant_id values only.
-            11. For USER, turnRefId must always be null.
-            12. Never invent IDs, names, or people that were not provided.
-            13. Use only the provided personas. Do not add interviewers or applicants not in the persona list.
-            14. Do not arbitrarily add experience or skills not present in the submitted documents.
+            [Turn Rules]
+            - turnOrder starts at 1 and increments by 1.
+            - INTERVIEWER: interviewer speaks
+            - APPLICANT: AI competing applicant answers
+            - USER: the real user's answer turn
+            - USER speechText must always be null.
+            - USER turnRefId must always be null.
+            - INTERVIEWER turnRefId must be one of the provided interviewer_id values only.
+            - APPLICANT turnRefId must be one of the provided applicant_id values only.
+            - INTERVIEWER and APPLICANT timeoutSec is null.
+            - USER timeoutSec: set between 30–60 seconds based on question difficulty.
 
-            [speechText / timeoutSec Rules]
-            15. For INTERVIEWER and APPLICANT, speechText must always be a non-null string.
-            16. For USER, speechText must always be null. (Never generate the content of the USER's answer. A USER turn only marks the point where the user must answer.)
-            17. For a USER turn, set timeoutSec appropriately for the question (maximum 60 seconds).
-            18. For INTERVIEWER and APPLICANT turns, set timeoutSec to null.
+            [questionSeq Rules]
+            - INTERVIEWER questions followed by answers: assign sequentially from 1.
+            - USER/APPLICANT turns answering that question: use the same questionSeq.
+            - Pure greetings or closing remarks with no answers: set to 0.
 
-            [Difficulty-Level Interview Style Rules]
-            ※ The question depth references below illustrate the intended tone and depth only.
-               Placeholders in [...] must be filled with actual content from [User Document Text]
-               (project names, tech stacks, specific experiences). Never copy the reference sentences verbatim.
+            [Interview Structure Rules]
+            Generate exactly 10 INTERVIEWER questions. Assign questionSeq sequentially from 1.
 
-            EASY (Low):
-            - Interviewer tone: Warm and encouraging — guide the applicant with open-ended questions
-            - Question type: Motivation, goals, role description. Let applicants freely narrate their experiences
-            - Technical depth: No domain knowledge required. Assess attitude and presence of experience
-            - Prohibited: Asking for numbers/evidence, probing failures, trade-offs, or technical decision-making
-            - Question depth reference (must be rewritten using document content):
-              "What motivated you to apply for [role/activity mentioned in documents]?"
-              "What was your primary responsibility in [project/experience mentioned in documents]?"
-              "Is there a specific area you'd most like to work on after joining the team?"
-              "How do you think your strengths would contribute to this role?"
+            ▶ Fixed positions (2 questions)
+            - First question: Self-introduction (common)
+              Ask only "Please introduce yourself." — do not attach any additional question.
+            - Last question: "Is there anything you'd like to say in closing?" (common)
+              Ask only the closing-statement request — do not attach any additional question.
 
-            NORMAL (Mid):
-            - Interviewer tone: Neutral. Probe the context and reasoning behind experiences
-            - Question type: Problem-solving process, reasoning behind decisions, job fit assessment
-            - Technical depth: Basic domain knowledge expected. Applicant should articulate their specific contribution and outcome
-            - Question depth reference (must be rewritten using document content):
-              "What challenges came up in [project mentioned in documents], and how did you resolve them?"
-              "How did you handle disagreements or conflicts during team collaboration?"
-              "What was your reasoning for choosing [technology mentioned in documents]?"
-              "Walk me through the hardest technical challenge in [experience mentioned in documents] and the result."
+            ▶ Remaining 8 questions — arrange freely in a natural interview flow:
+            Composition: 3 common job/topic questions + 3 individual document-based questions + 2 follow-up questions
+            Placement rule: each follow-up must appear immediately after the question it references.
+              e.g. APPLICANT answers a common question → next seq: perspective-extension follow-up
+                   USER answers an individual question → next seq: depth follow-up
+            The two follow-up questions must NOT appear consecutively.
 
-            HARD (High):
-            - Interviewer tone: Challenging and pressured. Verify deep expertise and logical rigor
-            - Question type: Technical decision-making, trade-off analysis, design rationale, incidents/failures, internals of specific technologies
-            - Technical depth: Advanced domain knowledge required.
-              Applicant must go beyond listing experiences — they must answer "why," "how," and "what was sacrificed."
-              Frame questions that presuppose data-driven, quantitative justification.
-            - Prohibited: Simple motivation/goal questions, open-ended questions that allow vague non-answers
-            - Question depth reference (must be rewritten using document content):
-              "You chose [architecture/technology mentioned in documents] — compare the alternatives you considered and the trade-offs of each."
-              "What measurable changes in performance, cost, or maintainability followed the adoption of [technology mentioned in documents]? Please be specific."
-              "Describe a critical failure in [project/system mentioned in documents]: walk me through detection, root cause analysis, and recovery step by step."
-              "Share a technical decision from [experience mentioned in documents] that you later regretted, and explain why."
-              "How did you identify the bottleneck in [system mentioned in documents], and what steps did you take to improve it?"
+            ▶ Common Question Rules (self-intro + closing + 3 others = 5 total)
+            - At the end of each common question's speechText, the INTERVIEWER must announce the answer order
+              using actual participant names: "A, B, and C, please answer in that order."
+              ({userName} and each APPLICANT's real name; vary the order across questions.)
+            - Do NOT open a common question by addressing a specific participant by name.
+              Names are only used in the answer-order announcement at the end.
 
-            [Difficulty-Level APPLICANT Answer Standards]
-            - EASY: Freely narrate experiences. No numbers required. Positive, enthusiastic tone.
-            - NORMAL: Include specific examples. Briefly mention personal contribution and outcome.
-            - HARD: Numbers and evidence are mandatory. Reference the reasoning behind technical choices and ruled-out alternatives.
-              Use domain terminology naturally; provide deep, substantiated answers.
+            ▶ Individual Question Rules (3 document-based + 2 follow-ups = 5 total)
+            - USER only answers; no APPLICANT answers.
+            - Every individual question must begin by addressing the USER by name: "{userName},"
+            - Follow-up — perspective extension (1 question):
+              Must follow this exact 3-step structure:
+              ① INTERVIEWER asks ONE specific APPLICANT a values/culture-fit/job-attitude question by name.
+                 ("A, what do you think about...?" — address that APPLICANT directly.)
+              ② Only that APPLICANT answers. No other participant answers this question.
+              ③ INTERVIEWER immediately asks USER a follow-up (next questionSeq):
+                 "A said [exact phrase], {userName} — is there anything else that comes to mind?"
+              Do NOT derive this from a common question (where everyone answers).
+              Do NOT cite personal experience stories from the APPLICANT.
+              Do NOT ask the USER to evaluate or react to the APPLICANT's answer.
+            - Follow-up — depth question (1 question):
+              Based on the USER's most recent individual answer, ask for specific reasoning, method, or outcome.
 
-            [Content Generation Rules]
-            19. Base the interviewer's questions strictly on the [Difficulty-Level Interview Style Rules] above.
-                 Consider the company name and job characteristics, but do not fabricate uncertain internal company information; use only general-level knowledge.
-            20. Questions should cover self-introduction, job competency, project experience, collaboration experience, and problem-solving experience, flowing naturally in that order.
-            21. Generate at least 8 INTERVIEWER questions, of which at least 5 must be questions the USER must answer (common questions + USER-specific questions).
-            22. APPLICANT should answer the interviewer's questions in a way that reflects their persona.
-            23. Every provided interviewer must speak at least once.
-            24. Every provided competing applicant must speak at least once.
-            25. Generate the entire scenario with 15 to 30 turns total.
-            26. Mix the following three turn types appropriately throughout the interview flow.
-                - Common questions: INTERVIEWER asks a question, then APPLICANT and USER answer in turn. The order is random (e.g. self-introduction, job competency)
-                - USER-specific questions: INTERVIEWER asks the USER a question based on the USER's documents, and only the USER answers.
-                - APPLICANT-specific questions: INTERVIEWER asks a specific APPLICANT a question, and only that APPLICANT answers.
-                  (The answer to an APPLICANT-specific question must not contradict that applicant's persona, and must stay consistent with their own earlier answers.)
+            Additional rules:
+            - Every interviewer must speak at least once.
+            - Every AI competing applicant must speak at least twice.
+            - Do not repeat the same topic or sentence structure.
 
-            [Applicant Type Description]
-            - NEW: New graduate hiring. An applicant with no experience aiming for a full-time position.
-            - INTERN: Internship hiring. An applicant for an internship position prior to full-time employment.
-            - EXPERIENCED: Experienced hiring. An applicant who holds relevant job experience.
+            [Question Generation]
+            - Synthesize the following to generate questions:
+              1. Company name
+              2. Job role
+              3. Applicant type
+              4. Difficulty
+              5. User's resume/portfolio
+              6. Interviewer persona
+              7. AI competing applicant persona
+
+            - If documents are submitted, base questions on actual projects, experiences, skills, and activities in those documents.
+            - If no documents, use general job/applicant-type questions instead.
+            - Mix question types as the AI sees fit for the context:
+              · Experience-based questions
+              · Job competency questions
+              · Problem-solving questions
+              · Collaboration/conflict questions
+              · Situational questions (must open with 1–2 sentences of realistic context before the hypothetical; starting directly with "If [situation]..." is prohibited)
+              · Values/culture fit questions
+              · For HARD: domain expertise verification questions
+
+            [Difficulty Guidelines]
+            EASY:
+            - Warm, encouraging tone. Focus on motivations, role experience, and job fit.
+            - No technical knowledge required. Avoid numbers/evidence, failure probes, or technical decisions.
+
+            NORMAL:
+            - Neutral tone. Probe the context, reasoning, and problem-solving behind experiences.
+            - Applicants should explain their specific contribution and outcome.
+
+            HARD:
+            - Sharp, terse, pressured tone. No praise or empathy expressions.
+            - Direct commands: "Walk me through X." / "Explain Y." rather than "Could you tell me about X?"
+            - Use {jobRole}-specific terminology, methodologies, and framework names in questions.
+            - If applicant type is NEW or INTERN, do not assume senior-level authority or decision-making.
+
+            [Applicant Type Guidelines]
+            NEW:
+            - Focus on school projects, extracurriculars, competitions, team experiences.
+            - Assess learning ability, potential, and problem-solving attitude over professional experience.
+
+            INTERN:
+            - Focus on basic understanding, attitude, communication, and growth potential.
+            - Do not expect completed professional-level output.
+
+            EXPERIENCED:
+            - Probe actual results, decision rationale, problem-solving process, and org contribution.
+            - May include metrics, failure cases, and trade-off comparisons.
+
+            [Company Name Guidelines]
+            - Well-known companies: naturally reflect publicly known business/service context.
+            - Unknown or ambiguous companies: don't assert internal details — ask job-role-centric questions.
+
+            [Interviewer Persona Reflection]
+            - Reflect each interviewer's personality in their question tone.
+            - Results-focused: prioritize performance, evidence, problem-solving.
+            - People-focused: prioritize values, collaboration, motivation.
+            - Pressure-type: ask sharply and concisely.
+            - Friendly-type: use a gentle, guiding tone.
+
+            [AI Competing Applicant Answer Rules]
+            - Each applicant should answer based on specific experiences fitting their persona.
+            - Minimum 100 words in English per answer.
+            - Include situation, action, and result — not just abstract opinions.
+            - Keep experiences consistent across all turns for the same applicant.
+
+            [Follow-up Question Rules]
+            - There are exactly 2 follow-up questions, placed naturally within questionSeq 2–9.
+            - Follow-up target is always the USER. APPLICANTs do not answer follow-up questions.
+            - The two follow-up questions must NOT appear consecutively.
+            - Perspective extension:
+              Must be placed immediately after the common question it references (next questionSeq).
+              Only applicable when the referenced common question is about values, culture fit, or job attitude —
+              NOT about a personal experience or specific story the APPLICANT shared.
+              Briefly reference what the APPLICANT said, then ask "[userName], is there anything else that comes to mind?" style.
+              Do NOT ask the USER to evaluate or react to the APPLICANT's answer.
+            - Depth follow-up:
+              Must be placed immediately after the USER individual question it references (next questionSeq).
+              Ask for specific reasoning, method, or outcome based on the USER's previous individual answer.
+            - Assign a new questionSeq to each follow-up question.
+
+            [Diversity Rules]
+            - Even with the same inputs, vary question order, angle, interviewer assignment, and APPLICANT answer examples across runs.
+            - Avoid overused phrasing like "What was the hardest part?", "What role did you play?", "How did you solve it?" — use contextually specific wording instead.
+            - Design a natural, unique interview flow for this generation.
 
             [Input Data]
             Room ID: {roomId}
+            Applicant name: {userName}
             Company name: {companyName}
             Job role: {jobRole}
             Applicant type: {applicantType}
@@ -286,6 +413,7 @@ public class AiPromptService {
             [User Document Text]
             Resume:
             {resumeText}
+
             Portfolio:
             {portfolioText}
 
@@ -397,7 +525,7 @@ public class AiPromptService {
         boolean isEnglish = "EN".equals(room.getLanguage());
         String prompt = buildPrompt(room, interviewers, applicants, isEnglish);
         String responseBody = callOpenAi(prompt,
-                "당신은 모의면접 대본을 생성하는 AI입니다. 반드시 JSON 형식으로만 응답하세요.", 0.7);
+                "당신은 모의면접 대본을 생성하는 AI입니다. 반드시 JSON 형식으로만 응답하세요.", 0.95);
 
         savePromptRecord(room.getRoomId(), isEnglish ? "SCRIPT_EN" : "SCRIPT_KR", prompt, responseBody);
 
@@ -479,8 +607,12 @@ public class AiPromptService {
                                List<AiInterviewerDto> interviewers,
                                List<AiApplicantDto> applicants,
                                boolean isEnglish) {
-        // 면접 언어별로 프롬프트 템플릿 자체를 분리 (KO/EN 각각 완전한 규칙 세트 보유)
         String template = isEnglish ? PROMPT_TEMPLATE_EN : PROMPT_TEMPLATE_KO;
+
+        int seed = ThreadLocalRandom.current().nextInt(100000, 999999);
+        String seedNote = isEnglish
+                ? "\n\n[Variation Seed: " + seed + "]\nUse this seed to vary question angles, order, interviewer assignments, and applicant answer examples from previous runs."
+                : "\n\n[이번 생성 시드: " + seed + "]\n이 시드를 참고하여 이전과 다른 질문 관점, 질문 순서, 면접관 배정, AI 지원자 사례를 선택하세요.";
 
         return template
                 .replace("{roomId}",             String.valueOf(room.getRoomId()))
@@ -492,8 +624,10 @@ public class AiPromptService {
                 .replace("{applicantCount}",      String.valueOf(room.getAiApplicantCnt()))
                 .replace("{resumeText}",          nvl(room.getResumeText(), "미제출"))
                 .replace("{portfolioText}",       nvl(room.getPortfolioText(), "미제출"))
+                .replace("{userName}",            nvl(room.getUserName(), "지원자"))
                 .replace("{interviewerPersonas}", formatInterviewers(interviewers))
-                .replace("{applicantPersonas}",   formatApplicants(applicants));
+                .replace("{applicantPersonas}",   formatApplicants(applicants))
+                + seedNote;
     }
 
     private String formatInterviewers(List<AiInterviewerDto> interviewers) {
@@ -560,7 +694,7 @@ public class AiPromptService {
             throw new RuntimeException("AI 응답 파싱 실패", e);
         }
     }
-    
+
     // 프롬프트 저장
     private void savePromptRecord(Long roomId, String promptType, String promptText, String responseText) {
         InterviewPromptDto dto = new InterviewPromptDto();

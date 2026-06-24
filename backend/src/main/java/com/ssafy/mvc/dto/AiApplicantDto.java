@@ -6,7 +6,8 @@ public class AiApplicantDto {
     private String applicantName;
     private String applicantGender;
     private String applicantType;
-    private String profileImageUrl; // 추후 사용
+    private String profileImageUrl;
+    private String moveVideoUrl;
     private String applicantPrompt;
     private String voiceType;
     private String language; // KO, EN
@@ -25,6 +26,9 @@ public class AiApplicantDto {
 
     public String getProfileImageUrl() { return profileImageUrl; }
     public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+
+    public String getMoveVideoUrl() { return moveVideoUrl; }
+    public void setMoveVideoUrl(String moveVideoUrl) { this.moveVideoUrl = moveVideoUrl; }
 
     public String getApplicantPrompt() { return applicantPrompt; }
     public void setApplicantPrompt(String applicantPrompt) { this.applicantPrompt = applicantPrompt; }

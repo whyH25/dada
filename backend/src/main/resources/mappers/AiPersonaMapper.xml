@@ -4,7 +4,7 @@
 <mapper namespace="com.ssafy.mvc.dao.AiPersonaDao">
 
     <select id="selectRandomInterviewers" resultType="com.ssafy.mvc.dto.AiInterviewerDto">
-        SELECT interviewer_id, interviewer_name, interviewer_gender, profile_image_url, interviewer_prompt, voice_type, language
+        SELECT interviewer_id, interviewer_name, interviewer_gender, profile_image_url, move_video_url, interviewer_prompt, voice_type, language
         FROM ai_interviewer
         WHERE language = #{language}
         ORDER BY RAND()
@@ -12,7 +12,7 @@
     </select>
 
     <select id="selectRandomApplicants" resultType="com.ssafy.mvc.dto.AiApplicantDto">
-        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, applicant_prompt, voice_type, language
+        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, move_video_url, applicant_prompt, voice_type, language
         FROM ai_applicant
         WHERE applicant_type = #{applicantType}
           AND language = #{language}
@@ -23,7 +23,7 @@
 
     <!-- 리포트 생성 시 시나리오에 등장한 지원자 페르소나 조회 -->
     <select id="selectApplicantsByIds" resultType="com.ssafy.mvc.dto.AiApplicantDto">
-        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, applicant_prompt, voice_type
+        SELECT applicant_id, applicant_name, applicant_gender, applicant_type, profile_image_url, move_video_url, applicant_prompt, voice_type
         FROM ai_applicant
         WHERE applicant_id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">

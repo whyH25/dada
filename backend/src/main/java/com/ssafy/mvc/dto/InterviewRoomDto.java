@@ -1,4 +1,4 @@
-package com.ssafy.mvc.dto;
+﻿package com.ssafy.mvc.dto;
 
 import java.time.LocalDateTime;
 
@@ -31,6 +31,7 @@ public class InterviewRoomDto {
     private String portfolioText;
 
     private String status;
+    private String userName;
 
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
@@ -151,6 +152,13 @@ public class InterviewRoomDto {
 		this.endedAt = endedAt;
 	}
 	
+	
+	public String getUserName() {
+		return userName;
+	}
+	public void setUserName(String userName) {
+		this.userName = userName;
+	}
 	
 	@Override
 	public String toString() {

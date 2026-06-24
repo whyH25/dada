@@ -14,7 +14,11 @@ public class InterviewStartResultDto {
     private List<InterviewScenarioDto> scenario;
     private List<Long> interviewerPersonaIds;  // 선정된 면접관 ID 순서 (타일 순서와 일치)
     private List<Long> applicantPersonaIds;    // 선정된 지원자 ID 순서 (타일 순서와 일치)
-    private Map<Long, String> personaNames;    // personaId → 이름
+    private Map<Long, String> personaNames;          // applicantId → 이름
+    private Map<Long, String> interviewerStopVideos; // interviewerId → stop 영상 URL
+    private Map<Long, String> interviewerMoveVideos; // interviewerId → move 영상 URL
+    private Map<Long, String> applicantStopVideos;   // applicantId → stop 영상 URL
+    private Map<Long, String> applicantMoveVideos;   // applicantId → move 영상 URL
 
     public Long getRoomId() { return roomId; }
     public void setRoomId(Long roomId) { this.roomId = roomId; }
@@ -45,4 +49,16 @@ public class InterviewStartResultDto {
 
     public Map<Long, String> getPersonaNames() { return personaNames; }
     public void setPersonaNames(Map<Long, String> personaNames) { this.personaNames = personaNames; }
+
+    public Map<Long, String> getInterviewerStopVideos() { return interviewerStopVideos; }
+    public void setInterviewerStopVideos(Map<Long, String> interviewerStopVideos) { this.interviewerStopVideos = interviewerStopVideos; }
+
+    public Map<Long, String> getInterviewerMoveVideos() { return interviewerMoveVideos; }
+    public void setInterviewerMoveVideos(Map<Long, String> interviewerMoveVideos) { this.interviewerMoveVideos = interviewerMoveVideos; }
+
+    public Map<Long, String> getApplicantStopVideos() { return applicantStopVideos; }
+    public void setApplicantStopVideos(Map<Long, String> applicantStopVideos) { this.applicantStopVideos = applicantStopVideos; }
+
+    public Map<Long, String> getApplicantMoveVideos() { return applicantMoveVideos; }
+    public void setApplicantMoveVideos(Map<Long, String> applicantMoveVideos) { this.applicantMoveVideos = applicantMoveVideos; }
 }
