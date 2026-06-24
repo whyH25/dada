@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useDataStore } from '../stores/data.js'
 import { useFlowStore } from '../stores/flow.js'
 import { useAuthStore } from '../stores/auth.js'
-import { fetchJobCategories, createInterviewRoom } from '../api/interviewRoomApi.js'
+import { fetchJobGroups, createInterviewRoom } from '../api/interviewRoomApi.js'
 import { fetchMyFiles } from '../api/userFileApi.js'
 import { startSession } from '../api/sessionApi.js'
 import { useDeviceCheck } from '../composables/useDeviceCheck.js'
@@ -31,9 +31,13 @@ watch(step, val => {
 onUnmounted(() => stopDeviceCheck())
 const company = ref('')
 const companyRef = ref(null)
+const jobGroups = ref([])
+const selectedGroupId = ref(null)
 const selectedJobId = ref(null)
 const selectedJobName = ref('')
-const jobCategories = ref([])
+
+// 현재 선택된 대분류에 속한 직무 목록
+const filteredJobs = computed(() => jobGroups.value.find(g => g.groupId === selectedGroupId.value)?.jobs ?? [])
 
 const sel = reactive({
   type: '신입',
@@ -83,14 +87,9 @@ const submittedDocCount = computed(() => {
 
 onMounted(async () => {
   try {
-    jobCategories.value = await fetchJobCategories()
-    // 첫 번째 직무를 기본 선택
-    if (jobCategories.value.length > 0) {
-      selectedJobId.value = jobCategories.value[0].jobId
-      selectedJobName.value = jobCategories.value[0].jobName
-    }
-  } catch {
-    // API 연결 전이거나 오류 시 빈 목록 유지
+    jobGroups.value = await fetchJobGroups()
+  } catch (e) {
+    errorMsg.value = e.message || '직무 목록을 불러오지 못했습니다.'
   }
 
   try {
@@ -101,8 +100,14 @@ onMounted(async () => {
   }
 })
 
+function onGroupChange(e) {
+  selectedGroupId.value = parseInt(e.target.value)
+  selectedJobId.value = null
+  selectedJobName.value = ''
+}
+
 function onJobChange(e) {
-  const found = jobCategories.value.find(j => j.jobId === parseInt(e.target.value))
+  const found = filteredJobs.value.find(j => j.jobId === parseInt(e.target.value))
   if (found) {
     selectedJobId.value = found.jobId
     selectedJobName.value = found.jobName
@@ -121,6 +126,14 @@ function gotoStep2() {
   if (!company.value.trim()) {
     errorMsg.value = '회사명을 입력해주세요.'
     companyRef.value?.focus()
+    return
+  }
+  if (!selectedGroupId.value) {
+    errorMsg.value = '직무 대분류를 선택해주세요.'
+    return
+  }
+  if (!selectedJobId.value) {
+    errorMsg.value = '직무 상세를 선택해주세요.'
     return
   }
   errorMsg.value = ''
@@ -210,24 +223,34 @@ async function startInterview() {
                 <div class="form-row">
                   <div class="field">
                     <label class="field-label">회사명 <span class="req">*</span></label>
-                    <input class="input" v-model="company" placeholder="예) 카카오, 삼성전자 DS부문" ref="companyRef" />
+                    <input class="input" v-model="company" placeholder="정확한 회사명을 입려해주세요. ex) 삼성전자 DS" ref="companyRef" />
                   </div>
                   <div class="field">
-                    <label class="field-label">직무 선택 <span class="req">*</span></label>
+                    <label class="field-label">유형 선택 <span class="req">*</span></label>
+                    <div class="chip-group">
+                      <div v-for="o in typeOpts" :key="o" class="chip" :class="{ active: sel.type === o }" @click="sel.type = o">{{ o }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="field">
+                    <label class="field-label">직무 대분류 <span class="req">*</span></label>
+                    <select class="select" :value="selectedGroupId" @change="onGroupChange">
+                      <option disabled value="">선택해주세요</option>
+                      <option v-if="jobGroups.length === 0" disabled value="">로딩 중...</option>
+                      <option v-for="g in jobGroups" :key="g.groupId" :value="g.groupId">{{ g.groupName }}</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="field-label">직무 상세 <span class="req">*</span></label>
                     <select class="select" :value="selectedJobId" @change="onJobChange">
-                      <option v-if="jobCategories.length === 0" disabled value="">직무 목록 로딩 중...</option>
-                      <option v-for="job in jobCategories" :key="job.jobId" :value="job.jobId">
-                        {{ job.jobName }}
-                      </option>
+                      <option disabled value="">선택해주세요</option>
+                      <option v-for="job in filteredJobs" :key="job.jobId" :value="job.jobId">{{ job.jobName }}</option>
                     </select>
                   </div>
                 </div>
-                <div class="field">
-                  <label class="field-label">유형 선택 <span class="req">*</span></label>
-                  <div class="chip-group">
-                    <div v-for="o in typeOpts" :key="o" class="chip" :class="{ active: sel.type === o }" @click="sel.type = o">{{ o }}</div>
-                  </div>
-                </div>
+
               </div>
             </div>
 
@@ -282,7 +305,7 @@ async function startInterview() {
                       <option v-for="r in resumes" :key="r.id" :value="r.id">{{ r.fileName }}</option>
                     </select>
                     <p class="text-sm text-muted" style="margin-top:6px;">
-                      등록한 이력서가 없거나 더 추가하고 싶다면
+                      등록한 이력서가 없거나 더 추가하고 싶다면 → 
                       <span style="color:var(--accent-blue,#1f6fe5);cursor:pointer;" @click="router.push({ path: '/mypage', query: { section: 'resume' } })">마이페이지에서 등록하기</span>
                     </p>
                   </div>
@@ -293,7 +316,7 @@ async function startInterview() {
                       <option v-for="p in portfolios" :key="p.id" :value="p.id">{{ p.fileName }}</option>
                     </select>
                     <p class="text-sm text-muted" style="margin-top:6px;">
-                      등록한 포트폴리오가 없거나 더 추가하고 싶다면
+                      등록한 포트폴리오가 없거나 더 추가하고 싶다면 → 
                       <span style="color:var(--accent-blue,#1f6fe5);cursor:pointer;" @click="router.push({ path: '/mypage', query: { section: 'portfolio' } })">마이페이지에서 등록하기</span>
                     </p>
                   </div>
@@ -333,7 +356,7 @@ async function startInterview() {
         </div>
 
         <div class="create-actions">
-          <button class="btn btn-ghost" @click="router.push('/')">취소</button>
+          <button class="btn btn-ghost" style="background:gray;color:#fafafa;" @click="router.push('/')">← 취소</button>
           <button class="btn btn-primary btn-lg" :disabled="submitting" @click="gotoStep2">
             <span v-if="submitting">저장 중...</span>
             <template v-else>
