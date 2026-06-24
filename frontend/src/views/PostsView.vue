@@ -136,13 +136,17 @@ onMounted(load)
 
     <!-- 페이지네이션 -->
     <div v-if="totalPages() > 1" class="pagination">
-      <button class="pg-btn" :disabled="page <= 1" @click="page--; load()">‹</button>
+      <button class="pg-btn" :disabled="page <= 1" @click="page--; load()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
       <button
         v-for="n in totalPages()" :key="n"
-        class="pg-btn" :class="{ active: page === n }"
+        class="pg-num" :class="{ active: page === n }"
         @click="page = n; load()"
       >{{ n }}</button>
-      <button class="pg-btn" :disabled="page >= totalPages()" @click="page++; load()">›</button>
+      <button class="pg-btn" :disabled="page >= totalPages()" @click="page++; load()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>
 
     <div class="board-total">총 {{ total }}개</div>
@@ -270,29 +274,28 @@ onMounted(load)
 /* 페이지네이션 */
 .pagination {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 4px;
   padding: 20px 0 8px;
 }
 .pg-btn {
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 6px;
-  background: #fff;
-  font-size: 13px;
-  color: var(--ink-600);
-  cursor: pointer;
-  transition: all 0.15s;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border, #e5e7eb); border-radius: 8px;
+  background: #fff; color: var(--ink-500); cursor: pointer; transition: all 0.15s;
 }
-.pg-btn:hover:not(:disabled) { background: var(--ink-50); }
-.pg-btn.active {
-  background: var(--green-500, #308860);
-  color: #fff;
-  border-color: var(--green-500, #308860);
+.pg-btn:hover:not(:disabled) { border-color: var(--green-500); color: var(--green-500); }
+.pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pg-num {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border, #e5e7eb); border-radius: 8px;
+  background: #fff; font-size: 14px; font-weight: 500;
+  color: var(--ink-600); cursor: pointer; transition: all 0.15s;
 }
-.pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pg-num:hover { border-color: var(--green-500); color: var(--green-500); }
+.pg-num.active { background: var(--green-500, #308860); border-color: var(--green-500, #308860); color: #fff; font-weight: 700; }
 
 .board-total {
   text-align: right;

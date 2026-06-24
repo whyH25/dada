@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { fetchStories } from '../api/storiesApi.js'
 import { fetchPosts } from '../api/postsApi.js'
-import { fetchJobSchedules } from '../api/scheduleApi.js'
+import { fetchNotices } from '../api/noticesApi.js'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -12,7 +12,7 @@ const auth = useAuthStore()
 
 const stories = ref([])
 const posts = ref([])
-const schedules = ref([])
+const notices = ref([])
 
 function go(p) { router.push(p) }
 function requireAuth(action) {
@@ -31,56 +31,24 @@ function formatDate(d) {
   return String(d).slice(0, 10).replace(/-/g, '.')
 }
 
-function excerpt(html) {
-  if (!html) return ''
-  return html.replace(/<[^>]*>/g, '').replace(/&[a-z#\d]+;/gi, ' ').trim().slice(0, 90)
+function parseMeta(content) {
+  try {
+    const p = JSON.parse(content)
+    if (p.__template__) return { company: p.company || '', jobRole: p.jobRole || '' }
+  } catch {}
+  return { company: '', jobRole: '' }
 }
 
-function dday(endDate) {
-  if (!endDate) return ''
-  const end = new Date(endDate)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  end.setHours(0, 0, 0, 0)
-  const diff = Math.ceil((end - today) / 86400000)
-  if (diff < 0) return '마감'
-  if (diff === 0) return 'D-Day'
-  return `D-${diff}`
-}
-
-function ddayClass(endDate) {
-  if (!endDate) return ''
-  const end = new Date(endDate)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  end.setHours(0, 0, 0, 0)
-  const diff = Math.ceil((end - today) / 86400000)
-  if (diff < 0) return 'dday-closed'
-  if (diff <= 3) return 'dday-urgent'
-  if (diff <= 7) return 'dday-soon'
-  return 'dday-ok'
-}
-
-function openSchedule(s) {
-  if (s.jobUrl) window.open(s.jobUrl, '_blank', 'noopener')
-  else go('/schedule')
-}
 
 onMounted(async () => {
-  const [s, p, sc] = await Promise.all([
+  const [s, p, n] = await Promise.all([
     fetchStories().catch(() => []),
     fetchPosts('', '', 'latest', 1).catch(() => ({ posts: [] })),
-    fetchJobSchedules().catch(() => [])
+    fetchNotices().catch(() => [])
   ])
   stories.value = s.slice(0, 3)
-  posts.value = p.posts.slice(0, 4)
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  schedules.value = sc
-    .filter(s => !s.endDate || new Date(s.endDate) >= today)
-    .sort((a, b) => new Date(a.endDate) - new Date(b.endDate))
-    .slice(0, 4)
+  posts.value = p.posts.slice(0, 3)
+  notices.value = n.slice(0, 3)
 })
 </script>
 
@@ -156,7 +124,10 @@ onMounted(async () => {
               <span class="story-kicker-result">최종 합격</span>
             </div>
             <h3 class="story-headline">{{ s.title }}</h3>
-            <p class="story-quote">{{ excerpt(s.content) }}</p>
+            <div class="story-meta-tags">
+              <span v-if="parseMeta(s.content).company" class="story-meta-tag">#{{ parseMeta(s.content).company }}</span>
+              <span v-if="parseMeta(s.content).jobRole" class="story-meta-tag story-meta-tag-role">#{{ parseMeta(s.content).jobRole }}</span>
+            </div>
             <div class="story-footer">
               <span class="story-read">인터뷰 읽기 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6" /></svg></span>
               <span class="story-date">{{ formatDate(s.createdAt) }}</span>
@@ -166,27 +137,8 @@ onMounted(async () => {
         </div>
       </section>
 
-      <!-- 채용일정 + 자유게시판 -->
+      <!-- 커뮤니티 + 공지사항 -->
       <section class="split-2">
-        <div class="card list-card">
-          <div class="card-header"><h3 class="card-title">채용일정</h3><a class="card-link" @click="go('/schedule')">더보기 ›</a></div>
-          <template v-if="schedules.length > 0">
-            <div
-              v-for="s in schedules"
-              :key="s.scheduleId"
-              class="list-item"
-              @click="openSchedule(s)"
-            >
-              <div class="list-item-text">
-                <div class="list-item-title">{{ s.companyName }} · {{ s.jobTitle }}</div>
-                <div class="list-item-sub">{{ [s.employmentType, s.companyType].filter(Boolean).join(' · ') }}</div>
-              </div>
-              <span class="sched-dday" :class="ddayClass(s.endDate)">{{ dday(s.endDate) }}</span>
-            </div>
-          </template>
-          <div v-else class="list-empty">등록된 채용일정이 없습니다.</div>
-        </div>
-
         <div class="card list-card">
           <div class="card-header"><h3 class="card-title">커뮤니티</h3><a class="card-link" @click="go('/community/board')">더보기 ›</a></div>
           <template v-if="posts.length > 0">
@@ -200,10 +152,27 @@ onMounted(async () => {
                 <div class="list-item-title">{{ p.title }}</div>
                 <div class="list-item-sub">{{ p.category || '기타' }} · 댓글 {{ p.commentCount ?? 0 }}</div>
               </div>
-              <span class="list-item-meta">{{ formatDate(p.createdAt) }}</span>
             </div>
           </template>
           <div v-else class="list-empty">등록된 게시글이 없습니다.</div>
+        </div>
+
+        <div class="card list-card">
+          <div class="card-header"><h3 class="card-title">공지사항</h3><a class="card-link" @click="go('/notices')">더보기 ›</a></div>
+          <template v-if="notices.length > 0">
+            <div
+              v-for="n in notices"
+              :key="n.noticeId"
+              class="list-item"
+              @click="go('/notices/' + n.noticeId)"
+            >
+              <div class="list-item-text">
+                <div class="list-item-title">{{ n.title }}</div>
+                <div class="list-item-sub">{{ n.category }}</div>
+              </div>
+            </div>
+          </template>
+          <div v-else class="list-empty">등록된 공지사항이 없습니다.</div>
         </div>
       </section>
     </div>
@@ -219,7 +188,7 @@ onMounted(async () => {
 }
 
 .story-thumb {
-  height: 180px;
+  height: 200px;
   overflow: hidden;
   border-radius: var(--radius);
   flex-shrink: 0;
@@ -233,6 +202,22 @@ onMounted(async () => {
   transition: transform 0.3s;
 }
 .story-card:hover .story-thumb img { transform: scale(1.04); }
+
+.story-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+.story-meta-tag {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-400, #9ca3af);
+}
+.story-meta-tag-role {
+  color: var(--green-600, #16a34a);
+}
 
 /* D-day 뱃지 */
 .sched-dday {

@@ -10,9 +10,8 @@ const notice = ref(null)
 const loading = ref(true)
 
 const BADGE = {
-  '업데이트': 'badge-green',
-  '공지':     '',
-  '이벤트':   'badge-blue',
+  '공지':   'badge-green',
+  '이벤트': 'badge-blue',
 }
 
 function formatDate(d) {

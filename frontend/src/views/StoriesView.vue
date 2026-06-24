@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { fetchStories, toggleLike } from '../api/storiesApi.js'
 import { fetchEventBanner } from '../api/noticesApi.js'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 const ACCENTS = ['#308860', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4']
@@ -13,6 +14,8 @@ const ACCENTS = ['#308860', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4
 const stories = ref([])
 const banner = ref(null)
 const sort = ref('latest')
+const page = ref(Number(route.query.page) || 1)
+const PAGE_SIZE = 6
 
 async function load() {
   const [s, b] = await Promise.all([fetchStories(), fetchEventBanner()])
@@ -28,6 +31,22 @@ const sorted = computed(() => {
   })
 })
 
+const totalPages = computed(() => Math.ceil(sorted.value.length / PAGE_SIZE))
+
+const paged = computed(() => {
+  const start = (page.value - 1) * PAGE_SIZE
+  return sorted.value.slice(start, start + PAGE_SIZE)
+})
+
+function setSort(val) {
+  sort.value = val
+  page.value = 1
+}
+
+watch(page, (p) => {
+  router.replace({ query: { ...route.query, page: p === 1 ? undefined : p } })
+})
+
 async function handleLike(e, story) {
   e.stopPropagation()
   if (!auth.isLoggedIn) { auth.openLogin(); return }
@@ -41,6 +60,14 @@ async function handleLike(e, story) {
 function formatDate(d) {
   if (!d) return ''
   return String(d).slice(0, 10).replace(/-/g, '.')
+}
+
+function parseMeta(content) {
+  try {
+    const p = JSON.parse(content)
+    if (p.__template__) return { company: p.company || '', jobRole: p.jobRole || '' }
+  } catch {}
+  return { company: '', jobRole: '' }
 }
 
 onMounted(load)
@@ -70,16 +97,16 @@ onMounted(load)
       </div>
 
       <div class="seg-tabs">
-        <div class="seg-tab" :class="{ active: sort === 'latest' }" @click="sort = 'latest'">최신순</div>
-        <div class="seg-tab" :class="{ active: sort === 'views' }" @click="sort = 'views'">조회순</div>
-        <div class="seg-tab" :class="{ active: sort === 'likes' }" @click="sort = 'likes'">인기순</div>
+        <div class="seg-tab" :class="{ active: sort === 'latest' }" @click="setSort('latest')">최신순</div>
+        <div class="seg-tab" :class="{ active: sort === 'views' }" @click="setSort('views')">조회순</div>
+        <div class="seg-tab" :class="{ active: sort === 'likes' }" @click="setSort('likes')">인기순</div>
       </div>
 
       <div v-if="stories.length === 0" class="stories-empty">등록된 합격 스토리가 없습니다.</div>
 
       <div class="story-grid" v-else>
         <article
-          v-for="(s, i) in sorted"
+          v-for="(s, i) in paged"
           :key="s.storyId"
           class="story-card"
           :style="{ '--accent': ACCENTS[i % ACCENTS.length] }"
@@ -94,6 +121,10 @@ onMounted(load)
               <span class="sc-date">{{ formatDate(s.createdAt) }}</span>
             </div>
             <h3 class="sc-title">{{ s.title }}</h3>
+            <div v-if="parseMeta(s.content).company || parseMeta(s.content).jobRole" class="sc-meta-tags">
+              <span v-if="parseMeta(s.content).company" class="sc-meta-tag">{{ parseMeta(s.content).company }}</span>
+              <span v-if="parseMeta(s.content).jobRole" class="sc-meta-tag sc-meta-tag-role">{{ parseMeta(s.content).jobRole }}</span>
+            </div>
           </div>
           <div class="sc-footer">
             <span class="sc-views">
@@ -110,6 +141,21 @@ onMounted(load)
             </button>
           </div>
         </article>
+      </div>
+
+      <!-- 페이지네이션 -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button class="pg-btn" :disabled="page === 1" @click="page--">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button
+          v-for="p in totalPages" :key="p"
+          class="pg-num" :class="{ active: page === p }"
+          @click="page = p"
+        >{{ p }}</button>
+        <button class="pg-btn" :disabled="page === totalPages" @click="page++">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
 
     </div>
@@ -235,6 +281,72 @@ onMounted(load)
   overflow: hidden;
   word-break: keep-all;
   min-height: 74px;
+}
+
+.sc-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.sc-meta-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--ink-100, #f3f4f6);
+  color: var(--ink-600, #4b5563);
+}
+.sc-meta-tag-role {
+  background: var(--green-50, #f0fdf4);
+  color: var(--green-700, #15803d);
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 40px;
+  padding-bottom: 48px;
+}
+.pg-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pg-btn:hover:not(:disabled) { border-color: var(--green-500); color: var(--green-500); }
+.pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.pg-num {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-600);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pg-num:hover { border-color: var(--green-500); color: var(--green-500); }
+.pg-num.active {
+  background: var(--green-500, #308860);
+  border-color: var(--green-500, #308860);
+  color: #fff;
+  font-weight: 700;
 }
 
 /* 하단 메타 */

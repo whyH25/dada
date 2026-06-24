@@ -4,7 +4,7 @@
 <mapper namespace="com.ssafy.mvc.dao.StoryDao">
 
     <select id="selectAll" resultType="com.ssafy.mvc.dto.StoryDto">
-        SELECT story_id, title, thumbnail, views, likes, created_at
+        SELECT story_id, title, thumbnail, content, views, likes, created_at
         FROM stories
         WHERE is_deleted = 0
         ORDER BY created_at DESC

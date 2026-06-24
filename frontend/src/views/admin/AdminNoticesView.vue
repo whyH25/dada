@@ -6,7 +6,7 @@ import '@vueup/vue-quill/dist/vue-quill.snow.css'
 const BASE = 'http://localhost:8080/api/admin'
 const OPTS = { credentials: 'include', headers: { 'Content-Type': 'application/json' } }
 
-const CATEGORIES = ['업데이트', '공지', '이벤트']
+const CATEGORIES = ['공지', '이벤트']
 
 const notices = ref([])
 const loading = ref(false)
@@ -85,7 +85,7 @@ onMounted(load)
       </thead>
       <tbody>
         <tr v-for="n in notices" :key="n.noticeId">
-          <td><span class="tbl-badge" :class="'tbl-badge-' + (n.category === '이벤트' ? 'blue' : n.category === '업데이트' ? 'green' : 'gray')">{{ n.category }}</span></td>
+          <td><span class="tbl-badge" :class="n.category === '이벤트' ? 'tbl-badge-blue' : 'tbl-badge-green'">{{ n.category }}</span></td>
           <td>{{ n.title }}</td>
           <td>{{ n.views }}</td>
           <td>{{ formatDate(n.createdAt) }}</td>
