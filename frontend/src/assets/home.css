@@ -3,12 +3,10 @@
    ========================= */
 .hero {
   position: relative;
-  background:
-    url('./images/banner1.png');
-  /* background: linear-gradient(105deg, #2c7a4b 0%, rgba(48, 136, 96, 0.78) 55%, rgba(48, 136, 96, 0.6) 100%), repeating-linear-gradient(135deg, rgb(26, 61, 42) 0px, rgb(26, 61, 42) 2px, rgb(34, 77, 52) 2px, #2c7a4b 4px); */
+  background: url('./images/banner1.png');
   background-size: cover;
   background-position: center;
-  color: #ffffff;
+  color: #2c7a4b;
   padding: 110px 0;
   overflow: hidden;
 }
@@ -34,7 +32,7 @@
   padding: 5px 10px;
   border-radius: 4px;
   margin-bottom: 18px;
-  color: #c8e8d4;
+  color: #2c7a4b;
   text-transform: uppercase;
 }
 .hero-eyebrow .pulse {
@@ -56,18 +54,18 @@
   letter-spacing: -0.035em;
   margin: 0 0 14px;
 }
-.hero-title span { color: #6cc492; }
+.hero-title span { color: #2c7a4b; }
 .hero-desc {
   font-size: 15.5px;
   line-height: 1.65;
-  color: #d3e9da;
+  color: #2c7a4b;
   margin: 0 0 28px;
   max-width: 540px;
 }
 .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .hero-btn-primary {
-  background: #ffffff;
-  color: var(--green-650);
+  background: var(--green-500);
+  color: #ffffff;
   padding: 13px 24px;
   font-size: 14.5px;
   font-weight: 700;
@@ -77,7 +75,7 @@
   align-items: center;
   gap: 8px;
 }
-.hero-btn-primary:hover { background: #f3f9f5; }
+.hero-btn-primary:hover { background: var(--green-650); }
 .hero-btn-secondary {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.3);
@@ -180,10 +178,6 @@
 .fc-a { background: #e3f1e8; }
 .fc-b { background: #eef5e3; }
 .fc-c { background: #ddeee8; }
-/* 색상 변형 — 세 카드를 또렷하게 구분, 그린 계열 내에서 톤 분리 */
-/* .fc-a { background: linear-gradient(150deg, #d4ebdc 0%, #b8ddc7 100%); }
-.fc-b { background: linear-gradient(150deg, #e0ebc8 0%, #cadfa8 100%); }
-.fc-c { background: linear-gradient(150deg, #c9e4dd 0%, #a9d2c7 100%); } */
 .feature-card-title {
   position: relative;
   z-index: 2;
