@@ -86,12 +86,12 @@ onMounted(async () => {
 
 <template>
   <main class="page active" id="page-home">
-    <div class="container">
-      <!-- Hero -->
-      <section class="hero">
+    <!-- Hero - full width -->
+    <section class="hero">
+      <div class="container">
         <div class="hero-inner">
           <div class="hero-eyebrow"><span class="pulse"></span>NEW | 실전형 다대다 면접</div>
-          <h1 class="hero-title">AI 기반 <span>다대다</span><br />면접 시뮬레이션</h1>
+          <h1 class="hero-title">AI 기반 <span>다대다</span> 면접 시뮬레이션</h1>
           <p class="hero-desc">
             혼자 준비하기 어려운 면접, 이제 AI와 함께하세요. AI 면접관과 AI 지원자가 함께하는 실전형 시뮬레이션으로 실제 면접 분위기와 맞춤형 피드백을 경험해보세요.
           </p>
@@ -102,7 +102,9 @@ onMounted(async () => {
             </button>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+    <div class="container">
       <!-- Feature cards -->
       <section class="feature-cards">
         <div class="feature-card fc-a" @click="go('/schedule')">

@@ -4,13 +4,12 @@
 .hero {
   position: relative;
   background:
-    linear-gradient(105deg, rgba(20,55,32,0.94) 0%, rgba(48,136,96,0.78) 55%, rgba(48,136,96,0.6) 100%),
-    repeating-linear-gradient(135deg, #1a3d2a 0 2px, #224d34 2px 4px);
+    url('./images/banner1.png');
+  background-size: cover;
+  background-position: center;
   color: #ffffff;
-  border-radius: var(--radius-md);
-  padding: 56px 56px;
+  padding: 110px 0;
   overflow: hidden;
-  margin-top: 24px;
 }
 .hero::before {
   content: "";
@@ -51,7 +50,7 @@
 .hero-title {
   font-family: var(--font-display);
   font-size: 44px;
-  font-weight: 800;
+  /* font-weight: 800; */
   line-height: 1.18;
   letter-spacing: -0.035em;
   margin: 0 0 14px;
