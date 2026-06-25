@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth.js'
 import { getBookmarks, toggleBookmark } from '../api/scheduleApi.js'
+import { API_BASE_URL } from '../config/api.js'
 
 const auth = useAuthStore()
 
@@ -16,7 +17,7 @@ const schedules = ref([])
 
 async function loadSchedules() {
   try {
-    const res = await fetch('http://localhost:8080/api/job-schedules', { credentials: 'include' })
+    const res = await fetch(`${API_BASE_URL}/job-schedules`, { credentials: 'include' })
     if (res.ok) {
       const json = await res.json()
       schedules.value = json.data || []

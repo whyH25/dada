@@ -10,7 +10,8 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 
-const SOCIAL_BASE = 'http://localhost:8080'
+import { SERVER_BASE_URL } from '../config/api.js'
+const SOCIAL_BASE = SERVER_BASE_URL
 function loginWithKakao() { window.location.href = `${SOCIAL_BASE}/oauth2/authorization/kakao` }
 function loginWithGoogle() { window.location.href = `${SOCIAL_BASE}/oauth2/authorization/google` }
 

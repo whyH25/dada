@@ -3,7 +3,8 @@ import { ref, onMounted } from 'vue'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
-const BASE = 'http://localhost:8080/api/admin'
+import { API_BASE_URL } from '../../config/api.js'
+const BASE = `${API_BASE_URL}/admin`
 const OPTS = { credentials: 'include', headers: { 'Content-Type': 'application/json' } }
 
 const CATEGORIES = ['공지', '이벤트']

@@ -6,6 +6,7 @@ import { useDataStore } from '../stores/data.js'
 import { useAuthStore } from '../stores/auth.js'
 import { updateRoomStatusApi } from '../api/interviewRoomApi.js'
 import { toast } from '../utils/toast.js'
+import { API_BASE_URL } from '../config/api.js'
 
 const router = useRouter()
 const flow = useFlowStore()
@@ -197,7 +198,7 @@ async function sendStt(chunks, scenarioId, answerSec) {
     // 회사명/면접관·지원자 이름처럼 다른 언어 고유명사가 섞여도 인식이 안 끊기도록 힌트로 전달
     const phraseHints = [r.value?.co, ...Object.values(flow.personaNames)].filter(Boolean).join(',')
     if (phraseHints) form.append('phraseHints', phraseHints)
-    await fetch('http://localhost:8080/api/speech/stt', {
+    await fetch(`${API_BASE_URL}/speech/stt`, {
       method: 'POST',
       credentials: 'include',
       body: form,
@@ -230,7 +231,7 @@ async function playTurn(index) {
   }
 
   try {
-    const res = await fetch('http://localhost:8080/api/speech/tts', {
+    const res = await fetch(`${API_BASE_URL}/speech/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -530,7 +531,7 @@ function handleBeforeUnload() {
   if (!statusFinalized.value && flow.roomId) {
     statusFinalized.value = true
     // keepalive: true → 페이지 언로드 중에도 요청 완료 보장
-    fetch(`http://localhost:8080/api/interview-rooms/${flow.roomId}/status`, {
+    fetch(`${API_BASE_URL}/interview-rooms/${flow.roomId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

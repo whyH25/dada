@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const BASE = 'http://localhost:8080/api/admin'
+import { API_BASE_URL } from '../../config/api.js'
+const BASE = `${API_BASE_URL}/admin`
 const OPTS = { credentials: 'include', headers: { 'Content-Type': 'application/json' } }
 
 const FIXED_QUESTIONS = [

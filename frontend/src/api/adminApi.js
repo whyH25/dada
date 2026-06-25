@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api/admin'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = `${API_BASE_URL}/admin`
 const opts = { credentials: 'include', headers: { 'Content-Type': 'application/json' } }
 
 async function request(method, path, body) {

@@ -1,5 +1,7 @@
+import { API_BASE_URL } from '../config/api.js'
+
 export async function loginApi(userEmail, userPwd) {
-  const response = await fetch('http://localhost:8080/api/users/login', {
+  const response = await fetch(`${API_BASE_URL}/users/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -15,7 +17,7 @@ export async function loginApi(userEmail, userPwd) {
 }
 
 export async function signupApi(userData) {
-  const response = await fetch('http://localhost:8080/api/users/signup', {
+  const response = await fetch(`${API_BASE_URL}/users/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -29,7 +31,7 @@ export async function signupApi(userData) {
 }
 
 export async function getMeApi() {
-  const response = await fetch('http://localhost:8080/api/users/me', {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
     credentials: 'include',
   })
   if (!response.ok) return null
@@ -38,14 +40,14 @@ export async function getMeApi() {
 }
 
 export async function logoutApi() {
-  await fetch('http://localhost:8080/api/users/logout', {
+  await fetch(`${API_BASE_URL}/users/logout`, {
     method: 'POST',
     credentials: 'include',
   })
 }
 
 export async function deleteUserApi() {
-  const response = await fetch('http://localhost:8080/api/users/me', {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
     method: 'DELETE',
     credentials: 'include',
   })
@@ -55,7 +57,7 @@ export async function deleteUserApi() {
 }
 
 export async function verifyPasswordApi(password) {
-  const response = await fetch('http://localhost:8080/api/users/me/verify-password', {
+  const response = await fetch(`${API_BASE_URL}/users/me/verify-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -67,7 +69,7 @@ export async function verifyPasswordApi(password) {
 }
 
 export async function updateUserApi(updateData) {
-  const response = await fetch('http://localhost:8080/api/users/me', {
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -79,7 +81,7 @@ export async function updateUserApi(updateData) {
 }
 
 export async function findPasswordApi(email) {
-  const response = await fetch('http://localhost:8080/api/users/find-password', {
+  const response = await fetch(`${API_BASE_URL}/users/find-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
@@ -90,7 +92,7 @@ export async function findPasswordApi(email) {
 }
 
 export async function sendVerificationCodeApi(email) {
-  const response = await fetch('http://localhost:8080/api/email/send-code', {
+  const response = await fetch(`${API_BASE_URL}/email/send-code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
@@ -101,7 +103,7 @@ export async function sendVerificationCodeApi(email) {
 }
 
 export async function verifyCodeApi(email, code) {
-  const response = await fetch('http://localhost:8080/api/email/verify-code', {
+  const response = await fetch(`${API_BASE_URL}/email/verify-code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, code }),

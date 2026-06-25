@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
+import { API_BASE_URL } from '../config/api.js'
 
-const BASE = 'http://localhost:8080/api/admin'
+const BASE = `${API_BASE_URL}/admin`
 const OPTS = { credentials: 'include', headers: { 'Content-Type': 'application/json' } }
 
 // restoreSession이 여러 곳(main.js, 라우터 가드)에서 호출돼도 실제 API 호출은 한 번만 일어나도록 캐싱

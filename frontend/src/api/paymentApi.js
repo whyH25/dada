@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api/payments'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = `${API_BASE_URL}/payments`
 const OPTS = { credentials: 'include' }
 
 async function json(res) {

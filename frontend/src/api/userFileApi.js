@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api/user-files'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = `${API_BASE_URL}/user-files`
 
 // 마이페이지 등록 서류 목록 (type: 'resume' | 'portfolio')
 export async function fetchMyFiles(type) {

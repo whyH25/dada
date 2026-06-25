@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api/job-schedules'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = `${API_BASE_URL}/job-schedules`
 const OPTS = { credentials: 'include' }
 
 export async function fetchJobSchedules() {

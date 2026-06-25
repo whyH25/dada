@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api/stories'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = `${API_BASE_URL}/stories`
 const OPTS = { credentials: 'include' }
 
 export async function fetchStories() {

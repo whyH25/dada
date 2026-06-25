@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = API_BASE_URL
 
 export async function fetchMyInterviewRooms() {
   const res = await fetch(`${BASE}/interview-rooms`, { credentials: 'include' })

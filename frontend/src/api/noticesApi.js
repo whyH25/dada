@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8080/api/notices'
+import { API_BASE_URL } from '../config/api.js'
+const BASE = `${API_BASE_URL}/notices`
 const OPTS = { credentials: 'include' }
 
 export async function fetchNotices() {
