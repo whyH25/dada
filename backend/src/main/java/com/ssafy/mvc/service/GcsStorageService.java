@@ -56,6 +56,23 @@ public class GcsStorageService {
         return "https://storage.googleapis.com/" + thumbnailBucket + "/" + objectName;
     }
 
+    // STT 임시 파일을 공개 버킷에 업로드하고 gs:// URI 반환 (API 키로도 STT 접근 가능)
+    public String uploadBytes(String prefix, byte[] data, String contentType) {
+        String objectName = prefix + "/" + UUID.randomUUID() + ".webm";
+        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(thumbnailBucket, objectName))
+                .setContentType(contentType)
+                .build();
+        storage.create(blobInfo, data);
+        return "gs://" + thumbnailBucket + "/" + objectName;
+    }
+
+    // uploadBytes로 저장된 공개 버킷 gs:// URI 객체 삭제
+    public void deleteSttTemp(String gsUri) {
+        if (gsUri == null || gsUri.isBlank()) return;
+        String objectName = gsUri.substring(("gs://" + thumbnailBucket + "/").length());
+        storage.delete(BlobId.of(thumbnailBucket, objectName));
+    }
+
     // 마이페이지에서 원본 삭제 시 GCS 객체도 함께 제거
     public void delete(String gsUri) {
         if (gsUri == null || gsUri.isBlank()) return;

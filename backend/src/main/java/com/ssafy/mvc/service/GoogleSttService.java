@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -18,22 +17,27 @@ import java.util.List;
 public class GoogleSttService {
 
     private final RestClient googleSttRestClient;
+    private final GcsStorageService gcsStorageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${google.api-key}")
     private String apiKey;
 
-    public GoogleSttService(@Qualifier("googleSttRestClient") RestClient googleSttRestClient) {
+    public GoogleSttService(@Qualifier("googleSttRestClient") RestClient googleSttRestClient,
+                            GcsStorageService gcsStorageService) {
         this.googleSttRestClient = googleSttRestClient;
+        this.gcsStorageService = gcsStorageService;
     }
 
     // 오디오 바이트(WebM/Opus) → 텍스트 변환 (languageCode 예: ko-KR, en-US)
     // phraseHints: 회사명/면접관·지원자 이름처럼 다른 언어 고유명사가 섞여도 인식이 끊기지 않도록 주는 힌트
     public String transcribe(byte[] audioBytes, String languageCode, List<String> phraseHints) {
+        // 인라인 base64는 ~1분 제한이 있어 GCS에 업로드 후 URI로 전달
+        String gcsUri = null;
         try {
-            String requestBody = buildRequest(audioBytes, languageCode, phraseHints);
+            gcsUri = gcsStorageService.uploadBytes("stt-temp", audioBytes, "audio/webm");
+            String requestBody = buildRequest(gcsUri, languageCode, phraseHints);
 
-            // longrunningrecognize: 60초 초과 오디오도 처리 가능한 비동기 API
             String startResponse = googleSttRestClient.post()
                     .uri("/v1/speech:longrunningrecognize?key=" + apiKey)
                     .body(requestBody)
@@ -48,6 +52,10 @@ public class GoogleSttService {
         } catch (Exception e) {
             log.error("Google STT 호출 실패: {}", e.getMessage());
             throw new RuntimeException("STT 변환에 실패했습니다.", e);
+        } finally {
+            if (gcsUri != null) {
+                try { gcsStorageService.deleteSttTemp(gcsUri); } catch (Exception ignore) {}
+            }
         }
     }
 
@@ -69,9 +77,7 @@ public class GoogleSttService {
         throw new RuntimeException("STT 작업 타임아웃 (7.5분 초과)");
     }
 
-    private String buildRequest(byte[] audioBytes, String languageCode, List<String> phraseHints) throws Exception {
-        String base64Audio = Base64.getEncoder().encodeToString(audioBytes);
-
+    private String buildRequest(String gcsUri, String languageCode, List<String> phraseHints) throws Exception {
         ObjectNode root = objectMapper.createObjectNode();
         ObjectNode config = root.putObject("config");
         config.put("encoding", "WEBM_OPUS");
@@ -83,7 +89,8 @@ public class GoogleSttService {
             ArrayNode phrases = contexts.addObject().putArray("phrases");
             phraseHints.forEach(phrases::add);
         }
-        root.putObject("audio").put("content", base64Audio);
+        // GCS URI 사용: 인라인 base64는 ~1분 제한, GCS URI는 최대 480분까지 지원
+        root.putObject("audio").put("uri", gcsUri);
 
         return objectMapper.writeValueAsString(root);
     }
