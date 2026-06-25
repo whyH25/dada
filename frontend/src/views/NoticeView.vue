@@ -61,7 +61,7 @@ onMounted(async () => {
         <hr class="nd-divider" />
         <div class="nd-content ql-content" v-html="notice.content"></div>
         <div class="nd-actions">
-          <button class="btn btn-ghost" @click="router.push('/notices')">목록으로</button>
+          <button class="btn btn-secondary" @click="router.push('/notices')">목록으로 →</button>
         </div>
       </article>
 
@@ -113,5 +113,5 @@ onMounted(async () => {
 }
 .nd-content :deep(a) { color: var(--green-600, #16a34a); text-decoration: underline; }
 .nd-content :deep(img) { max-width: 100%; border-radius: 8px; margin: 8px 0; }
-.nd-actions { margin-top: 32px; }
+.nd-actions { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--ink-150, #e5e7eb); text-align: right; }
 </style>

@@ -88,18 +88,23 @@ onMounted(load)
 
       <!-- 이벤트 배너 -->
       <div v-if="banner" class="story-banner" @click="router.push('/notices/' + banner.noticeId)">
+        <div class="story-banner-blob b1"></div>
+        <div class="story-banner-blob b2"></div>
+        <div class="story-banner-blob b3"></div>
         <div class="story-banner-inner">
           <span class="story-banner-tag">이벤트</span>
-          <span class="story-banner-title">합격 후기 공유이벤트!</span>
-          <span class="story-banner-sub">{{ banner.title }}</span>
+          <div class="story-banner-texts">
+            <span class="story-banner-title">합격 후기 공유이벤트!</span>
+            <span class="story-banner-sub">{{ banner.title }}</span>
+          </div>
         </div>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <svg class="story-banner-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </div>
 
-      <div class="seg-tabs">
-        <div class="seg-tab" :class="{ active: sort === 'latest' }" @click="setSort('latest')">최신순</div>
-        <div class="seg-tab" :class="{ active: sort === 'views' }" @click="setSort('views')">조회순</div>
-        <div class="seg-tab" :class="{ active: sort === 'likes' }" @click="setSort('likes')">인기순</div>
+      <div class="sort-row">
+        <button class="sort-btn" :class="{ active: sort === 'latest' }" @click="setSort('latest')">최신순</button>
+        <button class="sort-btn" :class="{ active: sort === 'views' }" @click="setSort('views')">조회순</button>
+        <button class="sort-btn" :class="{ active: sort === 'likes' }" @click="setSort('likes')">인기순</button>
       </div>
 
       <div v-if="stories.length === 0" class="stories-empty">등록된 합격 스토리가 없습니다.</div>
@@ -165,30 +170,91 @@ onMounted(load)
 <style scoped>
 /* 이벤트 배너 */
 .story-banner {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(120deg, #d1fae5 0%, #a7f3d0 50%, #6ee7b7 100%);
-  color: #065f46;
-  border-radius: 12px;
-  padding: 16px 20px;
+  background: linear-gradient(160deg, #e8f5ed 0%, #d0edda 60%, #c0e6cc 100%);
+  border-radius: 16px;
+  padding: 18px 24px;
   margin-bottom: 20px;
   cursor: pointer;
   transition: filter 0.15s;
 }
-.story-banner:hover { filter: brightness(0.96); }
-.story-banner-inner { display: flex; align-items: center; gap: 12px; }
+.story-banner:hover { filter: brightness(0.97); }
+
+/* 배경 원형 블롭 */
+.story-banner-blob {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.story-banner-blob.b1 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, #a8dfc0 0%, transparent 70%);
+  bottom: -80px; left: -40px;
+  opacity: 0.65;
+}
+.story-banner-blob.b2 {
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, #9dd8b8 0%, transparent 70%);
+  top: -60px; left: 35%;
+  opacity: 0.5;
+}
+.story-banner-blob.b3 {
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, #b2e5c8 0%, transparent 70%);
+  top: -80px; right: -30px;
+  opacity: 0.6;
+}
+
+.story-banner-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.story-banner-texts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .story-banner-tag {
-  background: #059669;
+  flex-shrink: 0;
+  background: #286c4a;
   color: #fff;
   font-size: 11px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 99px;
   letter-spacing: 0.05em;
 }
-.story-banner-title { font-size: 15px; font-weight: 700; color: #064e3b; }
-.story-banner-sub   { font-size: 13px; color: #047857; }
+.story-banner-title { font-size: 15px; font-weight: 800; color: #1a3d28; }
+.story-banner-sub   { font-size: 13px; color: #2d6a47; }
+.story-banner-arrow { position: relative; z-index: 1; color: #2d6a47; flex-shrink: 0; }
+
+/* 정렬 탭 — 오른쪽 끝 정렬 */
+.sort-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.sort-btn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-400, #9ca3af);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.sort-btn:hover { color: var(--ink-700); }
+.sort-btn.active {
+  color: var(--ink-900, #111827);
+  font-weight: 700;
+}
 
 /* 갤러리 그리드 */
 .story-grid {

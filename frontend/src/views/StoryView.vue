@@ -45,6 +45,19 @@ async function handleLike() {
   } catch { /* 무시 */ }
 }
 
+const copied = ref(false)
+async function handleShare() {
+  const url = window.location.href
+  const title = story.value?.title ?? '합격 스토리'
+  if (navigator.share) {
+    try { await navigator.share({ title, url }) } catch { /* 취소 */ }
+  } else {
+    await navigator.clipboard.writeText(url)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  }
+}
+
 function formatDate(d) {
   if (!d) return ''
   return String(d).slice(0, 10).replace(/-/g, '.')
@@ -193,6 +206,16 @@ watch(() => route.params.id, () => { thumbStyle.value = {}; load() })
               </svg>
               좋아요 {{ story.likes }}
             </button>
+            <button class="btn btn-secondary sd-share-btn" @click="handleShare">
+              <svg v-if="!copied" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              {{ copied ? '링크 복사됨!' : '공유' }}
+            </button>
           </div>
 
           <!-- CTA -->
@@ -279,6 +302,8 @@ watch(() => route.params.id, () => { thumbStyle.value = {}; load() })
   gap: 10px;
   margin-top: 32px;
 }
+.sd-share-btn { transition: background 0.15s, color 0.15s; }
+.sd-share-btn:hover { border-color: var(--green-500); color: var(--green-500); }
 
 /* CTA */
 .sd-cta {

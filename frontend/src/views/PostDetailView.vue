@@ -101,10 +101,6 @@ function formatDate(d) {
   return String(d).slice(0, 16).replace('T', ' ')
 }
 
-function formatDateShort(d) {
-  if (!d) return ''
-  return String(d).slice(0, 10).replace(/-/g, '.')
-}
 
 const isOwner = () => auth.user && post.value && auth.user.userId === post.value.userId
 const isEdited = computed(() => {
@@ -144,13 +140,13 @@ onMounted(load)
           <h1 class="pd-title">{{ post.title }}</h1>
           <div class="pd-meta-row">
             <div class="pd-meta">
-              <span>{{ post.authorName }}</span>
-              <span class="dot-sep"></span>
+              <span class="pd-meta-author">{{ post.authorName }}</span>
+              <span class="pd-dot"></span>
               <span>{{ formatDate(post.createdAt) }}</span>
               <span v-if="isEdited" class="edited-mark">(수정됨)</span>
-              <span class="dot-sep"></span>
+              <span class="pd-dot"></span>
               <span>조회 {{ post.views }}</span>
-              <span class="dot-sep"></span>
+              <span class="pd-dot"></span>
               <span>댓글 {{ post.commentCount }}</span>
             </div>
             <div v-if="isOwner()" class="pd-owner-actions">
@@ -159,6 +155,8 @@ onMounted(load)
             </div>
           </div>
         </div>
+
+        <hr class="pd-divider">
 
         <!-- 본문 -->
         <div class="pd-body ql-content" v-html="post.content"></div>
@@ -177,8 +175,26 @@ onMounted(load)
 
         <!-- 댓글 -->
         <div class="pd-comments">
-          <h3 class="pd-comments-title">댓글 {{ comments.length }}</h3>
+          <h3 class="pd-comments-title">댓글 <span class="pd-comments-count">{{ comments.length }}</span></h3>
 
+          <!-- 댓글 입력 (목록 위에) -->
+          <div class="pd-comment-write">
+            <label class="ci-anon">
+              <input type="checkbox" v-model="isAnonymous" />
+              <span>익명</span>
+            </label>
+            <input
+              v-model="commentText"
+              class="ci-input"
+              placeholder="댓글을 작성해보세요."
+              @keydown.enter="submitComment"
+            />
+            <button class="ci-submit" :disabled="submittingComment" @click="submitComment">
+              {{ submittingComment ? '...' : '등록' }}
+            </button>
+          </div>
+
+          <!-- 댓글 목록 -->
           <div v-if="comments.length === 0" class="pd-comment-empty">
             첫 댓글을 남겨보세요.
           </div>
@@ -210,45 +226,11 @@ onMounted(load)
               <button class="cr-del" @click="handleDeleteComment(c.commentId)">삭제</button>
             </div>
           </div>
-
-          <!-- 댓글 입력 -->
-          <div class="pd-comment-input">
-            <textarea
-              v-model="commentText"
-              class="ci-textarea"
-              placeholder="댓글을 입력하세요"
-              rows="3"
-              @keydown.ctrl.enter="submitComment"
-            ></textarea>
-            <div class="ci-footer">
-              <label class="ci-anon">
-                <input type="checkbox" v-model="isAnonymous" />
-                <span>익명</span>
-              </label>
-              <button class="ci-submit" :disabled="submittingComment" @click="submitComment">
-                {{ submittingComment ? '등록 중...' : '댓글 등록' }}
-              </button>
-            </div>
-          </div>
         </div>
 
+        <!-- 목록으로 -->
         <div class="pd-actions">
-          <button class="btn btn-ghost" @click="router.push('/community/board')">목록으로</button>
-        </div>
-
-        <!-- 연관 게시글 -->
-        <div v-if="related.length > 0" class="pd-related">
-          <h3 class="pd-related-title">더보기</h3>
-          <div class="related-list">
-            <div
-              v-for="r in related" :key="r.postId"
-              class="related-item"
-              @click="router.push('/community/board/' + r.postId)"
-            >
-              <span class="related-title">{{ r.title }}</span>
-              <span class="related-meta">{{ formatDateShort(r.createdAt) }}</span>
-            </div>
-          </div>
+          <button class="btn btn-secondary" @click="router.push('/community/board')">목록으로 →</button>
         </div>
 
       </template>
@@ -257,191 +239,168 @@ onMounted(load)
 </template>
 
 <style scoped>
-.pd-loading { text-align: center; padding: 80px 0; color: var(--ink-400); }
+.pd-loading { text-align: center; padding: 80px 0; color: #9aa6a0; }
 
-.pd-not-found {
-  text-align: center;
-  padding: 80px 0;
-  color: var(--ink-500);
-}
+.pd-not-found { text-align: center; padding: 80px 0; color: #9aa6a0; }
 .pd-not-found-icon { font-size: 40px; margin-bottom: 16px; }
-.pd-not-found h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--ink-800); }
+.pd-not-found h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #14241b; }
 .pd-not-found p { font-size: 14px; margin-bottom: 24px; }
 
+/* ── 헤더 ── */
 .pd-head { padding: 8px 0 16px; }
-.pd-badges { margin-bottom: 10px; }
-.pd-title { font-size: 22px; font-weight: 800; color: var(--ink-900); line-height: 1.4; margin-bottom: 12px; }
+.pd-badges { margin-bottom: 12px; }
+.pd-title {
+  font-size: 26px; font-weight: 800;
+  color: #14241b; line-height: 1.4;
+  margin: 0 0 16px; letter-spacing: -0.02em;
+}
 .pd-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.pd-meta { font-size: 13px; color: var(--ink-400); display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
-.edited-mark { font-size: 11px; color: var(--ink-400); font-weight: 400; }
+.pd-meta {
+  font-size: 13px; color: #9aa6a0;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.pd-meta-author { font-weight: 600; color: #4b5563; }
+.pd-dot { width: 3px; height: 3px; border-radius: 50%; background: #d0d6d3; flex-shrink: 0; }
+.edited-mark { font-size: 11px; color: #9aa6a0; font-weight: 400; }
+
 .pd-owner-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .pd-action-btn {
-  padding: 4px 10px; font-size: 12px; border-radius: 6px;
-  background: none; border: 1px solid var(--border, #e5e7eb);
-  color: var(--ink-500); cursor: pointer; transition: all 0.15s;
+  padding: 5px 12px; font-size: 12px; border-radius: 7px;
+  background: none; border: 1px solid #e5e9e7;
+  color: #6b7280; cursor: pointer; font-family: inherit; transition: all 0.15s;
 }
-.pd-action-btn:hover { background: var(--ink-50); }
-.pd-action-btn.danger { color: #ef4444; border-color: #fecaca; }
-.pd-action-btn.danger:hover { background: #fef2f2; }
-.pd-divider { border: none; border-top: 1px solid var(--ink-150, #e5e7eb); margin: 20px 0; }
+.pd-action-btn:hover { background: #f7f9f8; }
+.pd-action-btn.danger { color: #e0667a; border-color: #f5cdd4; }
+.pd-action-btn.danger:hover { background: #fdf1f3; }
 
+/* ── 구분선 ── */
+.pd-divider { border: none; border-top: 1px solid #eef1ef; margin: 4px 0 28px; }
+
+/* ── 본문 ── */
 .pd-body {
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--ink-800);
-  min-height: 120px;
-  margin-bottom: 8px;
+  font-size: 15.5px; line-height: 1.85;
+  color: #2a3a31; min-height: 120px; margin-bottom: 8px;
 }
-.pd-body :deep(h1), .pd-body :deep(h2), .pd-body :deep(h3) { font-weight: 700; margin: 18px 0 8px; }
-.pd-body :deep(p) { margin: 0 0 10px; }
-.pd-body :deep(ul), .pd-body :deep(ol) { padding-left: 24px; margin-bottom: 10px; }
-.pd-body :deep(blockquote) { border-left: 4px solid var(--green-400, #4ade80); padding-left: 14px; margin: 14px 0; color: var(--ink-600); font-style: italic; }
-.pd-body :deep(pre) { background: #f8f9fa; border-radius: 6px; padding: 12px 14px; font-size: 13px; overflow-x: auto; margin-bottom: 12px; }
-.pd-body :deep(a) { color: var(--green-600, #16a34a); text-decoration: underline; }
+.pd-body :deep(p) { margin: 0 0 16px; }
+.pd-body :deep(h1), .pd-body :deep(h2), .pd-body :deep(h3) { font-weight: 700; margin: 20px 0 8px; color: #14241b; }
+.pd-body :deep(ul), .pd-body :deep(ol) { padding-left: 24px; margin-bottom: 12px; }
+.pd-body :deep(blockquote) { border-left: 4px solid #2f8f63; padding-left: 14px; margin: 14px 0; color: #5d7a66; font-style: italic; }
+.pd-body :deep(pre) { background: #f7f9f8; border-radius: 8px; padding: 12px 14px; font-size: 13px; overflow-x: auto; margin-bottom: 12px; }
+.pd-body :deep(a) { color: #2f8f63; text-decoration: underline; }
 
-.pd-like-row { display: flex; justify-content: center; padding: 8px 0; }
+/* ── 좋아요 ── */
+.pd-like-row { display: flex; justify-content: center; padding: 28px 0; }
 .like-btn {
-  display: flex; align-items: center; gap: 6px;
-  padding: 8px 20px; border-radius: 99px;
-  border: 1px solid var(--border, #e5e7eb);
-  background: #fff; cursor: pointer; font-size: 14px;
-  color: var(--ink-500); transition: all 0.15s;
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 24px; border-radius: 999px;
+  border: 1px solid #e5e9e7;
+  background: #fff; cursor: pointer;
+  font-size: 14px; font-weight: 600;
+  color: #6b7280; font-family: inherit;
+  transition: all 0.15s;
 }
-.like-btn.on { background: #fef2f2; color: #ef4444; border-color: #fecaca; }
-.like-btn:hover { border-color: #ef4444; color: #ef4444; }
+.like-btn.on { background: #fdf1f3; color: #e0667a; border-color: #f5cdd4; }
+.like-btn:hover { border-color: #e0667a; color: #e0667a; }
 
-/* 댓글 */
-.pd-comments { margin: 8px 0 24px; }
-.pd-comments-title { font-size: 16px; font-weight: 700; color: var(--ink-900); margin-bottom: 16px; }
-.pd-comment-empty { color: var(--ink-400); font-size: 14px; padding: 16px 0; }
+/* ── 댓글 ── */
+.pd-comments {
+  background: #f7f9f8;
+  border-radius: 16px;
+  padding: 26px 24px;
+  margin-top: 16px;
+}
+.pd-comments-title { font-size: 15px; font-weight: 700; color: #14241b; margin: 0 0 18px; }
+.pd-comments-count { color: #2f8f63; }
+.pd-comment-empty { color: #9aa6a0; font-size: 14px; padding: 16px 0; }
 
 .pd-comment {
-  display: flex;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--ink-100, #f3f4f6);
+  display: flex; gap: 12px;
+  padding: 14px 16px; margin-bottom: 8px;
+  background: #fff; border-radius: 12px;
   align-items: flex-start;
 }
 .cr-avatar {
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--green-100, #d1fae5);
-  color: var(--green-700, #15803d);
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #dcefe3; color: #15803d;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700; flex-shrink: 0;
 }
-.cr-content { flex: 1; }
-.cr-name { font-size: 13px; font-weight: 600; color: var(--ink-700); margin-bottom: 4px; }
-.cr-time { font-size: 11px; font-weight: 400; color: var(--ink-400); margin-left: 8px; }
-.cr-text { font-size: 14px; color: var(--ink-800); line-height: 1.6; }
+.cr-content { flex: 1; min-width: 0; }
+.cr-name { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.cr-time { font-size: 11px; font-weight: 400; color: #9aa6a0; margin-left: 8px; }
+.cr-text { font-size: 14px; color: #2a3a31; line-height: 1.6; }
 
 .cr-edit-textarea {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: vertical;
-  outline: none;
-  box-sizing: border-box;
+  width: 100%; padding: 8px 10px;
+  border: 1px solid #d8e6dc; border-radius: 8px;
+  font-size: 14px; font-family: inherit;
+  resize: vertical; outline: none; box-sizing: border-box;
 }
 .cr-edit-actions { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.cr-edit-anon { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-600); cursor: pointer; margin-right: auto; }
+.cr-edit-anon { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #9aa6a0; cursor: pointer; margin-right: auto; }
 .cr-edit-btn {
-  padding: 4px 12px; font-size: 12px; border-radius: 6px;
-  border: 1px solid var(--border, #e5e7eb);
-  background: var(--green-500, #308860); color: #fff;
-  cursor: pointer; font-weight: 600;
+  padding: 4px 12px; font-size: 12px; border-radius: 7px;
+  border: none; background: #2f8f63; color: #fff;
+  cursor: pointer; font-weight: 600; font-family: inherit;
 }
-.cr-edit-btn.cancel { background: #fff; color: var(--ink-500); }
+.cr-edit-btn.cancel { background: #fff; color: #6b7280; border: 1px solid #e5e9e7; }
 
-.cr-owner-btns { display: flex; flex-direction: row; gap: 4px; flex-shrink: 0; align-items: center; }
-.cr-edit-action {
-  font-size: 12px; color: var(--ink-400); background: none;
-  border: none; cursor: pointer; padding: 2px 6px;
-}
-.cr-edit-action:hover { color: var(--ink-700); }
-.cr-del {
-  font-size: 12px; color: var(--ink-400); background: none;
-  border: none; cursor: pointer; padding: 2px 6px;
-}
-.cr-del:hover { color: #ef4444; }
+.cr-owner-btns { display: flex; gap: 4px; flex-shrink: 0; align-items: center; }
+.cr-edit-action { font-size: 12px; color: #9aa6a0; background: none; border: none; cursor: pointer; padding: 2px 6px; }
+.cr-edit-action:hover { color: #374151; }
+.cr-del { font-size: 12px; color: #9aa6a0; background: none; border: none; cursor: pointer; padding: 2px 6px; }
+.cr-del:hover { color: #e0667a; }
 
-/* 댓글 입력 */
-.pd-comment-input {
-  display: block;
-  width: 100%;
-  margin-top: 20px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 10px;
-  overflow: hidden;
-  box-sizing: border-box;
+/* ── 댓글 입력 ── */
+.pd-comment-write {
+  display: flex; align-items: center; gap: 10px;
+  background: #fff; border: 1.5px solid #d8e6dc;
+  border-radius: 12px; padding: 6px 6px 6px 16px;
+  margin-bottom: 22px; transition: border-color 0.15s;
 }
-.ci-textarea {
-  display: block;
-  width: 100%;
-  padding: 12px 14px;
-  border: none;
-  outline: none;
-  resize: none;
-  font-size: 14px;
-  font-family: inherit;
-  line-height: 1.6;
-  box-sizing: border-box;
+.pd-comment-write:focus-within { border-color: #2f8f63; }
+.ci-anon {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: #9aa6a0; cursor: pointer;
+  user-select: none; flex-shrink: 0; white-space: nowrap;
 }
-.ci-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 8px 12px;
-  border-top: 1px solid var(--ink-100, #f3f4f6);
-  background: var(--ink-50, #f8f9fa);
-  box-sizing: border-box;
+.ci-anon input { cursor: pointer; accent-color: #2f8f63; }
+.ci-input {
+  flex: 1; border: none; outline: none;
+  font-size: 14px; font-family: inherit;
+  color: #14241b; background: transparent; padding: 9px 0;
 }
-.ci-anon { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-600); cursor: pointer; user-select: none; }
-.ci-anon input { cursor: pointer; }
+.ci-input::placeholder { color: #aab5ae; }
 .ci-submit {
-  padding: 6px 16px; font-size: 13px; font-weight: 600;
-  background: var(--green-500, #308860); color: #fff;
-  border: none; border-radius: 6px; cursor: pointer;
-  white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
+  -webkit-appearance: none; appearance: none; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  height: 40px; padding: 0 20px; margin: 0;
+  font-size: 13px; font-weight: 700; font-family: inherit;
+  background: #2f8f63; color: #fff;
+  border: none; border-radius: 9px; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0; line-height: 1;
+  transition: background 0.15s;
 }
-.ci-submit:hover { background: var(--green-600, #256b4a); }
+.ci-submit:hover { background: #268054; }
 .ci-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.pd-actions { margin-top: 8px; }
+/* ── 목록으로 ── */
+.pd-actions {
+  margin-top: 32px; padding-top: 20px;
+  border-top: 1px solid #eef1ef;
+  text-align: right; padding-bottom: 36px;
+}
+.pd-actions .btn {
+  padding: 10px 20px; border-radius: 10px;
+  border: 1px solid #e5e9e7; background: #fff;
+  color: #4b5563; font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.pd-actions .btn:hover { background: #f7f9f8; }
 
-/* 연관 게시글 */
-.pd-related {
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border, #e5e7eb);
-}
-.pd-related-title { font-size: 14px; font-weight: 700; color: var(--ink-700); margin-bottom: 12px; }
-.related-list { display: flex; flex-direction: column; }
-.related-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--ink-100, #f3f4f6);
-  cursor: pointer;
-  transition: color 0.12s;
-}
-.related-item:hover .related-title { color: var(--green-600, #16a34a); }
-.related-title {
-  font-size: 14px;
-  color: var(--ink-800);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-.related-meta { font-size: 12px; color: var(--ink-400); flex-shrink: 0; margin-left: 12px; }
-
-/* 배지 */
-.badge-sm { font-size: 12px; padding: 3px 10px; border-radius: 99px; }
+/* ── 배지 ── */
+.badge-sm { font-size: 12px; padding: 3px 10px; border-radius: 999px; }
 .badge-blue   { background: #eff6ff; color: #1d4ed8; }
 .badge-green  { background: #f0fdf4; color: #15803d; }
 .badge-purple { background: #faf5ff; color: #7c3aed; }

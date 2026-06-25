@@ -71,7 +71,22 @@ onMounted(load)
 
 <template>
   <div class="comm-panel">
-    <!-- 툴바: 검색 + 정렬 + 글쓰기 -->
+    <!-- 검색창 -->
+    <div class="board-search">
+      <div class="search-box">
+        <input
+          v-model="keyword"
+          placeholder="키워드를 입력해보세요."
+          @keydown.enter="search"
+        />
+        <button class="search-btn" @click="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          검색
+        </button>
+      </div>
+    </div>
+
+    <!-- 카테고리 탭 + 정렬 -->
     <div class="board-toolbar">
       <div class="cat-tabs">
         <button
@@ -80,28 +95,19 @@ onMounted(load)
           @click="activeCat = c"
         >{{ c }}</button>
       </div>
-      <button class="btn btn-primary btn-sm" @click="goWrite">글쓰기</button>
-    </div>
-
-    <div class="board-filters">
-      <div class="search-box">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
-        </svg>
-        <input
-          v-model="keyword"
-          placeholder="제목 또는 내용 검색"
-          @keydown.enter="search"
-        />
-      </div>
-      <div class="sort-tabs">
+      <div class="board-sort-row">
         <button
           v-for="s in SORTS" :key="s.key"
-          class="sort-tab" :class="{ active: sort === s.key }"
+          class="board-sort-btn" :class="{ active: sort === s.key }"
           @click="sort = s.key"
         >{{ s.label }}</button>
       </div>
     </div>
+
+    <!-- 플로팅 글쓰기 버튼 -->
+    <button class="fab-write" @click="goWrite" title="글쓰기">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
 
     <div v-if="loading" class="board-empty">불러오는 중...</div>
     <div v-else-if="posts.length === 0" class="board-empty">
@@ -158,7 +164,8 @@ onMounted(load)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -179,49 +186,92 @@ onMounted(load)
   border-color: var(--green-500, #308860);
 }
 
-.board-filters {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
+/* 오른쪽 정렬 정렬 탭 */
+.board-sort-row { display: flex; gap: 4px; flex-shrink: 0; }
+.board-sort-btn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-400);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.15s;
 }
+.board-sort-btn:hover { color: var(--ink-700); }
+.board-sort-btn.active { color: var(--ink-900, #111827); font-weight: 700; }
+
+/* 검색창 */
+.board-search { margin-bottom: 20px; }
 
 .search-box {
   display: flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: 8px;
-  padding: 7px 12px;
-  background: #fff;
-  flex: 1;
-  color: var(--ink-400);
+  background: #ffffff;
+  border: 1.5px solid #d8e6dc;
+  border-radius: 999px;
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
+.search-box:focus-within { border-color: #308860; }
 .search-box input {
+  flex: 1;
   border: none;
   outline: none;
-  font-size: 13px;
-  color: var(--ink-800);
-  width: 100%;
+  padding: 11px 18px;
+  font-size: 14px;
+  color: var(--ink-900);
   background: transparent;
 }
-
-.sort-tabs { display: flex; gap: 12px; flex-shrink: 0; }
-.sort-tab {
-  padding: 0;
-  font-size: 13px;
-  font-weight: 500;
+.search-box input::placeholder { color: #aab5ae; }
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--green-500);
+  color: #ffffff;
   border: none;
-  background: none;
-  color: var(--ink-400);
-  cursor: pointer;
-  transition: color 0.15s;
-}
-.sort-tab:hover { color: var(--ink-700); }
-.sort-tab.active {
-  color: var(--ink-900, #111827);
+  padding: 9px 18px;
+  margin: 4px;
+  border-radius: 999px;
+  font-size: 13px;
   font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.search-btn:hover { background: var(--green-550); }
+
+/* 플로팅 글쓰기 버튼 — 컨테이너 오른쪽 끝에 정렬 */
+.fab-write {
+  position: fixed;
+  bottom: 36px;
+  right: max(var(--site-side-padding, 24px), calc((100vw - var(--site-max-width, 1240px)) / 2 + var(--site-side-padding, 24px)));
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: var(--green-500);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(40, 108, 74, 0.35);
+  z-index: 50;
+  transition: transform 0.18s, box-shadow 0.18s, background 0.15s;
+  animation: fab-float 3s ease-in-out infinite;
+}
+.fab-write:hover {
+  background: var(--green-550);
+  transform: scale(1.1);
+  box-shadow: 0 8px 28px rgba(40, 108, 74, 0.45);
+  animation: none;
+}
+@keyframes fab-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
 }
 
 .board-empty {
@@ -233,7 +283,6 @@ onMounted(load)
 .board-list {
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--border, #e5e7eb);
 }
 
 .board-item {
@@ -266,7 +315,7 @@ onMounted(load)
   flex-wrap: wrap;
 }
 
-.badge-sm { font-size: 11px; padding: 2px 8px; }
+.badge-sm { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
 .badge-blue   { background: #eff6ff; color: #1d4ed8; border-radius: 99px; }
 .badge-green  { background: #f0fdf4; color: #15803d; border-radius: 99px; }
 .badge-purple { background: #faf5ff; color: #7c3aed; border-radius: 99px; }
