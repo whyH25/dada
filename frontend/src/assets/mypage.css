@@ -184,6 +184,125 @@
 .pay-form .field-inline { gap: 10px; }
 .pay-simple { margin-top: 14px; padding: 14px; background: var(--ink-50); border: 1px solid var(--ink-200); border-radius: 8px; font-size: 13px; color: var(--ink-700); line-height: 1.6; }
 
+/* ===== 종합평가 redesign ===== */
+
+/* Hero card */
+.ov-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  border-radius: var(--radius-md);
+  padding: 24px 28px;
+  color: #fff;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.ov-hero--good { background: linear-gradient(135deg, #1c6644 0%, #308860 100%); }
+.ov-hero--warn { background: linear-gradient(180deg, #b34700 0%, #d96a0a 100%); }
+.ov-hero--bad  { background: linear-gradient(180deg, rgba(210,50,75,0.22) 0%, #ffffff 100%); color: #111; }
+.ov-hero--bad .ov-hero-num    { color: #c9294a; }
+.ov-hero--bad .ov-hero-badge  { background: rgba(201,41,74,0.12); color: #111; }
+.ov-hero--bad .ov-hero-max    { color: #888; }
+.ov-hero--bad .ov-hero-eyebrow{ color: rgba(201,41,74,0.55); }
+.ov-hero--bad .ov-hero-quote  { color: #111; }
+.ov-hero--bad .ov-hero-meta   { color: #666; }
+@media (max-width: 680px) {
+  .ov-hero { grid-template-columns: 1fr; }
+  .ov-hero-illus { display: none; }
+}
+.ov-hero-score { text-align: center; min-width: 110px; }
+.ov-hero-num { font-size: 68px; font-weight: 900; line-height: 1; color: #fff; letter-spacing: -0.04em; }
+.ov-hero-badge {
+  display: inline-block; font-size: 11.5px; font-weight: 700;
+  background: rgba(255,255,255,0.22); color: #fff;
+  padding: 3px 11px; border-radius: 20px; margin-top: 6px;
+}
+.ov-hero-max { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px; }
+.ov-hero-body { min-width: 0; }
+.ov-hero-eyebrow {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(255,255,255,0.65); margin-bottom: 7px;
+}
+.ov-hero-quote { font-size: 14.5px; font-weight: 500; line-height: 1.65; color: #fff; margin: 0 0 8px; text-wrap: pretty; }
+.ov-hero-meta { font-size: 11.5px; color: rgba(255,255,255,0.6); }
+.ov-hero-illus { flex-shrink: 0; color: #fff; }
+
+/* 면접 정보 아이콘 그리드 */
+.ov-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 0; }
+@media (max-width: 700px) { .ov-info-grid { grid-template-columns: repeat(2, 1fr); } }
+.ov-info-item { display: flex; align-items: center; gap: 10px; padding: 9px 4px; }
+.ov-info-ico {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink-50); border: 1px solid var(--ink-150); border-radius: 8px; font-size: 17px;
+}
+.ov-info-label { font-size: 11px; color: var(--ink-500); font-weight: 500; margin-bottom: 1px; }
+.ov-info-val { font-size: 13.5px; font-weight: 600; color: var(--ink-900); }
+
+/* 통계 미니 카드 */
+.ov-stats { display: flex; flex-direction: column; gap: 10px; }
+.ov-stat-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 9px;
+  background: var(--ink-50); border: 1px solid var(--ink-150);
+}
+.ov-stat-card--warn { background: #fff8f0; border-color: #ffd9aa; }
+.ov-stat-ico { font-size: 22px; flex-shrink: 0; }
+.ov-stat-label { font-size: 11.5px; color: var(--ink-500); font-weight: 500; }
+.ov-stat-val { font-size: 18px; font-weight: 700; color: var(--ink-900); line-height: 1.2; }
+
+/* 잘한점/개선점 카드 */
+.ov-sw-stack { display: flex; flex-direction: column; gap: 10px; }
+.ov-sw-card { border-radius: 9px; padding: 12px 14px; }
+.ov-sw-card--good { background: var(--green-50); border: 1px solid var(--green-100); }
+.ov-sw-card--bad  { background: #fff8ef; border: 1px solid #ffddb8; }
+.ov-sw-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--ink-600); margin-bottom: 6px; }
+.ov-sw-body { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-700); }
+
+/* AI 종합 요약 — CSS 체크박스 expand */
+.ov-ai-chk { display: none; }
+.ov-ai-text {
+  max-height: 73px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 50%, transparent 100%);
+  transition: max-height 0.35s ease;
+}
+.ov-ai-chk:checked ~ .ov-ai-text {
+  max-height: 800px;
+  -webkit-mask-image: none; mask-image: none;
+}
+.ov-ai-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 600; color: var(--green-500);
+  cursor: pointer; margin-top: 10px; user-select: none;
+}
+.ov-ai-btn:hover { opacity: 0.75; }
+.ov-ai-less { display: none; }
+.ov-ai-chk:checked ~ .ov-ai-btn .ov-ai-more { display: none; }
+.ov-ai-chk:checked ~ .ov-ai-btn .ov-ai-less { display: inline; }
+
+/* 역량별 상세 분석 */
+.comp-detail-item { padding: 14px 0; }
+.comp-detail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.comp-detail-label { font-size: 13.5px; font-weight: 700; color: var(--ink-800); }
+.comp-detail-body { margin: 0; font-size: 13px; line-height: 1.75; color: var(--ink-700); text-wrap: pretty; }
+.comp-detail-divider { height: 1px; background: var(--ink-150); }
+
+/* 다음 면접 체크리스트 */
+.ov-cl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ov-cl-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 11px 13px; border-radius: 9px;
+  background: var(--green-50); border: 1px solid var(--green-100);
+}
+.ov-cl-num {
+  flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--green-500); color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.ov-cl-text { font-size: 13.5px; line-height: 1.6; color: var(--ink-700); }
+
 /* 회원탈퇴 */
 .btn-withdraw { background: none; border: none; color: var(--ink-400); font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline; }
 .btn-withdraw:hover { color: #e53e3e; }

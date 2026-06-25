@@ -20,6 +20,7 @@ public class InterviewReportDto {
     private Integer speechWpm;
     private Integer speechFiller;
     private String checklist; // JSON 배열 문자열 ["항목1","항목2",...]
+    private String insight;   // 지원자 비교 종합 인사이트 (AI 생성 텍스트)
     private LocalDateTime createdAt;
 
     public Long getReportId() { return reportId; }
@@ -72,6 +73,9 @@ public class InterviewReportDto {
 
     public String getChecklist() { return checklist; }
     public void setChecklist(String checklist) { this.checklist = checklist; }
+
+    public String getInsight() { return insight; }
+    public void setInsight(String insight) { this.insight = insight; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

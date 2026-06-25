@@ -35,6 +35,7 @@ public class InterviewRoomDto {
 
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
+    private Integer overallScore; // interview_report 조인값 (목록 조회 시)
     
     
 	public Long getRoomId() {
@@ -158,6 +159,12 @@ public class InterviewRoomDto {
 	}
 	public void setUserName(String userName) {
 		this.userName = userName;
+	}
+	public Integer getOverallScore() {
+		return overallScore;
+	}
+	public void setOverallScore(Integer overallScore) {
+		this.overallScore = overallScore;
 	}
 	
 	@Override

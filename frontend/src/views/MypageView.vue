@@ -89,7 +89,7 @@ async function openRoom(room) {
 
 // API 응답 데이터 → mypageReport.js panelXxx 함수 입력 형식으로 변환
 // scenarios: roomScenarios — AI 지원자 답변을 question_seq 기준으로 매핑
-function transformReportForPanel(data, scenarios = [], room = null) {
+function transformReportForPanel(data, scenarios = [], room = null, allRooms = []) {
   const rep = data.report
   const me = [rep.compExpertise ?? 0, rep.compLogic ?? 0, rep.compCommu ?? 0, rep.compCulture ?? 0, rep.compPressure ?? 0]
 
@@ -143,15 +143,33 @@ function transformReportForPanel(data, scenarios = [], room = null) {
     endedAt: room.endedAt ? new Date(room.endedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-',
   } : null
 
+  // 총점 추이 — 리포트가 있는 면접방을 날짜 오름차순 정렬
+  const scoreHistory = allRooms
+    .filter(r => r.overallScore != null && r.endedAt)
+    .sort((a, b) => new Date(a.endedAt) - new Date(b.endedAt))
+    .map(r => ({
+      date: new Date(r.endedAt).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }),
+      score: r.overallScore,
+      current: r.roomId === room?.roomId,
+    }))
+
   return {
     score: rep.overallScore,
     aiComment: rep.aiComment,
-    logic: rep.compLogicDetail,
+    compDetails: [
+      rep.compExpertiseDetail,
+      rep.compLogicDetail,
+      rep.compCommuDetail,
+      rep.compCultureDetail,
+      rep.compPressureDetail,
+    ],
+    insight: rep.insight ?? '',
     me,
     ai: me.map(() => aiAvg),
     speechWpm: rep.speechWpm,
     speechFiller: rep.speechFiller,
     checklist: rep.checklist ? JSON.parse(rep.checklist) : [],
+    scoreHistory,
     info,
     speech: {
       avgLen: avgAnswerSec,
@@ -170,7 +188,7 @@ function transformReportForPanel(data, scenarios = [], room = null) {
 // 현재 탭에 맞는 패널 HTML (리포트 있을 때만)
 const currentPanelHtml = computed(() => {
   if (!roomReport.value) return ''
-  return reportPanel(transformReportForPanel(roomReport.value, roomScenarios.value, currentRoom.value), reportTab.value)
+  return reportPanel(transformReportForPanel(roomReport.value, roomScenarios.value, currentRoom.value, myRooms.value), reportTab.value)
 })
 
 // ---- 리포트 4탭을 하나의 PDF로 다운로드 ----

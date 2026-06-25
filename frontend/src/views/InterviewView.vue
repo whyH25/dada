@@ -139,13 +139,13 @@ function startAnswering() {
 
 function beginRecording(turn) {
   userTurnActive.value = true
-  const cappedSec = Math.min(turn.timeoutSec ?? 55, 55)
+  const cappedSec = turn.timeoutSec ?? 120
   userTurnTimeLeft.value = cappedSec
   audioChunks = []
   // 시스템 시계 변경에 영향받지 않는 단조 증가 타이머로 시작 시점을 기록 (생각할 시간은 제외하고 측정)
   userTurnStartedAt = performance.now()
   // 절대 마감 시각 기준 - 탭이 백그라운드/과부하로 setInterval 틱이 지연돼도
-  // 드리프트가 누적되지 않고 실제 경과 시간 기준으로 정확히 끊김 (구글 STT 1분 제한 초과 방지)
+  // 드리프트가 누적되지 않고 실제 경과 시간 기준으로 정확히 끊김
   const deadline = userTurnStartedAt + cappedSec * 1000
 
   // 마이크 스트림으로 녹음 시작

@@ -33,18 +33,40 @@ public class GoogleSttService {
         try {
             String requestBody = buildRequest(audioBytes, languageCode, phraseHints);
 
-            String responseBody = googleSttRestClient.post()
-                    .uri("/v1/speech:recognize?key=" + apiKey)
+            // longrunningrecognize: 60초 초과 오디오도 처리 가능한 비동기 API
+            String startResponse = googleSttRestClient.post()
+                    .uri("/v1/speech:longrunningrecognize?key=" + apiKey)
                     .body(requestBody)
                     .retrieve()
                     .body(String.class);
 
-            return parseTranscript(responseBody);
+            String operationName = objectMapper.readTree(startResponse).path("name").asText();
+            if (operationName.isBlank()) throw new RuntimeException("operation name이 비어있습니다.");
+
+            return pollUntilDone(operationName);
 
         } catch (Exception e) {
             log.error("Google STT 호출 실패: {}", e.getMessage());
             throw new RuntimeException("STT 변환에 실패했습니다.", e);
         }
+    }
+
+    // 3초 간격으로 최대 150회(7.5분) 폴링 - 무한 대기 방지용 상한
+    private String pollUntilDone(String operationName) throws Exception {
+        for (int i = 0; i < 150; i++) {
+            Thread.sleep(3000);
+
+            String pollResponse = googleSttRestClient.get()
+                    .uri("/v1/operations/" + operationName + "?key=" + apiKey)
+                    .retrieve()
+                    .body(String.class);
+
+            JsonNode root = objectMapper.readTree(pollResponse);
+            if (root.path("done").asBoolean(false)) {
+                return parseTranscript(root.path("response").toString());
+            }
+        }
+        throw new RuntimeException("STT 작업 타임아웃 (7.5분 초과)");
     }
 
     private String buildRequest(byte[] audioBytes, String languageCode, List<String> phraseHints) throws Exception {

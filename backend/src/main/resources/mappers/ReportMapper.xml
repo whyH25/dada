@@ -13,7 +13,7 @@
             comp_commu, comp_commu_detail,
             comp_culture, comp_culture_detail,
             comp_pressure, comp_pressure_detail,
-            speech_wpm, speech_filler, checklist
+            speech_wpm, speech_filler, checklist, insight
         ) VALUES (
             #{roomId}, #{overallScore}, #{aiComment},
             #{compExpertise}, #{compExpertiseDetail},
@@ -21,7 +21,7 @@
             #{compCommu}, #{compCommuDetail},
             #{compCulture}, #{compCultureDetail},
             #{compPressure}, #{compPressureDetail},
-            #{speechWpm}, #{speechFiller}, #{checklist}
+            #{speechWpm}, #{speechFiller}, #{checklist}, #{insight}
         )
     </insert>
 
@@ -53,7 +53,7 @@
                comp_commu, comp_commu_detail,
                comp_culture, comp_culture_detail,
                comp_pressure, comp_pressure_detail,
-               speech_wpm, speech_filler, checklist, created_at
+               speech_wpm, speech_filler, checklist, insight, created_at
         FROM interview_report
         WHERE room_id = #{roomId}
     </select>

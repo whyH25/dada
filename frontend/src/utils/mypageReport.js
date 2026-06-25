@@ -39,61 +39,217 @@ export function radarSVG(axes, series, size) {
   return `<svg viewBox="0 0 ${size} ${size}" class="radar-svg">${g}</svg>`
 }
 
+// 총점 추이 꺾은선 그래프 SVG
+function lineSVG(history) {
+  if (!history || history.length === 0) {
+    return `<p style="color:var(--ink-400);font-size:13px;text-align:center;padding:24px 0;margin:0;">면접 기록이 없습니다.</p>`
+  }
+  if (history.length === 1) {
+    return `<div style="text-align:center;padding:20px 0;">
+      <div style="font-size:48px;font-weight:900;color:var(--green-500);line-height:1;">${history[0].score}</div>
+      <div style="font-size:12px;color:var(--ink-400);margin-top:6px;">첫 번째 면접 기록</div>
+    </div>`
+  }
+
+  const W = 260, H = 148
+  const pL = 30, pR = 10, pT = 18, pB = 30
+  const cW = W - pL - pR, cH = H - pT - pB
+
+  const scores = history.map(h => h.score)
+  const minS = Math.max(0, Math.min(...scores) - 8)
+  const maxS = Math.min(100, Math.max(...scores) + 8)
+  const rangeS = maxS - minS || 20
+
+  const xPos = i => pL + (i / (history.length - 1)) * cW
+  const yPos = s => pT + cH - ((s - minS) / rangeS) * cH
+
+  // Y축 눈금 (3개)
+  const yTicks = [minS, Math.round((minS + maxS) / 2), maxS]
+  let grid = yTicks.map(v => {
+    const y = yPos(v).toFixed(1)
+    return `<line x1="${pL}" y1="${y}" x2="${W - pR}" y2="${y}" stroke="var(--ink-150)" stroke-width="1" stroke-dasharray="3 3"/>
+            <text x="${pL - 4}" y="${(parseFloat(y) + 3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--ink-400)">${v}</text>`
+  }).join('')
+
+  const pts = history.map((h, i) => `${xPos(i).toFixed(1)},${yPos(h.score).toFixed(1)}`).join(' ')
+  const areaPts = `${xPos(0).toFixed(1)},${(pT + cH).toFixed(1)} ${pts} ${xPos(history.length - 1).toFixed(1)},${(pT + cH).toFixed(1)}`
+
+  // 점 + 점수 레이블
+  const step = Math.ceil(history.length / 5)
+  let dots = '', xLabels = ''
+  history.forEach((h, i) => {
+    const x = xPos(i).toFixed(1), y = yPos(h.score).toFixed(1)
+    const cur = h.current
+    dots += `<circle cx="${x}" cy="${y}" r="${cur ? 5.5 : 3}" fill="${cur ? 'var(--green-500)' : '#fff'}" stroke="var(--green-500)" stroke-width="${cur ? 2.5 : 1.5}"/>`
+    if (cur) {
+      dots += `<text x="${x}" y="${(parseFloat(y) - 9).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--green-500)">${h.score}</text>`
+    }
+    if (i === 0 || i === history.length - 1 || cur || i % step === 0) {
+      xLabels += `<text x="${x}" y="${(pT + cH + 14).toFixed(1)}" text-anchor="middle" font-size="9" fill="${cur ? 'var(--green-500)' : 'var(--ink-400)'}" font-weight="${cur ? '700' : '400'}">${h.date}</text>`
+    }
+  })
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible;display:block;">
+    <defs>
+      <linearGradient id="lgOvChart" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--green-500)" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="var(--green-500)" stop-opacity="0.01"/>
+      </linearGradient>
+    </defs>
+    ${grid}
+    <polygon points="${areaPts}" fill="url(#lgOvChart)"/>
+    <polyline points="${pts}" fill="none" stroke="var(--green-500)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    ${xLabels}
+  </svg>`
+}
+
 export function panelOverview(r) {
   const sc = r.score
-  const scColor = sc >= 80 ? 'var(--green-500)' : sc >= 60 ? 'var(--accent-amber)' : 'var(--accent-red)'
+  const heroClass = sc >= 80 ? 'good' : sc >= 60 ? 'warn' : 'bad'
   const scLabel = sc >= 90 ? '매우 우수' : sc >= 80 ? '합격권' : sc >= 70 ? '평균 이상' : sc >= 60 ? '보완 필요' : '개선 필요'
-  const infoCard = r.info ? `
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-header"><h3 class="card-title">면접 정보</h3><span class="text-sm text-muted">${r.info.endedAt}</span></div>
-      <div class="rep-grid-2" style="gap:0;">
-        <div>
-          <div class="kv-row"><span>회사</span><strong>${r.info.company}</strong></div>
-          <div class="kv-row"><span>직무</span><strong>${r.info.job}</strong></div>
-          <div class="kv-row"><span>지원 유형</span><strong>${r.info.type}</strong></div>
-        </div>
-        <div>
-          <div class="kv-row"><span>난이도</span><strong>${r.info.difficulty}</strong></div>
-          <div class="kv-row"><span>AI 면접관</span><strong>${r.info.interviewerCnt}명</strong></div>
-          <div class="kv-row"><span>AI 지원자</span><strong>${r.info.applicantCnt}명</strong></div>
-        </div>
-      </div>
-    </div>` : ''
+
+  // 히어로 한 줄 총평 — 첫 문장
+  const firstLine = r.aiComment ? r.aiComment.split(/(?<=[.。])\s+/)[0].trim() : ''
+  const heroQuote = firstLine.length > 10 ? firstLine : (r.aiComment || '')
+
+  // 사용자 강약점 (지원자 비교 패널의 me 항목 재사용)
+  const meAppl = r.applicants ? r.applicants.find(a => a.me) : null
+
+  // 면접 정보 아이콘 목록
+  const infoItems = r.info ? [
+    { ico: '🏢', label: '회사', val: r.info.company },
+    { ico: '💼', label: '직무', val: r.info.job },
+    { ico: '📋', label: '지원 유형', val: r.info.type },
+    { ico: '⚡', label: '난이도', val: r.info.difficulty },
+    { ico: '🎤', label: 'AI 면접관', val: r.info.interviewerCnt + '명' },
+    { ico: '👤', label: 'AI 지원자', val: r.info.applicantCnt + '명' },
+  ] : []
+
+  // 통계 미니 카드
+  const fillerBad = r.speechFiller != null && r.speechFiller > 5
+  const stats = [
+    { ico: '⏱', label: '평균 답변 시간', val: r.speech.avgLen + '초', mod: '' },
+    { ico: '💬', label: '분당 어절 수 (WPM)', val: r.speechWpm != null ? r.speechWpm + ' wpm' : '-', mod: '' },
+    { ico: '🔔', label: '추임새 횟수', val: r.speechFiller != null ? r.speechFiller + '회' : '-', mod: fillerBad ? 'warn' : '' },
+  ]
+
+  // 히어로 체크리스트 일러스트 SVG — bad는 다홍 계열, 나머지는 흰색 반투명
+  const isBad = heroClass === 'bad'
+  const ic = isBad
+    ? { bg: 'rgba(201,41,74,0.08)', border: 'rgba(201,41,74,0.22)', line: 'rgba(201,41,74,0.35)', line2: 'rgba(201,41,74,0.25)', dot: 'rgba(201,41,74,0.25)', ck: 'rgba(201,41,74,0.75)' }
+    : { bg: 'rgba(255,255,255,0.14)', border: 'rgba(255,255,255,0.28)', line: 'rgba(255,255,255,0.55)', line2: 'rgba(255,255,255,0.4)', dot: 'rgba(255,255,255,0.35)', ck: 'rgba(255,255,255,0.9)' }
+  const illustSvg = `<svg viewBox="0 0 90 90" width="86" height="86" fill="none" aria-hidden="true">
+    <rect x="16" y="8" width="58" height="74" rx="7" fill="${ic.bg}" stroke="${ic.border}" stroke-width="1.5"/>
+    <rect x="28" y="26" width="34" height="4" rx="2" fill="${ic.line}"/>
+    <rect x="28" y="37" width="26" height="4" rx="2" fill="${ic.line2}"/>
+    <rect x="28" y="48" width="30" height="4" rx="2" fill="${ic.line2}"/>
+    <rect x="28" y="59" width="18" height="4" rx="2" fill="${ic.dot}"/>
+    <circle cx="21" cy="28" r="3.5" fill="${ic.dot}"/>
+    <polyline points="19.5,28 21,29.8 23,26" stroke="${ic.ck}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="21" cy="39" r="3.5" fill="${ic.dot}"/>
+    <circle cx="21" cy="50" r="3.5" fill="${ic.dot}"/>
+    <circle cx="21" cy="61" r="3.5" fill="${ic.dot}" opacity="0.7"/>
+  </svg>`
+
   return `
-    ${infoCard}
-    <div class="rep-grid-2" style="margin-bottom:16px;">
-      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:32px 16px;">
-        <div style="font-size:13px;font-weight:600;color:var(--ink-500);">종합 점수</div>
-        <div style="font-size:60px;font-weight:800;color:${scColor};line-height:1.1;">${sc}</div>
-        <div style="font-size:13px;font-weight:700;color:${scColor};">${scLabel}</div>
+    <div class="ov-hero ov-hero--${heroClass}">
+      <div class="ov-hero-score">
+        <div class="ov-hero-num">${sc}</div>
+        <div class="ov-hero-badge">${scLabel}</div>
+        <div class="ov-hero-max">/ 100점</div>
       </div>
+      <div class="ov-hero-body">
+        <div class="ov-hero-eyebrow">AI 종합 평가</div>
+        <p class="ov-hero-quote">"${heroQuote}"</p>
+        ${r.info ? `<div class="ov-hero-meta">${r.info.company} · ${r.info.job} · ${r.info.endedAt}</div>` : ''}
+      </div>
+      <div class="ov-hero-illus">${illustSvg}</div>
+    </div>
+
+    ${r.info ? `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h3 class="card-title">면접 정보</h3>
+        <span class="text-sm text-muted">${r.info.endedAt}</span>
+      </div>
+      <div class="ov-info-grid">
+        ${infoItems.map(item => `
+          <div class="ov-info-item">
+            <span class="ov-info-ico">${item.ico}</span>
+            <div>
+              <div class="ov-info-label">${item.label}</div>
+              <div class="ov-info-val">${item.val}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="rep-grid-2" style="margin-bottom:16px;">
       <div class="card">
         <div class="card-header"><h3 class="card-title">면접 통계</h3></div>
-        <div class="kv-row"><span>평균 답변 시간</span><strong>${r.speech.avgLen}초</strong></div>
-        <div class="kv-row"><span>분당 어절 수 (WPM)</span><strong>${r.speechWpm != null ? r.speechWpm : '-'}</strong></div>
-        <div class="kv-row"><span>추임새 횟수</span><strong>${r.speechFiller != null ? r.speechFiller + '회' : '-'}</strong></div>
+        <div class="ov-stats">
+          ${stats.map(s => `
+            <div class="ov-stat-card${s.mod ? ' ov-stat-card--' + s.mod : ''}">
+              <span class="ov-stat-ico">${s.ico}</span>
+              <div class="ov-stat-body">
+                <div class="ov-stat-label">${s.label}</div>
+                <div class="ov-stat-val">${s.val}</div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3 class="card-title">이번 면접 한눈에 보기</h3></div>
+        ${meAppl ? `
+        <div class="ov-sw-stack">
+          <div class="ov-sw-card ov-sw-card--good">
+            <div class="ov-sw-head"><span>✅</span><span>잘한 점</span></div>
+            <p class="ov-sw-body">${meAppl.strength || '-'}</p>
+          </div>
+          <div class="ov-sw-card ov-sw-card--bad">
+            <div class="ov-sw-head"><span>📌</span><span>개선할 점</span></div>
+            <p class="ov-sw-body">${meAppl.weak || '-'}</p>
+          </div>
+        </div>` : `<p style="color:var(--ink-400);font-size:13px;margin:0;">분석 데이터가 없습니다.</p>`}
       </div>
     </div>
-    <div class="card">
-      <div class="card-header"><h3 class="card-title">총평 요약</h3></div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <h3 class="card-title">AI 종합 요약</h3>
+        <span class="ai-badge">AI</span>
+      </div>
       <p class="rep-summary">${r.aiComment}</p>
     </div>
-    <div class="card" style="margin-top:16px;">
-      <div class="card-header"><h3 class="card-title">다음 면접 체크리스트</h3><span class="text-sm text-muted">다음 면접 전 꼭 준비하세요</span></div>
-      ${r.checklist && r.checklist.length ? `
-      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
-        ${r.checklist.map(item => `
-          <li style="display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.6;color:var(--ink-700);">
-            <span style="flex-shrink:0;margin-top:1px;color:var(--green-500);font-size:16px;">☑</span>
-            <span>${item}</span>
-          </li>`).join('')}
-      </ul>` : `<p style="color:var(--ink-400);font-size:13px;margin:0;">없음</p>`}
+
+    <div class="rep-grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">총점 추이</h3>
+          <span class="text-sm text-muted">${r.scoreHistory ? r.scoreHistory.length + '회' : '-'}</span>
+        </div>
+        ${lineSVG(r.scoreHistory)}
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">다음 면접 체크리스트</h3>
+          <span class="text-sm text-muted">꼭 준비하세요</span>
+        </div>
+        ${r.checklist && r.checklist.length ? `
+        <ul class="ov-cl-list">
+          ${r.checklist.map((item, i) => `
+            <li class="ov-cl-item">
+              <span class="ov-cl-num">${i + 1}</span>
+              <span class="ov-cl-text">${item}</span>
+            </li>`).join('')}
+        </ul>` : `<p style="color:var(--ink-400);font-size:13px;margin:0;">체크리스트가 없습니다.</p>`}
+      </div>
     </div>
   `
 }
 
 export function panelCompetency(r) {
-  const logicIdx = 1
   const bars = compLabels.map((l, i) => `
     <div class="score-item">
       <div class="score-num ${r.me[i] < 75 ? 'warn' : ''}">${r.me[i]}</div>
@@ -125,10 +281,19 @@ export function panelCompetency(r) {
           </div>`).join('')}
       </div>
     </div>
-    <div class="card logic-card" style="margin-top:16px;">
-      <div class="card-header"><h3 class="card-title">논리력 상세 분석</h3><span class="badge ${r.me[logicIdx] >= 80 ? 'badge-green' : 'badge-amber'}">${r.me[logicIdx]}점</span></div>
-      <p class="rep-summary">${r.logic}</p>
-      <div class="ai-comment"><div class="ai-comment-head"><span class="ai-badge">AI 코멘트</span></div><p>${r.aiComment}</p></div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header"><h3 class="card-title">역량별 상세 분석</h3><span class="ai-badge">AI</span></div>
+      ${compLabels.map((l, i) => {
+        const detail = r.compDetails && r.compDetails[i]
+        if (!detail) return ''
+        return `<div class="comp-detail-item">
+          <div class="comp-detail-head">
+            <span class="comp-detail-label">${l}</span>
+            <span class="badge ${r.me[i] >= 80 ? 'badge-green' : r.me[i] >= 60 ? 'badge-amber' : 'badge-red'}">${r.me[i]}점</span>
+          </div>
+          <p class="comp-detail-body">${detail}</p>
+        </div>`
+      }).filter(Boolean).join('<div class="comp-detail-divider"></div>')}
     </div>`
 }
 
@@ -151,8 +316,10 @@ export function panelApplicants(r) {
       </div>
     </div>
     <div class="card" style="margin-top:16px;">
-      <div class="card-header"><h3 class="card-title">종합 인사이트</h3></div>
-      <p class="rep-summary">이번 면접방에서 당신의 총점은 <strong>${r.score}점</strong>으로 ${r.applicants.filter((a) => !a.me && a.score < r.score).length}명의 AI 지원자보다 높았습니다. 특히 <strong>${r.applicants[0].strength}</strong>에서 두드러졌으나, <strong>${r.applicants[0].weak}</strong> 영역은 다른 지원자 대비 개선 여지가 있습니다.</p>
+      <div class="card-header"><h3 class="card-title">종합 인사이트</h3><span class="ai-badge">AI</span></div>
+      ${r.insight
+        ? `<p class="rep-summary">${r.insight}</p>`
+        : `<p style="color:var(--ink-400);font-size:13px;margin:0;">인사이트 데이터가 없습니다.</p>`}
     </div>`
 }
 

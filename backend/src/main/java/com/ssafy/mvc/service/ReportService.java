@@ -120,6 +120,7 @@ public class ReportService {
             // checklistItems 배열을 JSON 문자열로 그대로 저장
             JsonNode cl = json.path("checklistItems");
             report.setChecklist((!cl.isNull() && !cl.isMissingNode()) ? cl.toString() : null);
+            report.setInsight(textOrNull(json, "insight"));
             reportDao.insertReport(report);
             Long reportId = report.getReportId();
 

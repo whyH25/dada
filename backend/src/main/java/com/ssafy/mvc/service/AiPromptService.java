@@ -455,7 +455,6 @@ public class AiPromptService {
 		따라서 단순한 칭찬이나 추상적인 피드백이 아니라, 실제 면접관이 남길 수준의 깊이 있는 분석을 제공해야 합니다.
 		
 		모든 평가는 반드시 실제 답변 내용을 근거로 작성하세요.
-		
 		답변 내용에 없는 내용을 추측하여 작성하지 마세요.
 		
 		좋았다, 아쉽다와 같은 추상적인 표현만 사용하는 것은 금지합니다.
@@ -467,7 +466,6 @@ public class AiPromptService {
 		까지 설명하세요.
 		
 		반드시 JSON만 응답하세요.
-		
 		JSON 외의 문자, 설명, 코드블록, 마크다운은 절대 출력하지 마세요.
 		
 		
@@ -557,7 +555,7 @@ public class AiPromptService {
 		5. 채용 가능성 평가
 		6. 다음 면접에서 가장 먼저 개선해야 할 행동
 		
-		최소 700자 이상 작성한다.
+		최소 800자 이상 작성한다.
 		
 		
 		compExpertise
@@ -665,6 +663,16 @@ public class AiPromptService {
 		
 		
 		====================
+		종합 인사이트
+		====================
+
+		이번 면접에서 사용자(isUser=true)가 AI 경쟁 지원자들과 비교하여 어떤 위치에 있었는지 분석한다.
+		- 총점 순위, 두드러진 강점, 개선이 필요한 약점을 구체적으로 서술한다.
+		- 3~5문장, 최소 200자 이상.
+		- insight 필드에 작성한다.
+
+
+		====================
 		다음 면접 체크리스트
 		====================
 
@@ -752,6 +760,8 @@ public class AiPromptService {
 		  "speechFiller": number,
 
 		  "checklistItems": ["string", "string", "string"],
+
+		  "insight": string,
 
 		  "applicants":[
 		    {

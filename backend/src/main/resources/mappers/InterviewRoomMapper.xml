@@ -57,9 +57,11 @@
         SELECT ir.room_id, ir.user_id, ir.applicant_type, ir.company_name, ir.job_id,
                cj.job_name,
                ir.difficulty, ir.language, ir.ai_interviewer_cnt, ir.ai_applicant_cnt,
-               ir.status, ir.started_at, ir.ended_at
+               ir.status, ir.started_at, ir.ended_at,
+               rep.overall_score AS overallScore
         FROM interview_room ir
         LEFT JOIN category_job cj ON ir.job_id = cj.job_id
+        LEFT JOIN interview_report rep ON rep.room_id = ir.room_id
         WHERE ir.user_id = #{userId}
           AND ir.deleted_at IS NULL
         ORDER BY ir.started_at DESC
