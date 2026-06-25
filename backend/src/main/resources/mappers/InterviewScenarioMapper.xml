@@ -46,6 +46,20 @@
         WHERE s.scenario_id = #{scenarioId}
     </select>
 
+    <!-- 리포트 저장 시 특정 질문·역할·페르소나의 scenario_id 조회 -->
+    <select id="selectScenarioId" resultType="java.lang.Long">
+        SELECT scenario_id
+        FROM interview_scenario
+        WHERE room_id     = #{roomId}
+          AND question_seq = #{questionSeq}
+          AND turn_role    = #{turnRole}
+          AND <choose>
+                <when test="turnRefId != null">turn_ref_id = #{turnRefId}</when>
+                <otherwise>turn_ref_id IS NULL</otherwise>
+              </choose>
+        LIMIT 1
+    </select>
+
     <!-- 회원탈퇴 시 해당 유저의 면접방에 속한 시나리오를 일괄 비활성화 -->
     <update id="deactivateByRoomIds">
         UPDATE interview_scenario SET deleted_at = NOW()

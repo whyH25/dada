@@ -117,6 +117,9 @@ public class ReportService {
             report.setCompPressureDetail(textOrNull(json, "compPressureDetail"));
             report.setSpeechWpm(asIntOrNull(json, "speechWpm"));
             report.setSpeechFiller(asIntOrNull(json, "speechFiller"));
+            // checklistItems 배열을 JSON 문자열로 그대로 저장
+            JsonNode cl = json.path("checklistItems");
+            report.setChecklist((!cl.isNull() && !cl.isMissingNode()) ? cl.toString() : null);
             reportDao.insertReport(report);
             Long reportId = report.getReportId();
 
@@ -124,7 +127,6 @@ public class ReportService {
             List<ReportApplicantDto> applicants = new ArrayList<>();
             for (JsonNode a : json.path("applicants")) {
                 ReportApplicantDto dto = new ReportApplicantDto();
-                dto.setReportId(reportId);
                 dto.setRoomId(roomId);
                 dto.setIsUser(a.path("isUser").asBoolean(false));
                 dto.setApplicantId(a.path("personaId").isNull() ? null : a.path("personaId").asLong());
@@ -137,20 +139,31 @@ public class ReportService {
                 reportDao.insertApplicants(applicants);
             }
 
-            // 3. report_question 저장
+            // 3. report_question 저장 — 질문당 USER + APPLICANT 각각 한 행
             List<ReportQuestionDto> questions = new ArrayList<>();
             for (JsonNode q : json.path("questions")) {
-                ReportQuestionDto dto = new ReportQuestionDto();
-                dto.setReportId(reportId);
-                dto.setRoomId(roomId);
-                dto.setQuestionSeq(q.path("questionSeq").asInt());
-                dto.setQuestionText(textOrNull(q, "questionText"));
-                dto.setAnswerText(textOrNull(q, "answerText"));
-                dto.setScore(asIntOrNull(q, "score"));
-                dto.setLabel(textOrNull(q, "label"));
-                dto.setFeedback(textOrNull(q, "feedback"));
-                dto.setTags(textOrNull(q, "tags"));
-                questions.add(dto);
+                int questionSeq = q.path("questionSeq").asInt();
+                for (JsonNode p : q.path("participants")) {
+                    String turnRole = p.path("turnRole").asText();
+                    Long personaId = p.path("personaId").isNull() ? null : p.path("personaId").asLong();
+
+                    // interview_scenario에서 해당 턴의 scenario_id 조회
+                    Long scenarioId = interviewScenarioDao.selectScenarioId(roomId, questionSeq, turnRole, personaId);
+                    if (scenarioId == null) {
+                        log.warn("scenario_id 없음 — roomId={}, seq={}, role={}, personaId={}", roomId, questionSeq, turnRole, personaId);
+                        continue;
+                    }
+
+                    ReportQuestionDto dto = new ReportQuestionDto();
+                    dto.setRoomId(roomId);
+                    dto.setScenarioId(scenarioId);
+                    dto.setQuestionSeq(questionSeq);
+                    dto.setScore(asIntOrNull(p, "score"));
+                    dto.setLabel(textOrNull(p, "label"));
+                    dto.setFeedback(textOrNull(p, "feedback"));
+                    dto.setTags(textOrNull(p, "tags"));
+                    questions.add(dto);
+                }
             }
             if (!questions.isEmpty()) {
                 reportDao.insertQuestions(questions);

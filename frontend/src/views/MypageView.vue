@@ -89,7 +89,7 @@ async function openRoom(room) {
 
 // API 응답 데이터 → mypageReport.js panelXxx 함수 입력 형식으로 변환
 // scenarios: roomScenarios — AI 지원자 답변을 question_seq 기준으로 매핑
-function transformReportForPanel(data, scenarios = []) {
+function transformReportForPanel(data, scenarios = [], room = null) {
   const rep = data.report
   const me = [rep.compExpertise ?? 0, rep.compLogic ?? 0, rep.compCommu ?? 0, rep.compCulture ?? 0, rep.compPressure ?? 0]
 
@@ -103,12 +103,23 @@ function transformReportForPanel(data, scenarios = []) {
     if (!a.isUser && a.applicantId) appNameMap[a.applicantId] = a.name ?? 'AI 지원자'
   }
 
-  // question_seq → APPLICANT 답변 목록 (시나리오에서 추출)
-  const appAnswersBySeq = {}
-  for (const s of scenarios) {
-    if (s.turnRole === 'APPLICANT' && s.questionSeq > 0 && s.speechText) {
-      const name = appNameMap[s.turnRefId] ?? 'AI 지원자'
-      ;(appAnswersBySeq[s.questionSeq] ??= []).push({ name, text: s.speechText })
+  // question_seq 기준으로 질문 그루핑 (data.questions = 참여자별 평가 행의 flat list)
+  const questionMap = new Map()
+  for (const q of data.questions) {
+    if (!questionMap.has(q.questionSeq)) {
+      questionMap.set(q.questionSeq, { q: `Q${q.questionSeq}`, text: q.questionText ?? '', participants: [] })
+    }
+    if (q.turnRole) {
+      const labelColor = q.label === '우수' ? 'green' : q.label === '미흡' ? 'red' : 'amber'
+      questionMap.get(q.questionSeq).participants.push({
+        turnRole: q.turnRole,
+        name: q.turnRole === 'USER' ? '나' : (appNameMap[q.turnRefId] ?? 'AI 지원자'),
+        answerText: q.answerText ?? '',
+        score: q.score ?? 0,
+        label: q.label ? [q.label, labelColor] : null,
+        body: q.feedback ?? '',
+        tags: q.tags ? q.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      })
     }
   }
 
@@ -120,13 +131,28 @@ function transformReportForPanel(data, scenarios = []) {
     ? Math.round(userAnswerSecs.reduce((sum, v) => sum + v, 0) / userAnswerSecs.length)
     : 0
 
+  const typeMap = { NEW: '신입', INTERN: '인턴', EXPERIENCED: '경력' }
+  const diffMap = { EASY: '쉬움', NORMAL: '보통', HARD: '어려움' }
+  const info = room ? {
+    company: room.companyName ?? '-',
+    job: room.jobName ?? '-',
+    type: typeMap[room.applicantType] ?? room.applicantType ?? '-',
+    difficulty: diffMap[room.difficulty] ?? room.difficulty ?? '-',
+    interviewerCnt: room.aiInterviewerCnt ?? 0,
+    applicantCnt: room.aiApplicantCnt ?? 0,
+    endedAt: room.endedAt ? new Date(room.endedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '-',
+  } : null
+
   return {
     score: rep.overallScore,
     aiComment: rep.aiComment,
     logic: rep.compLogicDetail,
     me,
     ai: me.map(() => aiAvg),
-    pass: [75, 78, 80, 72, 70],
+    speechWpm: rep.speechWpm,
+    speechFiller: rep.speechFiller,
+    checklist: rep.checklist ? JSON.parse(rep.checklist) : [],
+    info,
     speech: {
       avgLen: avgAnswerSec,
     },
@@ -137,25 +163,14 @@ function transformReportForPanel(data, scenarios = []) {
       strength: a.strength ?? '',
       weak: a.weakness ?? '',
     })),
-    questions: data.questions.map(q => ({
-      q: `Q${q.questionSeq}`,
-      text: q.questionText ?? '',
-      answerText: q.answerText ?? '',
-      applicantAnswers: appAnswersBySeq[q.questionSeq] ?? [],
-      score: q.score ?? 0,
-      label: q.label
-        ? [q.label, q.label === '우수' ? 'green' : q.label === '미흡' ? 'red' : 'amber']
-        : null,
-      body: q.feedback ?? '',
-      tags: q.tags ? q.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-    })),
+    questions: [...questionMap.values()],
   }
 }
 
 // 현재 탭에 맞는 패널 HTML (리포트 있을 때만)
 const currentPanelHtml = computed(() => {
   if (!roomReport.value) return ''
-  return reportPanel(transformReportForPanel(roomReport.value, roomScenarios.value), reportTab.value)
+  return reportPanel(transformReportForPanel(roomReport.value, roomScenarios.value, currentRoom.value), reportTab.value)
 })
 
 // ---- 리포트 4탭을 하나의 PDF로 다운로드 ----

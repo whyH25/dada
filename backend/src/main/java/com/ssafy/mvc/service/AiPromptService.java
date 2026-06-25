@@ -447,75 +447,368 @@ public class AiPromptService {
             """;
 
     private static final String ANALYSIS_PROMPT_TEMPLATE = """
-            당신은 면접 평가 전문가입니다.
-            아래 면접 정보와 질문/답변 내용을 바탕으로 지원자를 종합적으로 평가하세요.
-            반드시 JSON만 응답하세요. JSON 외의 문자(설명, 마크다운, 코드블록)는 절대 출력하지 마세요.
+		당신은 삼성, 네이버, 카카오, 현대자동차 등 국내 대기업 면접관과 채용 컨설턴트 경력을 가진 AI 면접 평가 전문가입니다.
+		
+		아래 면접 정보와 질문/답변 내용을 기반으로 지원자를 매우 객관적이고 상세하게 평가하세요.
+		
+		이 리포트는 사용자가 비용을 지불하고 받는 프리미엄 면접 분석 리포트입니다.
+		따라서 단순한 칭찬이나 추상적인 피드백이 아니라, 실제 면접관이 남길 수준의 깊이 있는 분석을 제공해야 합니다.
+		
+		모든 평가는 반드시 실제 답변 내용을 근거로 작성하세요.
+		
+		답변 내용에 없는 내용을 추측하여 작성하지 마세요.
+		
+		좋았다, 아쉽다와 같은 추상적인 표현만 사용하는 것은 금지합니다.
+		
+		반드시
+		"왜 그렇게 평가했는지",
+		"어떤 답변 때문에 그런 점수를 주었는지",
+		"어떻게 개선하면 되는지"
+		까지 설명하세요.
+		
+		반드시 JSON만 응답하세요.
+		
+		JSON 외의 문자, 설명, 코드블록, 마크다운은 절대 출력하지 마세요.
+		
+		
+		====================
+		[면접 정보]
+		====================
+		
+		회사 : {company}
+		직무 : {job}
+		지원 유형 : {type}
+		난이도 : {difficulty}
+		
+		
+		====================
+		[AI 경쟁 지원자]
+		====================
+		
+		{applicantList}
+		
+		
+		====================
+		[면접 질문 및 답변]
+		====================
+		
+		(나 = 실제 사용자)
+		(나머지 = AI 경쟁 지원자)
+		{qaSection}
+		
+		
+		====================
+		[평가 기준]
+		====================
+		
+		overallScore
+		- 직무 전문성 30%
+		- 논리적 사고력 20%
+		- 커뮤니케이션 20%
+		- 조직 적합성 15%
+		- 압박 대응력 15%
+		
+		단순 평균이 아니라 실제 합격 가능성을 반영하여 계산한다.
+		
+		점수 기준
+		
+		95~100 : 즉시 합격 가능한 매우 뛰어난 수준
+		90~94 : 매우 우수
+		80~89 : 합격권
+		70~79 : 평균 이상
+		60~69 : 보완 필요
+		40~59 : 개선 필요
+		0~39 : 답변 부족 또는 무응답
+		
+		
+		====================
+		[평가 원칙]
+		====================
+		
+		모든 평가는 실제 답변을 근거로 작성한다.
+		답변 내용이 부족하면 부족한 이유를 설명한다.
+		답변 내용이 좋다면 어떤 표현이 좋았는지 설명한다.
+		AI 경쟁 지원자가 있는 경우 반드시 비교 분석을 수행한다.
+		
+		예시
+		"2번 지원자보다 경험의 구체성이 높았다."
+		"3번 지원자는 STAR 방식으로 설명했지만 사용자는 결과 중심 설명이 부족했다."
+		처럼 반드시 비교하여 작성한다.
+		
+		
+		
+		====================
+		[항목별 작성 규칙]
+		====================
+		
+		overallScore
+		
+		0~100
+		
+		
+		aiComment
+		
+		반드시 아래 내용을 모두 포함한다.
+		
+		1. 전체 면접 총평
+		2. 가장 뛰어났던 강점 3가지
+		3. 가장 부족했던 점 3가지
+		4. 실제 면접관이 느꼈을 인상
+		5. 채용 가능성 평가
+		6. 다음 면접에서 가장 먼저 개선해야 할 행동
+		
+		최소 700자 이상 작성한다.
+		
+		
+		compExpertise
+		0~100
+		
+		
+		compExpertiseDetail
+		반드시 아래 내용을 포함한다.
+		
+		- 점수를 준 이유
+		- 좋았던 답변 사례
+		- 부족했던 답변 사례
+		- 감점 요소
+		- 어떻게 개선하면 높은 점수를 받을 수 있는지
+		최소 250자 이상 작성한다.
+		
+		
+		compLogicDetail
+		
+		반드시 아래 내용을 포함한다.
+		- 답변 구조 분석
+		- 논리 전개의 장점
+		- 부족한 부분
+		- 더 설득력 있게 말하는 방법
+		최소 250자 이상 작성한다.
+		
+		
+		compCommuDetail
+		
+		반드시 아래 내용을 포함한다.
+		- 전달력
+		- 표현의 명확성
+		- 문장 구성
+		- 듣는 사람 입장에서 이해하기 쉬웠는지
+		- 개선 방법
+		최소 250자 이상 작성한다.
+		
+		
+		compCultureDetail
+		반드시 아래 내용을 포함한다.
+		- 조직 적합성
+		- 협업 태도
+		- 성장 가능성
+		- 기업 문화와의 적합성
+		- 개선 방법
+		최소 250자 이상 작성한다.
+		
+		
+		compPressureDetail
+		반드시 아래 내용을 포함한다.
+		- 어려운 질문 대응
+		- 침착함
+		- 답변 유지 능력
+		- 부족했던 부분
+		- 개선 방법
+		최소 250자 이상 작성한다.
+		
+		
+		speechWpm
+		
+		총 답변 어절 수를 총 답변 시간으로 나누어 추정한다.
+		
+		
+		
+		speechFiller
+		
+		"음"
+		"어"
+		"그"
+		"저"
+		"뭐"
+		등의 필러 사용 횟수를 계산한다.
+		
+		
+		
+		====================
+		지원자 분석
+		====================
+		
+		모든 지원자를 포함한다.
+		
+		사용자는
+		isUser=true
+		personaId=null
+		
+		AI 지원자는
+		isUser=false
+		
+		personaId=AI 경쟁 지원자 목록의 persona_id
+		
+		
+		
+		strength
+		
+		경쟁 지원자와 비교하여 가장 뛰어났던 점을 작성한다.
+		최소 120자.
+		
+		
+		
+		weakness
+		
+		경쟁 지원자와 비교하여 부족했던 점과 개선 방법을 작성한다.
+		최소 120자.
+		
+		
+		
+		====================
+		다음 면접 체크리스트
+		====================
 
-            [면접 정보]
-            회사: {company}
-            직무: {job}
-            지원 유형: {type}
-            난이도: {difficulty}
+		이번 면접 분석을 바탕으로 다음 면접 전에 반드시 준비해야 할 행동 항목 3~5개를 작성한다.
 
-            [AI 경쟁 지원자 목록]
-            {applicantList}
+		- 구체적이고 실행 가능한 행동으로 작성한다.
+		- "~하기" 형태로 끝나는 짧은 문장으로 작성한다.
+		- 이번 면접에서 부족했던 점을 직접적으로 개선할 수 있는 항목 위주로 작성한다.
 
-            [면접 Q&A]
-            (나: 실제 사용자 답변 / 나머지: AI 경쟁 지원자 답변)
-            {qaSection}
+		예시
+		"프로젝트 성과를 수치로 정리하기"
+		"STAR 방식으로 답변 구조 연습하기"
+		"자기소개를 1분 안에 말하는 연습하기"
 
-            [평가 항목 안내]
-            - compExpertise: 직무 전문성 (기술적 지식, 직무 관련 경험의 깊이)
-            - compLogic: 논리적 사고력 (구조적 설명, 인과관계, 결론 도출)
-            - compCommu: 커뮤니케이션 (명확한 표현, 답변의 흐름과 전달력)
-            - compCulture: 조직 적합성 (가치관, 협업 태도, 성장 마인드셋)
-            - compPressure: 압박 대응력 (어려운 질문에서의 태도 유지 및 대처)
-            - speechWpm: 예상 말하기 속도 (분당 어절 수, 총 답변 어절 수 ÷ 총 답변 시간(분)으로 추정)
-            - speechFiller: 추임새 예상 횟수 ("음", "어", "그", "저", "뭐" 등 답변 내 등장 횟수 합산)
 
-            [출력 JSON 형식]
-            {
-              "overallScore": number (0-100),
-              "aiComment": string (종합 평가 코멘트),
-              "compExpertise": number (0-100),
-              "compExpertiseDetail": string,
-              "compLogic": number (0-100),
-              "compLogicDetail": string,
-              "compCommu": number (0-100),
-              "compCommuDetail": string,
-              "compCulture": number (0-100),
-              "compCultureDetail": string,
-              "compPressure": number (0-100),
-              "compPressureDetail": string,
-              "speechWpm": number,
-              "speechFiller": number,
-              "applicants": [
-                {
-                  "isUser": true,
-                  "personaId": null,
-                  "name": "나",
-                  "score": number (0-100),
-                  "strength": string (핵심 강점 1~2문장),
-                  "weakness": string (개선 포인트 1~2문장)
-                }
-              ],
-              "questions": [
-                {
-                  "questionSeq": number,
-                  "questionText": string,
-                  "answerText": string (사용자 답변 원문),
-                  "score": number (0-100),
-                  "label": "우수" | "양호" | "보통" | "미흡",
-                  "feedback": string (구체적 피드백),
-                  "tags": string (쉼표로 구분된 키워드, 예: "논리성,구체성,직무연관")
-                }
-              ]
-            }
+		====================
+		질문별 평가
+		====================
+		
+		모든 질문을 포함한다.
+		
+		답변이 없는 경우
+		
+		score=0
+		label="미흡"
+		feedback에는 어떤 내용을 답했어야 하는지 작성한다.
+		
+		
+		
+		feedback
+		반드시 아래 내용을 모두 포함한다.
+		1. 좋았던 점
+		2. 부족했던 점
+		3. 면접관이라면 이어서 했을 후속 질문
+		4. 더 좋은 답변 방향
+		최소 180자 이상 작성한다.
+		
+		
+		
+		label
+		
+		90 이상 = 우수
+		75 이상 = 양호
+		60 이상 = 보통
+		60 미만 = 미흡
+		
+		
+		
+		tags
+		
+		반드시 3~6개의 키워드를 쉼표로 구분하여 작성한다.
+		
+		예시
+		
+		논리성,구체성,STAR기법
+		직무이해도,성과지표,협업
+		문제해결,리더십,성장가능성
+		
+		
+		
+		====================
+		출력 JSON
+		====================
+		
+		{
+		  "overallScore": number,
+		  "aiComment": string,
+		
+		  "compExpertise": number,
+		  "compExpertiseDetail": string,
+		
+		  "compLogic": number,
+		  "compLogicDetail": string,
+		
+		  "compCommu": number,
+		  "compCommuDetail": string,
+		
+		  "compCulture": number,
+		  "compCultureDetail": string,
+		
+		  "compPressure": number,
+		  "compPressureDetail": string,
+		
+		  "speechWpm": number,
+		  "speechFiller": number,
 
-            [주의사항]
-            - applicants 배열에는 반드시 사용자("나") 항목을 포함하고, AI 경쟁 지원자가 있다면 각각 추가하세요.
-            - AI 경쟁 지원자 항목의 personaId는 위 경쟁 지원자 목록에 나온 persona_id 값을 그대로 사용하세요.
-            - questions 배열은 사용자가 답변한 질문만 포함하세요 (사용자 답변이 없으면 제외).
+		  "checklistItems": ["string", "string", "string"],
+
+		  "applicants":[
+		    {
+		      "isUser":true,
+		      "personaId":null,
+		      "score":number,
+		      "strength":string,
+		      "weakness":string
+		    },
+		    {
+		      "isUser":false,
+		      "personaId":number,
+		      "score":number,
+		      "strength":string,
+		      "weakness":string
+		    }
+		  ],
+		
+		  "questions":[
+		    {
+		      "questionSeq":number,
+		      "participants":[
+		        {
+		          "turnRole":"USER",
+		          "personaId":null,
+		          "score":number,
+		          "label":"우수",
+		          "feedback":string,
+		          "tags":string
+		        },
+		        {
+		          "turnRole":"APPLICANT",
+		          "personaId":number,
+		          "score":number,
+		          "label":"우수",
+		          "feedback":string,
+		          "tags":string
+		        }
+		      ]
+		    }
+		  ]
+		}
+		
+		
+		
+		====================
+		매우 중요
+		====================
+		
+		- JSON 외의 어떠한 문자도 출력하지 않는다.
+		- 모든 필드는 반드시 채운다.
+		- 문자열은 줄바꿈(\n)을 포함해도 된다.
+		- detail, feedback, aiComment는 절대로 한두 문장으로 끝내지 않는다.
+		- 실제 대기업 면접관이 작성한 리포트처럼 깊이 있게 분석한다.
+		- 점수와 피드백의 내용이 서로 모순되지 않아야 한다.
+		- 근거 없는 칭찬이나 비판을 하지 않는다.
+		- JSON 형식이 깨지지 않도록 반드시 유효한 JSON만 출력한다.
             """;
 
     // 프롬프트 생성 → OpenAI 호출 → 프롬프트 기록 저장 → 응답 파싱

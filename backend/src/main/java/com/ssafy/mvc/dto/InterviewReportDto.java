@@ -19,6 +19,7 @@ public class InterviewReportDto {
     private String compPressureDetail;
     private Integer speechWpm;
     private Integer speechFiller;
+    private String checklist; // JSON 배열 문자열 ["항목1","항목2",...]
     private LocalDateTime createdAt;
 
     public Long getReportId() { return reportId; }
@@ -68,6 +69,9 @@ public class InterviewReportDto {
 
     public Integer getSpeechFiller() { return speechFiller; }
     public void setSpeechFiller(Integer speechFiller) { this.speechFiller = speechFiller; }
+
+    public String getChecklist() { return checklist; }
+    public void setChecklist(String checklist) { this.checklist = checklist; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

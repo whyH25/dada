@@ -22,4 +22,10 @@ public interface InterviewScenarioDao {
 
     // 회원탈퇴 시 해당 유저의 면접방에 속한 시나리오를 일괄 비활성화
     void deactivateByRoomIds(@Param("roomIds") List<Long> roomIds);
+
+    // 리포트 생성 시 특정 턴의 scenario_id 조회 (USER: turnRefId=null, APPLICANT: turnRefId=personaId)
+    Long selectScenarioId(@Param("roomId") Long roomId,
+                          @Param("questionSeq") int questionSeq,
+                          @Param("turnRole") String turnRole,
+                          @Param("turnRefId") Long turnRefId);
 }

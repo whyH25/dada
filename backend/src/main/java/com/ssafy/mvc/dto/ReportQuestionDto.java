@@ -2,11 +2,14 @@ package com.ssafy.mvc.dto;
 
 public class ReportQuestionDto {
     private Long id;
-    private Long reportId;
-    private Long roomId;
+    private Long roomId;         // report_question.room_id FK
+    private Long scenarioId;     // USER 또는 APPLICANT 턴의 scenario_id
     private Integer questionSeq;
-    private String questionText;
-    private String answerText;
+    // JOIN으로 채워지는 필드 (DB 컬럼 아님)
+    private String questionText; // INTERVIEWER 턴 speech_text
+    private String answerText;   // USER/APPLICANT 턴 answer_text 또는 speech_text
+    private String turnRole;     // interview_scenario.turn_role
+    private Long turnRefId;      // interview_scenario.turn_ref_id (APPLICANT의 persona id)
     private Integer score;
     private String label;
     private String feedback;
@@ -15,11 +18,11 @@ public class ReportQuestionDto {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Long getReportId() { return reportId; }
-    public void setReportId(Long reportId) { this.reportId = reportId; }
-
     public Long getRoomId() { return roomId; }
     public void setRoomId(Long roomId) { this.roomId = roomId; }
+
+    public Long getScenarioId() { return scenarioId; }
+    public void setScenarioId(Long scenarioId) { this.scenarioId = scenarioId; }
 
     public Integer getQuestionSeq() { return questionSeq; }
     public void setQuestionSeq(Integer questionSeq) { this.questionSeq = questionSeq; }
@@ -29,6 +32,12 @@ public class ReportQuestionDto {
 
     public String getAnswerText() { return answerText; }
     public void setAnswerText(String answerText) { this.answerText = answerText; }
+
+    public String getTurnRole() { return turnRole; }
+    public void setTurnRole(String turnRole) { this.turnRole = turnRole; }
+
+    public Long getTurnRefId() { return turnRefId; }
+    public void setTurnRefId(Long turnRefId) { this.turnRefId = turnRefId; }
 
     public Integer getScore() { return score; }
     public void setScore(Integer score) { this.score = score; }

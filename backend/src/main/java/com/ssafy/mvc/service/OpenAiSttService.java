@@ -45,6 +45,7 @@ public class OpenAiSttService {
 
             String responseBody = openAiSttRestClient.post()
                     .uri("/audio/transcriptions")
+                    .contentType(org.springframework.http.MediaType.MULTIPART_FORM_DATA)
                     .body(body)
                     .retrieve()
                     .body(String.class);

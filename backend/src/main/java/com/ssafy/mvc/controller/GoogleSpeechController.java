@@ -2,8 +2,8 @@ package com.ssafy.mvc.controller;
 
 import com.ssafy.mvc.dao.InterviewScenarioDao;
 import com.ssafy.mvc.dto.InterviewScenarioDto;
+import com.ssafy.mvc.service.GoogleSttService;
 import com.ssafy.mvc.service.GoogleTtsService;
-import com.ssafy.mvc.service.OpenAiSttService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +24,7 @@ import java.util.Map;
 public class GoogleSpeechController {
 
     private final GoogleTtsService googleTtsService;
-    private final OpenAiSttService openAiSttService;
+    private final GoogleSttService googleSttService;
     private final InterviewScenarioDao interviewScenarioDao;
 
     // scenarioId → DB에서 text + voiceType 조회 → MP3 반환
@@ -64,7 +64,7 @@ public class GoogleSpeechController {
         String transcript = "";
         try {
             if (audioFile != null && !audioFile.isEmpty()) {
-                transcript = openAiSttService.transcribe(audioFile.getBytes(), languageCode, hints);
+                transcript = googleSttService.transcribe(audioFile.getBytes(), languageCode, hints);
             }
         } catch (Exception e) {
             log.error("OpenAI STT 실패 (scenarioId={}): {}", scenarioId, e.getMessage());
