@@ -5,6 +5,9 @@ import { useAuthStore } from '../stores/auth.js'
 import { fetchStories } from '../api/storiesApi.js'
 import { fetchPosts } from '../api/postsApi.js'
 import { fetchNotices } from '../api/noticesApi.js'
+import c1Img from '../assets/images/c1.png'
+import c2Img from '../assets/images/c2.png'
+import c3Img from '../assets/images/c3.png'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -20,16 +23,21 @@ function requireAuth(action) {
   else auth.openLogin(action)
 }
 
+
 function formatDate(d) {
   if (!d) return ''
-  const dt = new Date(d)
-  const diff = Date.now() - dt.getTime()
-  if (diff < 60000) return '방금 전'
-  if (diff < 3600000) return Math.floor(diff / 60000) + '분 전'
-  if (diff < 86400000) return Math.floor(diff / 3600000) + '시간 전'
-  if (diff < 604800000) return Math.floor(diff / 86400000) + '일 전'
   return String(d).slice(0, 10).replace(/-/g, '.')
 }
+
+
+const CAT_CLASS = {
+  '면접 후기': 'cat-review',
+  '질문':      'cat-question',
+  '스터디 모집': 'cat-study',
+  '기타':      'cat-etc',
+}
+
+function catClass(cat) { return CAT_CLASS[cat] || 'cat-etc' }
 
 function parseMeta(content) {
   try {
@@ -72,38 +80,44 @@ onMounted(async () => {
         </div>
       </div>
     </section>
+    <!-- Feature cards -->
     <div class="container">
-      <!-- Feature cards -->
       <section class="feature-cards">
         <div class="feature-card fc-a" @click="go('/schedule')">
-          <h3 class="feature-card-title">채용 일정을<br />한눈에 확인하고<br />즐겨찾기로<br />관리하세요.</h3>
+          <img :src="c1Img" class="feature-icon" alt="" />
+          <h3 class="feature-card-title">채용 일정 관리</h3>
+          <p class="feature-card-desc">채용 일정을 한눈에 확인하고<br />즐겨찾기로 관리하세요.</p>
           <button class="feature-pill">채용 일정 보기
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </button>
-          <div class="feature-art art-a" aria-hidden="true"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
         </div>
         <div class="feature-card fc-b" @click="go('/interview-intro')">
-          <h3 class="feature-card-title">직무도 난이도도<br />내 마음대로!<br />나만의 다대다<br />면접방을 만들어요.</h3>
+          <img :src="c2Img" class="feature-icon" alt="" />
+          <h3 class="feature-card-title">나만의 면접방</h3>
+          <p class="feature-card-desc">직무와 난이도를 선택하고<br />나만의 면접방을 만들어요.</p>
           <button class="feature-pill">면접방 생성
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </button>
-          <div class="feature-art art-b" aria-hidden="true"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
         </div>
         <div class="feature-card fc-c" @click="requireAuth(() => go('/mypage?section=resume'))">
-          <h3 class="feature-card-title">이력서 등록만으로<br />모든 면접방에<br />나에게 맞는<br />질문이 도착해요.</h3>
+          <img :src="c3Img" class="feature-icon" alt="" />
+          <h3 class="feature-card-title">이력서 등록</h3>
+          <p class="feature-card-desc">이력서를 등록하면<br />나에게 딱 맞는 질문이 도착해요.</p>
           <button class="feature-pill">이력서 등록
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </button>
-          <div class="feature-art art-c" aria-hidden="true"><span class="c1"></span><span class="c2"></span><span class="c3"></span></div>
         </div>
       </section>
+    </div>
 
-      <!-- 합격 스토리 -->
-      <section class="section">
+    <!-- 합격 스토리 -->
+    <div class="stories-bg">
+      <div class="container">
+      <section class="section section-stories">
         <div class="section-head">
           <div>
             <h2 class="section-title">합격 스토리</h2>
-            <p class="section-desc">다대다 편집팀이 만난 합격자 인터뷰. 합격까지의 진짜 이야기를 들어보세요.</p>
+            <p class="section-desc">다대다 편집팀이 직접 만난 합격자 인터뷰. 합격까지의 진짜 이야기를 들어보세요.</p>
           </div>
           <a class="section-link" @click="go('/stories')">전체 보기
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6" /></svg>
@@ -119,60 +133,62 @@ onMounted(async () => {
             <div class="story-thumb">
               <img :src="s.thumbnail || '/thumbnail.png'" :alt="s.title" />
             </div>
-            <div class="story-kicker">
-              <span class="story-kicker-tag">합격자 인터뷰</span>
-              <span class="story-kicker-result">최종 합격</span>
-            </div>
             <h3 class="story-headline">{{ s.title }}</h3>
             <div class="story-meta-tags">
-              <span v-if="parseMeta(s.content).company" class="story-meta-tag">#{{ parseMeta(s.content).company }}</span>
-              <span v-if="parseMeta(s.content).jobRole" class="story-meta-tag story-meta-tag-role">#{{ parseMeta(s.content).jobRole }}</span>
+              <span v-if="parseMeta(s.content).company" class="story-meta-tag">{{ parseMeta(s.content).company }}</span>
+              <span v-if="parseMeta(s.content).jobRole" class="story-meta-tag story-meta-tag-role">{{ parseMeta(s.content).jobRole }}</span>
             </div>
             <div class="story-footer">
               <span class="story-read">인터뷰 읽기 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6" /></svg></span>
-              <span class="story-date">{{ formatDate(s.createdAt) }}</span>
             </div>
           </div>
           <div v-if="stories.length === 0" class="story-empty">등록된 합격 스토리가 없습니다.</div>
         </div>
       </section>
+      </div>
+    </div>
 
-      <!-- 커뮤니티 + 공지사항 -->
-      <section class="split-2">
-        <div class="card list-card">
-          <div class="card-header"><h3 class="card-title">커뮤니티</h3><a class="card-link" @click="go('/community/board')">더보기 ›</a></div>
-          <template v-if="posts.length > 0">
+    <!-- 커뮤니티 + 공지사항 -->
+    <div class="container">
+      <section class="board-section">
+        <!-- 커뮤니티 -->
+        <div class="board-card">
+          <div class="board-card-header">
+            <h3 class="card-title">커뮤니티</h3>
+            <a class="card-link" @click="go('/community/board')">더보기 ›</a>
+          </div>
+          <div class="board-list">
             <div
               v-for="p in posts"
               :key="p.postId"
-              class="list-item"
+              class="board-item"
               @click="go('/community/board/' + p.postId)"
             >
-              <div class="list-item-text">
-                <div class="list-item-title">{{ p.title }}</div>
-                <div class="list-item-sub">{{ p.category || '기타' }} · 댓글 {{ p.commentCount ?? 0 }}</div>
-              </div>
+              <span class="board-cat-tag" :class="catClass(p.category)">{{ p.category || '기타' }}</span>
+              <span class="board-item-title">{{ p.title }}</span>
+              <span class="board-side">💬 {{ p.commentCount ?? 0 }}</span>
             </div>
-          </template>
-          <div v-else class="list-empty">등록된 게시글이 없습니다.</div>
+          </div>
         </div>
 
-        <div class="card list-card">
-          <div class="card-header"><h3 class="card-title">공지사항</h3><a class="card-link" @click="go('/notices')">더보기 ›</a></div>
-          <template v-if="notices.length > 0">
+        <!-- 공지사항 -->
+        <div class="board-card">
+          <div class="board-card-header">
+            <h3 class="card-title">공지사항</h3>
+            <a class="card-link" @click="go('/notices')">더보기 ›</a>
+          </div>
+          <div class="board-list">
             <div
               v-for="n in notices"
               :key="n.noticeId"
-              class="list-item"
+              class="board-item"
               @click="go('/notices/' + n.noticeId)"
             >
-              <div class="list-item-text">
-                <div class="list-item-title">{{ n.title }}</div>
-                <div class="list-item-sub">{{ n.category }}</div>
-              </div>
+              <span class="board-cat-tag" :class="n.category === '이벤트' ? 'ncat-event' : 'ncat-notice'">{{ n.category }}</span>
+              <span class="board-item-title">{{ n.title }}</span>
+              <span class="board-side">{{ formatDate(n.createdAt) }}</span>
             </div>
-          </template>
-          <div v-else class="list-empty">등록된 공지사항이 없습니다.</div>
+          </div>
         </div>
       </section>
     </div>
@@ -188,11 +204,9 @@ onMounted(async () => {
 }
 
 .story-thumb {
-  height: 200px;
+  height: 190px;
   overflow: hidden;
-  border-radius: var(--radius);
   flex-shrink: 0;
-  margin: 8px 8px 0;
 }
 .story-thumb img {
   width: 100%;
@@ -206,17 +220,20 @@ onMounted(async () => {
 .story-meta-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 6px;
-  margin-bottom: 4px;
+  gap: 6px;
+  padding: 10px 28px 16px;
 }
 .story-meta-tag {
+  background: #edf7f0;
+  color: #286c4a;
+  border-radius: 999px;
+  padding: 4px 10px;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-400, #9ca3af);
+  font-weight: 600;
 }
 .story-meta-tag-role {
-  color: var(--green-600, #16a34a);
+  background: #e7f4df;
+  color: #4f8f33;
 }
 
 /* D-day 뱃지 */
