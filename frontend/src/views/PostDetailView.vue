@@ -8,7 +8,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const CAT_CLS = { '면접 후기': 'badge-blue', '질문': 'badge-green', '스터디 모집': 'badge-purple', '기타': '' }
+const CAT_CLS = { '면접 후기': 'badge-blue', '스터디 모집': 'badge-purple', '기타': '' }
 
 const post = ref(null)
 const related = ref([])
@@ -54,6 +54,14 @@ async function handleDelete() {
   router.push('/community/board')
 }
 
+const commentInputRef = ref(null)
+
+function autoResizeComment(e) {
+  const el = e.target
+  el.style.height = 'auto'
+  el.style.height = el.scrollHeight + 'px'
+}
+
 async function submitComment() {
   if (!auth.isLoggedIn) { auth.openLogin(); return }
   const text = commentText.value.trim()
@@ -62,6 +70,7 @@ async function submitComment() {
   try {
     await addComment(postId, text, isAnonymous.value)
     commentText.value = ''
+    if (commentInputRef.value) commentInputRef.value.style.height = 'auto'
     comments.value = await fetchComments(postId)
     post.value.commentCount = comments.value.length
   } finally {
@@ -156,8 +165,6 @@ onMounted(load)
           </div>
         </div>
 
-        <hr class="pd-divider">
-
         <!-- 본문 -->
         <div class="pd-body ql-content" v-html="post.content"></div>
 
@@ -179,19 +186,24 @@ onMounted(load)
 
           <!-- 댓글 입력 (목록 위에) -->
           <div class="pd-comment-write">
-            <label class="ci-anon">
-              <input type="checkbox" v-model="isAnonymous" />
-              <span>익명</span>
-            </label>
-            <input
+            <textarea
+              ref="commentInputRef"
               v-model="commentText"
               class="ci-input"
               placeholder="댓글을 작성해보세요."
-              @keydown.enter="submitComment"
-            />
-            <button class="ci-submit" :disabled="submittingComment" @click="submitComment">
-              {{ submittingComment ? '...' : '등록' }}
-            </button>
+              rows="1"
+              @input="autoResizeComment"
+              @keydown.enter.exact.prevent="submitComment"
+            ></textarea>
+            <div class="ci-bottom">
+              <label class="ci-anon">
+                <input type="checkbox" v-model="isAnonymous" />
+                <span>익명</span>
+              </label>
+              <button class="ci-submit" :disabled="submittingComment" @click="submitComment">
+                {{ submittingComment ? '...' : '등록' }}
+              </button>
+            </div>
           </div>
 
           <!-- 댓글 목록 -->
@@ -247,7 +259,7 @@ onMounted(load)
 .pd-not-found p { font-size: 14px; margin-bottom: 24px; }
 
 /* ── 헤더 ── */
-.pd-head { padding: 8px 0 16px; }
+.pd-head { padding: 8px 0 24px; }
 .pd-badges { margin-bottom: 12px; }
 .pd-title {
   font-size: 26px; font-weight: 800;
@@ -272,9 +284,6 @@ onMounted(load)
 .pd-action-btn:hover { background: #f7f9f8; }
 .pd-action-btn.danger { color: #e0667a; border-color: #f5cdd4; }
 .pd-action-btn.danger:hover { background: #fdf1f3; }
-
-/* ── 구분선 ── */
-.pd-divider { border: none; border-top: 1px solid #eef1ef; margin: 4px 0 28px; }
 
 /* ── 본문 ── */
 .pd-body {
@@ -353,9 +362,9 @@ onMounted(load)
 
 /* ── 댓글 입력 ── */
 .pd-comment-write {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column;
   background: #fff; border: 1.5px solid #d8e6dc;
-  border-radius: 12px; padding: 6px 6px 6px 16px;
+  border-radius: 12px; padding: 14px 14px 10px 16px;
   margin-bottom: 22px; transition: border-color 0.15s;
 }
 .pd-comment-write:focus-within { border-color: #2f8f63; }
@@ -366,11 +375,16 @@ onMounted(load)
 }
 .ci-anon input { cursor: pointer; accent-color: #2f8f63; }
 .ci-input {
-  flex: 1; border: none; outline: none;
-  font-size: 14px; font-family: inherit;
-  color: #14241b; background: transparent; padding: 9px 0;
+  width: 100%; border: none; outline: none; resize: none; overflow: hidden;
+  font-size: 14px; font-family: inherit; line-height: 1.6;
+  color: #14241b; background: transparent; padding: 0;
+  min-height: 24px; max-height: 200px; box-sizing: border-box;
 }
 .ci-input::placeholder { color: #aab5ae; }
+.ci-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 10px; margin-top: 6px; border-top: 1px solid #eef1ef;
+}
 .ci-submit {
   -webkit-appearance: none; appearance: none; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;

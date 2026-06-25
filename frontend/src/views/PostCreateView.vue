@@ -10,7 +10,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const CATS = ['면접 후기', '질문', '스터디 모집', '기타']
+const CATS = ['면접 후기', '스터디 모집', '기타']
 
 const isEdit = !!route.params.id
 const postId = route.params.id ? Number(route.params.id) : null

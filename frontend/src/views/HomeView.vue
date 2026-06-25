@@ -32,7 +32,6 @@ function formatDate(d) {
 
 const CAT_CLASS = {
   '면접 후기': 'cat-review',
-  '질문':      'cat-question',
   '스터디 모집': 'cat-study',
   '기타':      'cat-etc',
 }

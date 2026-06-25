@@ -6,7 +6,6 @@ const OPTS = { credentials: 'include', headers: { 'Content-Type': 'application/j
 
 const CAT_CLS = {
   '면접 후기': 'tbl-badge-blue',
-  '질문':      'tbl-badge-green',
   '스터디 모집': 'tbl-badge-purple',
   '자유':      'tbl-badge-gray',
 }
