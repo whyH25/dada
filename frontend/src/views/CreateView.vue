@@ -142,6 +142,11 @@ function gotoStep2() {
 }
 
 async function startInterview() {
+  if (camStatus.value !== 'ok' || micStatus.value !== 'ok') {
+    const confirmed = window.confirm('카메라 or 마이크 없이 진행하시겠습니까?')
+    if (!confirmed) return
+  }
+
   try {
     submitting.value = true
 
@@ -477,13 +482,10 @@ async function startInterview() {
               <div class="preview-row"><div class="preview-row-label">예상 소요 시간</div><div class="preview-row-val">{{ estimatedTime }}</div></div>
             </div>
             <div class="preview-foot">
-              <p v-if="camStatus !== 'ok' || micStatus !== 'ok'" style="font-size:13px;color:var(--ink-400);margin-bottom:10px;text-align:center;">
-                카메라와 마이크가 모두 정상이어야 시작할 수 있습니다.
-              </p>
               <button
                 class="btn btn-primary btn-block btn-lg"
-                :disabled="camStatus !== 'ok' || micStatus !== 'ok' || submitting"
-                :style="{ opacity: camStatus === 'ok' && micStatus === 'ok' && !submitting ? 1 : 0.45, cursor: camStatus === 'ok' && micStatus === 'ok' && !submitting ? 'pointer' : 'not-allowed' }"
+                :disabled="submitting"
+                :style="{ opacity: !submitting ? 1 : 0.45, cursor: !submitting ? 'pointer' : 'not-allowed' }"
                 @click="startInterview"
               >
                 <span v-if="submitting">면접방 생성 중...</span>
