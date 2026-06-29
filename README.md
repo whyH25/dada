@@ -74,8 +74,8 @@
 
 | 분류 | 기술 |
 |:---|:---|
-| 음성 변환 | Web Speech API / Whisper API |
-| 파일 저장 | AWS S3 (또는 로컬) |
+| 음성 변환 | Google TTS API / Google STT API |
+| 파일 저장 | Google Cloude Storage |
 | 형상 관리 | Git / GitHub |
 
 ---
