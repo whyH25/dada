@@ -71,7 +71,7 @@ onMounted(async () => {
             혼자 준비하기 어려운 면접, 이제 AI와 함께하세요. AI 면접관과 AI 지원자가 함께하는 실전형 시뮬레이션으로 실제 면접 분위기와 맞춤형 피드백을 경험해보세요.
           </p>
           <div class="hero-actions">
-            <button class="hero-btn-primary" @click="go('/interview-intro')">
+            <button class="hero-btn-primary" @click="go('/interview/intro')">
               빠른 시작
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
@@ -90,7 +90,7 @@ onMounted(async () => {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
           </button>
         </div>
-        <div class="feature-card fc-b" @click="go('/interview-intro')">
+        <div class="feature-card fc-b" @click="go('/interview/intro')">
           <img :src="c2Img" class="feature-icon" alt="" />
           <h3 class="feature-card-title">나만의 면접방</h3>
           <p class="feature-card-desc">직무와 난이도를 선택하고<br />나만의 면접방을 만들어요.</p>
@@ -127,7 +127,7 @@ onMounted(async () => {
             v-for="s in stories"
             :key="s.storyId"
             class="story-card"
-            @click="go('/story/' + s.storyId)"
+            @click="go('/stories/' + s.storyId)"
           >
             <div class="story-thumb">
               <img :src="s.thumbnail || '/thumbnail.png'" :alt="s.title" />
@@ -154,14 +154,14 @@ onMounted(async () => {
         <div class="board-card">
           <div class="board-card-header">
             <h3 class="card-title">커뮤니티</h3>
-            <a class="card-link" @click="go('/community/board')">더보기 ›</a>
+            <a class="card-link" @click="go('/community/posts')">더보기 ›</a>
           </div>
           <div class="board-list">
             <div
               v-for="p in posts"
               :key="p.postId"
               class="board-item"
-              @click="go('/community/board/' + p.postId)"
+              @click="go('/community/posts/' + p.postId)"
             >
               <span class="board-cat-tag" :class="catClass(p.category)">{{ p.category || '기타' }}</span>
               <span class="board-item-title">{{ p.title }}</span>

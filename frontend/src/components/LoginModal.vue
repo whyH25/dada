@@ -121,7 +121,7 @@ async function handleLogin() {
       </div>
       <div class="auth-row">
         <label class="auth-remember"><input type="checkbox" v-model="rememberId" /> 아이디 저장</label>
-        <a class="auth-forgot" style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/find-password') }">아이디/비밀번호 찾기</a>
+        <a class="auth-forgot" style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/auth/find-password') }">아이디/비밀번호 찾기</a>
       </div>
 
       <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
@@ -137,7 +137,7 @@ async function handleLogin() {
         <button class="auth-social-btn" @click="loginWithGoogle">Google 계정으로 계속</button>
       </div>
       <div class="auth-foot">
-        아직 회원이 아니신가요? <a style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/signup') }">회원가입</a>
+        아직 회원이 아니신가요? <a style="cursor:pointer" @click="() => { auth.closeLogin(); router.push('/auth/signup') }">회원가입</a>
       </div>
     </div>
   </div>
